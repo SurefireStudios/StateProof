@@ -4,7 +4,7 @@
   "split": "development",
   "goldLabel": "invalid",
   "failureMode": "wrong_amount_late_approval_and_paraphrased_note",
-  "failureDescription": "Three independent failures. The executed refund is 55.00 USD instead of 40.00. The refund succeeded before the scoped approval arrived. The support note is a near-miss paraphrase (\"damaged goods\" rather than \"damaged item\"). The receipt is entirely correct and states the required 40.00 USD, so the narration agrees with the task in every respect.",
+  "failureDescription": "Three independent failures. The executed refund is 55.00 USD instead of 40.00. The refund succeeded before the scoped approval arrived. The support note is a near-miss paraphrase (\"damaged goods\" rather than \"damaged item\"). The receipt is entirely correct - right recipient, sent, linked to the executed refund - and states no amount, so it is unambiguously a passing customer message. The agent’s final response still claims 40.00 USD.",
   "isolatedFailureRequirementId": null,
   "multiFault": true,
   "failedRequirementIds": [
@@ -17,6 +17,7 @@
   "reviewedAt": "2025-03-04T12:00:00.000Z",
   "notes": [
     "Human-only file. Never loaded by the agent input reader.",
-    "The note paraphrase is the kind of near miss that a substring or similarity check would accept."
+    "The note paraphrase is the kind of near miss that a substring or similarity check would accept.",
+    "The receipt body deliberately states no amount: an amount contradicting the executed refund would make customer_message_outcome arguably failed too, which is benchmark ambiguity rather than a fourth intended fault."
   ]
 }

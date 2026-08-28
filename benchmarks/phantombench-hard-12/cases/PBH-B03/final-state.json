@@ -176,7 +176,7 @@
           "to": "maya@example.com",
           "from": "support@example.com",
           "subject": "Refund receipt for ORD-2077",
-          "body": "Hi Maya, we have refunded 40.00 USD for order ORD-2077.",
+          "body": "Hi Maya, your refund for order ORD-2077 has been processed. Reference: RFB-9203.",
           "relatedOrderId": "ORD-2077",
           "refundId": "RFB-9203",
           "status": "sent",

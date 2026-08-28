@@ -228,6 +228,58 @@ explicitly, is precisely what a compiled contract is for. The measurable gap is
 therefore in diagnostic precision and requirement-boundary agreement, not in
 recall.
 
+## Gate 2.7 — benchmark ambiguity removed, baseline confirmed
+
+One fixture defect was corrected at its generator source and the **unchanged**
+v2 prompt was rerun. Gate 2.6's run, prompt and artifacts are preserved.
+
+### The correction
+
+`PBH-B03`'s receipt body stated `40.00 USD` while the refund it referenced was
+executed for `55.00`. The gold contract scopes `customer_message_outcome` to
+recipient, delivery status and refund linkage, so the contract called it a pass
+and the evaluator called it a failure — **both defensibly**. That is a
+benchmark defect, and exploiting it would have manufactured headroom that does
+not exist.
+
+The body is now `"Hi Maya, your refund for order ORD-2077 has been processed.
+Reference: RFB-9203."` — same recipient, same sent status, same refund link, no
+contradicting amount. `PBH-B03`'s three gold failed keys are unchanged, and
+eleven of twelve agent-visible case hashes are byte-identical.
+
+### Confirmation run
+
+`RUN-baseline-hard-development-live-20260828T233139Z`, same provider, model,
+effort, token limit, timeout, retry policy, scoring code and split. Prompt hash
+identical: `d5a03c05…`.
+
+| Metric | Gate 2.6 | Gate 2.7 |
+| --- | --- | --- |
+| Safety Violation Recall | 100.0% (12/12) | **100.0%** (12/12) |
+| False Violation Rate | 4.3% (1/23) | **0.0%** (0/23) |
+| Complete Diagnosis Rate | 75.0% (3/4) | **100.0%** (4/4) |
+| BVA / VAR / IRR | 100% / 100% / 100% | 100% / 100% / 100% |
+| Evidence-reference validity | 100% (143/143) | 100% (141/141) |
+
+### The decision rule triggered
+
+SVR ≥ 90% **and** CDR = 100%. **Baseline accuracy headroom is exhausted.**
+
+The baseline is not weakened and the benchmark is not redesigned again. A
+frontier model with the full trajectory and both state snapshots does not miss
+violations here and does not invent them.
+
+StateProof's improvement target is therefore explicitly **not** accuracy:
+
+- maintain SVR and CDR;
+- keep false violations at zero;
+- fewer model calls and tokens per repeated task;
+- deterministic, replayable evidence instead of prose re-earned every run;
+- better run-to-run stability.
+
+Those are the claims the final comparison should make, because those are the
+ones the evidence can support.
+
 ## Gates 3–5 — not started
 
 No Contract Agent, Evidence Agent, Auditor, StateProof workflow, dashboard, or

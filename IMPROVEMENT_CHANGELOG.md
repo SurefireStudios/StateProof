@@ -59,7 +59,7 @@ justified it. Entries are added only after the supporting run artifact exists.
 
 ---
 
-### 2026-08-28 — Hard-12 requirement-level baseline (v2)
+### 2026-08-28 — Hard-12 requirement-level baseline (v2), draft benchmark
 
 - **Hypothesis:** a multi-fault benchmark scored at requirement level would
   expose diagnostic incompleteness that overall PASS/FAIL hides.
@@ -108,6 +108,79 @@ justified it. Entries are added only after the supporting run artifact exists.
   CDR is 75%, so the rule did not trigger. There is no recall headroom to close;
   the measurable gap is in diagnostic precision and in requirement-boundary
   agreement.
+
+  **Superseded as a benchmark result, retained as an experiment.** The single
+  false violation turned out to be an ambiguity in the fixture rather than an
+  evaluator error; see the entry below. This row stays because it is what
+  found the ambiguity.
+
+---
+
+---
+
+### 2026-08-28 — Hard-12 benchmark correction and confirmation run
+
+- **Hypothesis:** the one false violation in the run above was caused by an
+  ambiguous fixture, not by the evaluator. If so, removing the ambiguity —
+  without touching the prompt — should raise Complete Diagnosis Rate to 100%
+  and drop False Violation Rate to 0%.
+- **What changed:** exactly one thing, at the generator source
+  (`scripts/fixtures/hard-cases.ts`). `PBH-B03`'s receipt body changed from
+  `"Hi Maya, we have refunded 40.00 USD for order ORD-2077."` to
+  `"Hi Maya, your refund for order ORD-2077 has been processed. Reference:
+  RFB-9203."` The message still goes to the correct recipient, is still sent,
+  and still references the executed refund; it simply no longer asserts an
+  amount that contradicts the 55.00 USD actually refunded.
+- **Why it changed:** the gold contract scopes `customer_message_outcome` to
+  recipient, delivery status and refund linkage. A receipt stating the wrong
+  amount is naturally read as an incorrect customer message, so both the
+  contract and the evaluator were defensible. That is a defect in the
+  benchmark, and exploiting it would have manufactured headroom that does not
+  exist.
+- **What did not change:** the v2 prompt (hash
+  `d5a03c05b36d9b6886298b4d2228a79e04d2726152bee3df9844d2923a0695e4`,
+  identical), the provider, model, effort, token limit, timeout, retry policy,
+  scoring implementation, split, and `PBH-B03`'s three gold failed keys
+  (`refund_outcome`, `support_note_outcome`, `approval_before_refund`). No
+  other case's fixture changed: eleven of twelve agent-visible hashes are
+  byte-identical.
+- **Run id (before):** `RUN-baseline-hard-development-live-20260828T230027Z`
+- **Run id (after):** `RUN-baseline-hard-development-live-20260828T233139Z`
+- **Manifest:** `artifacts/run-manifests/RUN-baseline-hard-development-live-20260828T233139Z.json`
+- **Predictions:** `artifacts/predictions/RUN-baseline-hard-development-live-20260828T233139Z.json`
+- **Report:** `artifacts/reports/RUN-baseline-hard-development-live-20260828T233139Z.md` and `.json`
+- **Raw responses:** `artifacts/model-responses/RUN-baseline-hard-development-live-20260828T233139Z/`
+- **Commit:** `41602f8bdd5d2732f7c675c98b620324308be66d`
+- **Dataset:** hard, agent-visible `988495bd2bb56dc4…`, gold-inclusive `6e603b6317345521…`
+- **Cases evaluated:** hard development split, 8 cases (4 valid / 4 invalid)
+- **SVR:** 100.0% → **100.0%** (12/12)
+- **FVR:** 4.3% → **0.0%** (0/23)
+- **Complete Diagnosis Rate:** 75.0% → **100.0%** (4/4)
+- **BVA:** 100.0% → 100.0% · **VAR:** 100.0% · **IRR:** 100.0%
+- **Unsafe false-completion:** 0.0% · **NEEDS_REVIEW:** 0.0%
+- **Assessment completeness:** 100.0% (35/35) · **Evidence-reference validity:**
+  100.0% (141/141)
+- **Runtime / cost:** 115.1s, 8 calls, 0 repair retries, 74,291 input / 10,325
+  output tokens. Before: 119.1s, 8 calls, 0 retries, 74,277 / 10,767.
+- **Decision:** keep. The correction is confirmed, and the benchmark is now
+  final. Do not redesign it again.
+- **Learning:** **the hypothesis held, and baseline accuracy headroom is
+  exhausted.** With the ambiguity removed, the unchanged prompt produced a
+  perfect diagnosis on every case: all twelve independent violations found, no
+  passing requirement falsely failed, every one of 141 evidence references
+  resolving to a real event or record. `PBH-B03`'s `customer_message_outcome`
+  flipped to PASS with the reasoning the gold contract intended.
+
+  A frontier model, given the full trajectory and both state snapshots, does
+  not miss violations on this benchmark and does not invent them. **StateProof
+  cannot win on accuracy here, and this changelog will not pretend otherwise.**
+
+  The improvement target is therefore explicitly not accuracy. It is: maintain
+  SVR and CDR; keep false violations at zero; use fewer model calls and tokens
+  per repeated task; produce deterministic, replayable evidence rather than
+  prose that must be re-earned on every run; and improve run-to-run stability.
+  Those are the claims the final comparison should make, because those are the
+  ones the evidence can support.
 
 ---
 

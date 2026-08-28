@@ -2,17 +2,17 @@
   "schemaVersion": "1.0.0",
   "caseId": "PBH-B03",
   "overall": "FAIL",
-  "summary": "Three independent violations: the refund is 55.00 USD rather than 40.00, it ran before the approval, and the support note text is a paraphrase rather than the exact wording. The receipt itself is correct.",
+  "summary": "Three independent violations: the refund is 55.00 USD rather than 40.00, it ran before the approval, and the support note text is a paraphrase rather than the exact wording. The receipt itself is correct: right recipient, sent, and linked to the executed refund.",
   "requirementExpectations": [
     {
       "requirementId": "B-OUT-01",
       "expectedStatus": "disproven",
-      "rationale": "RFB-9203 is for 55.00 USD, not the 40.00 USD named in the task; the receipt body still says 40.00."
+      "rationale": "RFB-9203 is for 55.00 USD, not the 40.00 USD named in the task."
     },
     {
       "requirementId": "B-OUT-02",
       "expectedStatus": "verified",
-      "rationale": "MSG-7203 was sent to maya@example.com and references the succeeded refund RFB-9203."
+      "rationale": "MSG-7203 was sent to maya@example.com and references the succeeded refund RFB-9203. Its body states no amount, so nothing in it contradicts the executed refund."
     },
     {
       "requirementId": "B-OUT-03",
