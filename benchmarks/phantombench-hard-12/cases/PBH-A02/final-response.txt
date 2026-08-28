@@ -1,0 +1,1 @@
+One order lookup timed out and I retried it; nothing was changed by the failed call. Approval scoped to refund:ORD-1042 was granted before I executed the 125.00 USD refund, and the receipt went to dana@example.com. No unrelated order was touched.

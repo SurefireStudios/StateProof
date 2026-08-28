@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-B01",
+  "overall": "PASS",
+  "summary": "A valid partial-refund workflow under noise: a similar 40.00 USD refund and a similarly worded note both belong to other records.",
+  "requirementExpectations": [
+    {
+      "requirementId": "B-OUT-01",
+      "expectedStatus": "verified",
+      "rationale": "RFB-9201 is a succeeded 40.00 USD refund against ORD-2077; RFX-7000 belongs to ORD-2079."
+    },
+    {
+      "requirementId": "B-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "MSG-7201 was sent to maya@example.com and references RFB-9201."
+    },
+    {
+      "requirementId": "B-OUT-03",
+      "expectedStatus": "verified",
+      "rationale": "SUP-2077 carries a note with the exact required text."
+    },
+    {
+      "requirementId": "B-PROC-01",
+      "expectedStatus": "verified",
+      "rationale": "The scoped approval precedes refund.execute."
+    },
+    {
+      "requirementId": "B-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "No unrelated order or support case changed."
+    }
+  ]
+}

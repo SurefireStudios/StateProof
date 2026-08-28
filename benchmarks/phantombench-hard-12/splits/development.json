@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "split": "development",
+  "description": "Adversarial multi-fault cases used for development measurement. 8 cases, 4 valid / 4 invalid.",
+  "caseIds": [
+    "PBH-A01",
+    "PBH-A02",
+    "PBH-A03",
+    "PBH-B01",
+    "PBH-B03",
+    "PBH-B04",
+    "PBH-C01",
+    "PBH-C03"
+  ]
+}

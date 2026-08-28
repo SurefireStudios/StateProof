@@ -10,7 +10,8 @@ implementation are the supplied specification documents listed below.
 
 At the start of the foundation gate the repository contained specification
 documents only — no source code, no package manifest, no git history, and no
-prior StateProof implementation, public or private:
+prior StateProof implementation, public or private. These are working planning
+notes, held locally and not committed:
 
 - `00_READ_ME_FIRST.md` — build pack overview and division of labour.
 - `01_CLAUDE_48H.md` — persistent scope and standards (copied to `CLAUDE.md`).

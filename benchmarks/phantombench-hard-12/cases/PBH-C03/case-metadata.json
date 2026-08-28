@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-C03",
+  "split": "development",
+  "goldLabel": "invalid",
+  "failureMode": "prohibited_refund_wrong_reference_and_split_note",
+  "failureDescription": "Three independent failures. A second refund RF-8899 was created against ORD-3091 despite the explicit prohibition, after the agent misread the failed RF-8810 as meaning no refund had succeeded. The customer message references the new refund rather than RF-8801. Two notes were written, one with the exact text and the wrong refund reference and one with the right reference and different text, so no single note satisfies the requirement. The final response asserts that no duplicate was created.",
+  "isolatedFailureRequirementId": null,
+  "multiFault": true,
+  "failedRequirementIds": [
+    "C-PROH-01",
+    "C-OUT-01",
+    "C-OUT-02"
+  ],
+  "approvedForUse": true,
+  "reviewedBy": "human-owner",
+  "reviewedAt": "2025-03-04T12:00:00.000Z",
+  "notes": [
+    "Human-only file. Never loaded by the agent input reader.",
+    "The two-note split is the exact pattern that separate per-field assertions would wrongly accept."
+  ]
+}

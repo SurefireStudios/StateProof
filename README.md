@@ -114,7 +114,7 @@ Three rules shape the code more than anything else:
 - [`docs/decisions/0001-foundation.md`](docs/decisions/0001-foundation.md)
 - [`docs/decisions/0002-gate-2.md`](docs/decisions/0002-gate-2.md)
 - [`benchmarks/phantombench-12/CASE_MATRIX.md`](benchmarks/phantombench-12/CASE_MATRIX.md)
-  (canonical design: [`04_PHANTOMBENCH_12_CASE_MATRIX.md`](04_PHANTOMBENCH_12_CASE_MATRIX.md))
+  (canonical design: `04_PHANTOMBENCH_12_CASE_MATRIX.md`)
 - [`PREEXISTING_WORK.md`](PREEXISTING_WORK.md)
 - [`IMPROVEMENT_CHANGELOG.md`](IMPROVEMENT_CHANGELOG.md)
 

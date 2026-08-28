@@ -31,3 +31,9 @@ Thumbs.db
 
 # local archives / backups
 *.zip
+
+# local working notes: supplied briefs, gate prompts and audit addenda.
+# These are planning documents, not deliverables, and are not published.
+# CLAUDE.md is deliberately NOT ignored: it is the repository instruction file.
+0[0-9]_*.md
+CLAUDE_*.md

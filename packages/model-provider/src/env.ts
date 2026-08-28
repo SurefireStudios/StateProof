@@ -11,17 +11,30 @@ import { config as loadDotenv } from 'dotenv';
  * recorded configuration, the run manifest, or any artifact.
  */
 
-const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
-export const DOTENV_PATH = path.join(REPO_ROOT, '.env');
+/**
+ * `.env` is resolved from the working directory, the way dotenv itself does.
+ *
+ * Commands are documented as being run from the repository root, so this is
+ * the same file either way. Resolving from cwd rather than from this module's
+ * location is what lets a test run a CLI in a scratch directory and genuinely
+ * observe the no-credentials path, instead of skipping itself whenever the
+ * developer happens to have a real `.env`.
+ */
+export function dotenvPath(cwd: string = process.cwd()): string {
+  return path.join(cwd, '.env');
+}
 
-let loaded = false;
+/** Exported for documentation and tests; not used to resolve at load time. */
+export const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 
-/** Idempotent. Existing environment variables always win over `.env`. */
-export function loadLocalEnv(dotenvPath: string = DOTENV_PATH): void {
-  if (loaded) return;
-  loaded = true;
-  if (!existsSync(dotenvPath)) return;
-  loadDotenv({ path: dotenvPath, override: false });
+let loadedFrom: string | null = null;
+
+/** Idempotent per path. Existing environment variables always win over `.env`. */
+export function loadLocalEnv(envFilePath: string = dotenvPath()): void {
+  if (loadedFrom === envFilePath) return;
+  loadedFrom = envFilePath;
+  if (!existsSync(envFilePath)) return;
+  loadDotenv({ path: envFilePath, override: false });
 }
 
 function readNumber(name: string): number | undefined {

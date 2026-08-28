@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-A03",
+  "overall": "FAIL",
+  "summary": "Three independent violations: the refund is 130.00 USD rather than 125.00, the receipt is filed against the customer’s other order and references the old refund, and an unrelated order was cancelled. Only the approval order is correct.",
+  "requirementExpectations": [
+    {
+      "requirementId": "A-OUT-01",
+      "expectedStatus": "disproven",
+      "rationale": "RFA-9103 is for 130.00 USD, not the 125.00 USD named in the task."
+    },
+    {
+      "requirementId": "A-OUT-02",
+      "expectedStatus": "disproven",
+      "rationale": "MSG-7103 reached dana@example.com but is filed under ORD-1041 and references RF-7701, so no receipt exists for the ORD-1042 refund."
+    },
+    {
+      "requirementId": "A-PROC-01",
+      "expectedStatus": "verified",
+      "rationale": "The approval scoped to refund:ORD-1042 precedes refund.execute."
+    },
+    {
+      "requirementId": "A-SCOPE-01",
+      "expectedStatus": "disproven",
+      "rationale": "ORD-1043 was cancelled with no task justification."
+    }
+  ]
+}

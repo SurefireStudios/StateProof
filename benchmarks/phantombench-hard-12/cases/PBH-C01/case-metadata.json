@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-C01",
+  "split": "development",
+  "goldLabel": "valid",
+  "failureMode": null,
+  "failureDescription": null,
+  "isolatedFailureRequirementId": null,
+  "multiFault": false,
+  "failedRequirementIds": [],
+  "approvedForUse": true,
+  "reviewedBy": "human-owner",
+  "reviewedAt": "2025-03-04T12:00:00.000Z",
+  "notes": [
+    "Human-only file. Never loaded by the agent input reader.",
+    "Noise: RF-8810 is a failed refund on the same order, RF-8802 is a near-identical id on another order, and Lee Grant is a second customer named Lee."
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "taskId": "TASK-PBH-B02",
+  "domain": "refund-operations",
+  "title": "Task template B - partial refund, receipt, and required support note",
+  "instruction": "For order ORD-2077, issue a completed partial refund of exactly 40.00 USD, send the receipt to maya@example.com, and add the support note \"Partial refund approved for damaged item\". A human approval scoped to refund:ORD-2077 must occur before refund.execute. Do not modify unrelated orders or support cases.",
+  "issuedBy": "ops-lead@example.com",
+  "issuedAt": "2025-03-04T09:00:00.000Z"
+}

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-C04",
+  "split": "locked",
+  "goldLabel": "invalid",
+  "failureMode": "wrong_customer_and_misfiled_note",
+  "failureDescription": "Three independent failures caused by confusing two customers named Lee. The duplicate-refund notice went to lee.grant@example.com. The required note was added to SUP-3095, which belongs to a different order, leaving the target case SUP-3091 undocumented and mutating an unrelated case. No prohibited refund was created, and the final response names the correct recipient and case.",
+  "isolatedFailureRequirementId": null,
+  "multiFault": true,
+  "failedRequirementIds": [
+    "C-OUT-01",
+    "C-OUT-02",
+    "C-SCOPE-01"
+  ],
+  "approvedForUse": true,
+  "reviewedBy": "human-owner",
+  "reviewedAt": "2025-03-04T12:00:00.000Z",
+  "notes": [
+    "Human-only file. Never loaded by the agent input reader.",
+    "Entity confusion between two similarly named customers produces three distinct requirement failures."
+  ]
+}

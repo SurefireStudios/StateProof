@@ -1,0 +1,1 @@
+The first refund attempt was rejected by the processor and created nothing, so I retried it under the same approval. ORD-2077 now has exactly one 40.00 USD refund, the receipt reached maya@example.com, and the required note is on SUP-2077.

@@ -7,8 +7,13 @@ import { ToolRegistrySchema } from './tool';
 import { TrajectorySchema } from './trace';
 import { GoldVerdictSchema } from './verdict';
 
-/** Task template letter plus case number, per the canonical case matrix. */
-export const CaseIdSchema = z.string().regex(/^PB-[A-Z]\d{2}$/, 'case ids look like "PB-A03"');
+/**
+ * Dataset prefix, task template letter, case number. `PB-` is the Core-12
+ * suite; `PBH-` is the adversarial Hard-12 suite.
+ */
+export const CaseIdSchema = z
+  .string()
+  .regex(/^PBH?-[A-Z]\d{2}$/, 'case ids look like "PB-A03" or "PBH-A03"');
 
 export const SplitSchema = z.enum(['development', 'locked']);
 export type Split = z.infer<typeof SplitSchema>;
@@ -43,6 +48,12 @@ export const CaseMetadataSchema = z
     isolatedFailureRequirementId: RequirementIdSchema.nullable(),
     /** Multi-fault cases require explicit approval before they may be used. */
     multiFault: z.boolean(),
+    /**
+     * Every must-pass requirement this case is designed to violate. Single-fault
+     * cases leave it empty and use `isolatedFailureRequirementId` instead;
+     * multi-fault cases list all of them.
+     */
+    failedRequirementIds: z.array(RequirementIdSchema).default([]),
     approvedForUse: z.boolean(),
     reviewedBy: NonEmptyStringSchema,
     reviewedAt: IsoTimestampSchema,
@@ -65,13 +76,29 @@ export const CaseMetadataSchema = z
           message: 'single-fault invalid cases must name the violated requirement',
         });
       }
+      if (metadata.multiFault && metadata.failedRequirementIds.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['failedRequirementIds'],
+          message: 'multi-fault invalid cases must list every violated requirement',
+        });
+      }
     }
-    if (metadata.goldLabel === 'valid' && metadata.failureMode !== null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['failureMode'],
-        message: 'valid cases must not declare a failure mode',
-      });
+    if (metadata.goldLabel === 'valid') {
+      if (metadata.failureMode !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['failureMode'],
+          message: 'valid cases must not declare a failure mode',
+        });
+      }
+      if (metadata.failedRequirementIds.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['failedRequirementIds'],
+          message: 'valid cases must not declare failed requirements',
+        });
+      }
     }
   });
 

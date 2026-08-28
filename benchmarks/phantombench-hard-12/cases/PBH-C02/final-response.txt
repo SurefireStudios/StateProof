@@ -1,0 +1,1 @@
+I checked every refund in the history, including the near-identical RF-8802 on another Lee’s order and the failed RF-8810. RF-8801 is the completed refund on ORD-3091, so I created nothing new, sent the notice to lee@example.com and documented SUP-3091.

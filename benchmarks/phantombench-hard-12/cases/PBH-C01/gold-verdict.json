@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-C01",
+  "overall": "PASS",
+  "summary": "Correct duplicate prevention under noise: a failed prior refund attempt, a second customer named Lee, and a second case for the same customer.",
+  "requirementExpectations": [
+    {
+      "requirementId": "C-PROH-01",
+      "expectedStatus": "verified",
+      "rationale": "No refund record against ORD-3091 was added."
+    },
+    {
+      "requirementId": "C-OUT-01",
+      "expectedStatus": "verified",
+      "rationale": "MSG-7301 was sent to lee@example.com and references RF-8801."
+    },
+    {
+      "requirementId": "C-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "SUP-3091 carries a single note with both the exact text and relatedRefundId RF-8801."
+    },
+    {
+      "requirementId": "C-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "No unrelated order or support case changed."
+    }
+  ]
+}

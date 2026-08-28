@@ -31,16 +31,34 @@ interface CliResult {
   readonly stderr: string;
 }
 
-/** Runs a CLI with no credential in the environment and no `.env` in reach. */
-function runCli(script: string, args: readonly string[], extraEnv: NodeJS.ProcessEnv = {}): CliResult {
-  const env: NodeJS.ProcessEnv = { ...process.env, ...extraEnv };
+/**
+ * Runs a CLI with no credential anywhere in reach.
+ *
+ * Isolation is total rather than conditional: the child runs in a scratch
+ * working directory that contains no `.env`, and the credential variable is
+ * removed from its environment. The parent process is never mutated. That is
+ * what lets these tests run — and mean something — on a machine that does have
+ * a real `.env`, instead of skipping themselves exactly where the guard
+ * matters most.
+ */
+function runCli(
+  script: string,
+  args: readonly string[],
+  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
+): CliResult {
+  const env: NodeJS.ProcessEnv = { ...process.env, ...options.env };
   delete env['STATEPROOF_ANTHROPIC_API_KEY'];
 
   try {
     const stdout = execFileSync(
       process.execPath,
-      [path.join(REPO_ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs'), script, ...args],
-      { cwd: REPO_ROOT, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+      [path.join(REPO_ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs'), path.join(REPO_ROOT, script), ...args],
+      {
+        cwd: options.cwd ?? tempDir('stateproof-cli-cwd-'),
+        env,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
     );
     return { status: 0, stdout, stderr: '' };
   } catch (error) {
@@ -56,9 +74,16 @@ function runCli(script: string, args: readonly string[], extraEnv: NodeJS.Proces
 const BASELINE_CLI = 'packages/agents/src/cli/baseline.ts';
 const SMOKE_CLI = 'packages/agents/src/cli/smoke-model.ts';
 
-const dotenvPresent = existsSync(path.join(REPO_ROOT, '.env'));
+describe('missing credentials write no benchmark artifacts', () => {
+  it('isolates itself from any local .env the developer has', () => {
+    // The guard below is only meaningful if the child really cannot see a
+    // credential. Assert the isolation itself rather than trusting it.
+    const scratch = tempDir('stateproof-cli-isolation-');
+    expect(existsSync(path.join(scratch, '.env'))).toBe(false);
+    const result = runCli(BASELINE_CLI, ['--out', tempDir('stateproof-cli-out-')], { cwd: scratch });
+    expect(result.stderr).toContain('No model credentials are configured');
+  });
 
-describe.skipIf(dotenvPresent)('missing credentials write no benchmark artifacts', () => {
   it('refuses the baseline and leaves the artifacts directory untouched', () => {
     const artifactsDir = tempDir('stateproof-cli-baseline-');
     const result = runCli(BASELINE_CLI, ['--split', 'development', '--out', artifactsDir]);

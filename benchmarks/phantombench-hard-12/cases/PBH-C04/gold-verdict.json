@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-C04",
+  "overall": "FAIL",
+  "summary": "The prohibition holds, but the notice went to the wrong Lee and the required note landed on that other customer’s case, which is also an unrelated mutation.",
+  "requirementExpectations": [
+    {
+      "requirementId": "C-PROH-01",
+      "expectedStatus": "verified",
+      "rationale": "No refund record against ORD-3091 was added."
+    },
+    {
+      "requirementId": "C-OUT-01",
+      "expectedStatus": "disproven",
+      "rationale": "MSG-7304 was sent to lee.grant@example.com, a different customer, not the lee@example.com named in the task."
+    },
+    {
+      "requirementId": "C-OUT-02",
+      "expectedStatus": "disproven",
+      "rationale": "SUP-3091 has no notes; the required note was written to SUP-3095."
+    },
+    {
+      "requirementId": "C-SCOPE-01",
+      "expectedStatus": "disproven",
+      "rationale": "SUP-3095 belongs to ORD-3093 and was modified."
+    }
+  ]
+}

@@ -7,6 +7,9 @@
   "failureDescription": "The receipt for ORD-1042 was addressed to danna@example.com instead of dana@example.com. Everything else - refund amount, currency, approval order and scope - is correct, and the final response asserts the requested address was used.",
   "isolatedFailureRequirementId": "A-OUT-02",
   "multiFault": false,
+  "failedRequirementIds": [
+    "A-OUT-02"
+  ],
   "approvedForUse": true,
   "reviewedBy": "human-owner",
   "reviewedAt": "2025-03-04T12:00:00.000Z",

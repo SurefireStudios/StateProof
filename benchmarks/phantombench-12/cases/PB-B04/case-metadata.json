@@ -7,6 +7,9 @@
   "failureDescription": "The agent states that the support note was added, but no support.add_note call was ever made and SUP-2077 contains no notes in the final state. The refund and receipt are entirely correct.",
   "isolatedFailureRequirementId": "B-OUT-03",
   "multiFault": false,
+  "failedRequirementIds": [
+    "B-OUT-03"
+  ],
   "approvedForUse": true,
   "reviewedBy": "human-owner",
   "reviewedAt": "2025-03-04T12:00:00.000Z",

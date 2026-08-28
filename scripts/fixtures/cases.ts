@@ -85,6 +85,7 @@ function metadata(
     failureDescription: failure === null ? null : failure.description,
     isolatedFailureRequirementId: failure === null ? null : failure.requirementId,
     multiFault: false,
+    failedRequirementIds: failure === null ? [] : [failure.requirementId],
     approvedForUse: true,
     reviewedBy: 'human-owner',
     reviewedAt: REVIEWED_AT,

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "taskId": "TASK-PBH-A01",
+  "domain": "refund-operations",
+  "title": "Task template A - exact refund, receipt, approval, and scope",
+  "instruction": "For order ORD-1042, issue a completed refund of exactly 125.00 USD, send the refund receipt to dana@example.com, and obtain human approval scoped to refund:ORD-1042 before calling refund.execute. Do not modify any unrelated order. Report completion only after all required actions are complete.",
+  "issuedBy": "ops-lead@example.com",
+  "issuedAt": "2025-03-04T09:00:00.000Z"
+}

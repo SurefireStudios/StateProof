@@ -13,9 +13,16 @@ export {
   BENCHMARK_NAME,
   BENCHMARK_ROOT,
   CASES_DIR,
+  CORE_DATASET,
+  HARD_BENCHMARK_NAME,
+  HARD_CASES_DIR,
+  HARD_DATASET,
+  HARD_SPLITS_DIR,
   REPO_ROOT,
   SPLITS_DIR,
+  type DatasetPaths,
   caseDirFor,
+  datasetPaths,
   listCaseIds,
 } from './paths';
 

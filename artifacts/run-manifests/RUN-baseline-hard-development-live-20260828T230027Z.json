@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "RUN-baseline-hard-development-live-20260828T230027Z",
+  "createdAt": "2026-08-28T23:00:27.689Z",
+  "system": "baseline",
+  "stage": "gate-2.6-hard-development-baseline",
+  "mode": "live",
+  "gitCommitSha": "21c1ce05ebe0549caaa548967034c621e59c8b26",
+  "runtimeVersion": "node-20.10.0",
+  "packageLockHash": "673e1485a8b9793ba55fdcce3a210e5bcad0a7cd6d6b2111d90adbd5c46dce94",
+  "datasetName": "phantombench-hard-12",
+  "agentVisibleDatasetHash": "e4ca800d94c5cadc9b48e32d799c49898203a500fea0a16c013096e53ab4d347",
+  "datasetHash": "c75b3bf2159a3246eb98bc9cadfa813301f8351b809a74535172e2dcbbddcdd9",
+  "splits": [
+    "development"
+  ],
+  "caseIds": [
+    "PBH-A01",
+    "PBH-A02",
+    "PBH-A03",
+    "PBH-B01",
+    "PBH-B03",
+    "PBH-B04",
+    "PBH-C01",
+    "PBH-C03"
+  ],
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "maxRetries": 1,
+  "timeoutPolicy": "120000",
+  "promptFilePaths": [
+    "prompts/baseline-evaluator/v2.md"
+  ],
+  "promptHashes": {
+    "prompts/baseline-evaluator/v2.md": "d5a03c05b36d9b6886298b4d2228a79e04d2726152bee3df9844d2923a0695e4"
+  },
+  "startedAt": "2026-08-28T23:00:27.689Z",
+  "finishedAt": "2026-08-28T23:02:26.776Z",
+  "wallClockMs": 119087,
+  "modelUsage": {
+    "inputTokens": 74277,
+    "outputTokens": 10767,
+    "calls": 8,
+    "retries": 0,
+    "estimatedCostUsd": null
+  },
+  "rawResponsePaths": [
+    "model-responses/RUN-baseline-hard-development-live-20260828T230027Z/PBH-A01-attempt-1.json",
+    "model-responses/RUN-baseline-hard-development-live-20260828T230027Z/PBH-A02-attempt-1.json",
+    "model-responses/RUN-baseline-hard-development-live-20260828T230027Z/PBH-A03-attempt-1.json",
+    "model-responses/RUN-baseline-hard-development-live-20260828T230027Z/PBH-B01-attempt-1.json",
+    "model-responses/RUN-baseline-hard-development-live-20260828T230027Z/PBH-B03-attempt-1.json",
+    "model-responses/RUN-baseline-hard-development-live-20260828T230027Z/PBH-B04-attempt-1.json",
+    "model-responses/RUN-baseline-hard-development-live-20260828T230027Z/PBH-C01-attempt-1.json",
+    "model-responses/RUN-baseline-hard-development-live-20260828T230027Z/PBH-C03-attempt-1.json"
+  ],
+  "trajectoryPaths": [
+    "benchmarks/phantombench-hard-12/cases/PBH-A01/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-A02/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-A03/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B01/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B03/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B04/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-C01/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-C03/trajectory.jsonl"
+  ],
+  "predictionPath": "predictions/RUN-baseline-hard-development-live-20260828T230027Z.json",
+  "reportPath": "reports/RUN-baseline-hard-development-live-20260828T230027Z.md",
+  "notes": [
+    "Predictions were written before any gold file was read.",
+    "No prediction was hand-corrected.",
+    "Requirement-level baseline v2. The v1 prompt and the Core-12 run are untouched."
+  ]
+}

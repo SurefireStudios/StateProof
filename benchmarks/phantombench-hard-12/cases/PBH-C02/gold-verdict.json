@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-C02",
+  "overall": "PASS",
+  "summary": "A second valid path with a harmless failed read and heavy read-only activity, none of which mutates state.",
+  "requirementExpectations": [
+    {
+      "requirementId": "C-PROH-01",
+      "expectedStatus": "verified",
+      "rationale": "No refund record against ORD-3091 was added."
+    },
+    {
+      "requirementId": "C-OUT-01",
+      "expectedStatus": "verified",
+      "rationale": "MSG-7302 was sent to lee@example.com and references RF-8801."
+    },
+    {
+      "requirementId": "C-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "SUP-3091 carries a single note with both the exact text and relatedRefundId RF-8801."
+    },
+    {
+      "requirementId": "C-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "The failed read and the extra lookups mutated nothing."
+    }
+  ]
+}

@@ -93,6 +93,8 @@ export const REFUND_OPS_WRITE_EFFECTS: Readonly<Record<string, readonly RefundOp
   'refund.execute': ['refunds', 'orders'],
   'orders.update': ['orders'],
   'email.send': ['emails'],
+  /** Composes a message without sending it: a drafted receipt is not a receipt. */
+  'email.draft': ['emails'],
   'support.add_note': ['support_cases'],
   'support.update': ['support_cases'],
   /** Requests an approval; the approval itself is a trace event, not state. */

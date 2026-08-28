@@ -1,0 +1,1 @@
+ORD-3091 already had a completed refund, RF-8801, so I created no new refund. The earlier RF-8810 attempt had failed and was not a second refund. I sent the duplicate-refund notice to lee@example.com and recorded the decision on SUP-3091.

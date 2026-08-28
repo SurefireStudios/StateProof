@@ -1,5 +1,5 @@
 import type { BenchmarkCase } from '@stateproof/core';
-import { APPROVED_TOTALS, approvedCaseIds } from './approved-cases';
+import { APPROVED_TOTALS, type ApprovedCase, approvedCaseIds } from './approved-cases';
 import { hashAgentVisibleCase, loadAgentVisibleCase } from '../load-agent-input';
 import { datasetHash, loadAllCases, loadSplitManifest } from '../load-gold';
 import { CASES_DIR } from '../paths';
@@ -10,6 +10,8 @@ import type { BenchmarkValidationReport, CaseValidationReport, ValidationIssue }
 
 export * from './types';
 export * from './approved-cases';
+export * from './hard-cases';
+export * from './hard';
 export { validateContractConsistency } from './contract-consistency';
 export { validateStructure } from './structural';
 export { computeVerdict, evaluationContextFor, validateSemantics } from './semantic';
@@ -18,8 +20,9 @@ export { computeVerdict, evaluationContextFor, validateSemantics } from './seman
 export function validateCase(
   benchmarkCase: BenchmarkCase,
   casesDir: string = CASES_DIR,
+  lookupApproved?: (caseId: string) => ApprovedCase | undefined,
 ): CaseValidationReport {
-  const issues: ValidationIssue[] = [...validateStructure(benchmarkCase)];
+  const issues: ValidationIssue[] = [...validateStructure(benchmarkCase, lookupApproved)];
   const semantic = validateSemantics(benchmarkCase);
   issues.push(...semantic.issues);
 

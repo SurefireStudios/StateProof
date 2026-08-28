@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-C02",
+  "split": "locked",
+  "goldLabel": "valid",
+  "failureMode": null,
+  "failureDescription": null,
+  "isolatedFailureRequirementId": null,
+  "multiFault": false,
+  "failedRequirementIds": [],
+  "approvedForUse": true,
+  "reviewedBy": "human-owner",
+  "reviewedAt": "2025-03-04T12:00:00.000Z",
+  "notes": [
+    "Human-only file. Never loaded by the agent input reader.",
+    "Heavy read-only activity plus one failed read. Neither is an action and neither is a violation."
+  ]
+}

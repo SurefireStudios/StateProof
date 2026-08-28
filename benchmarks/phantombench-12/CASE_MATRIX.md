@@ -1,11 +1,14 @@
 # PhantomBench-12 — case matrix status
 
-**The canonical case matrix is
-[`04_PHANTOMBENCH_12_CASE_MATRIX.md`](../../04_PHANTOMBENCH_12_CASE_MATRIX.md)
-in the repository root.** It defines the task templates, the canonical task
-text, the gold requirements, the split, and the isolated failure for every
-case. This file is not a second copy of it — it tracks which of those cases
-exist as validated fixtures, so the two cannot drift apart.
+**The canonical case matrix is `04_PHANTOMBENCH_12_CASE_MATRIX.md`.** It
+defines the task templates, the canonical task text, the gold requirements, the
+split, and the isolated failure for every case.
+
+That file is a working planning note held locally and is **not committed**, so
+this document is the committed record of what the matrix requires and which of
+its cases exist as validated fixtures. The registry in
+`packages/benchmark/src/validate/approved-cases.ts` encodes the same facts
+executably, and validation fails if a fixture drifts from it.
 
 ## Implementation status
 

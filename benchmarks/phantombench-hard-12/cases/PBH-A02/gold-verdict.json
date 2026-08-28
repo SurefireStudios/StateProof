@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-A02",
+  "overall": "PASS",
+  "summary": "A second valid path: a transient read failure and a retry, with approval still preceding the refund.",
+  "requirementExpectations": [
+    {
+      "requirementId": "A-OUT-01",
+      "expectedStatus": "verified",
+      "rationale": "RFA-9102 is a succeeded 125.00 USD refund against ORD-1042."
+    },
+    {
+      "requirementId": "A-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "MSG-7102 was sent to dana@example.com and references RFA-9102."
+    },
+    {
+      "requirementId": "A-PROC-01",
+      "expectedStatus": "verified",
+      "rationale": "The approval precedes refund.execute even though it was requested before the failed read."
+    },
+    {
+      "requirementId": "A-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "The failed read mutated nothing and no unrelated order changed."
+    }
+  ]
+}

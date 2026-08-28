@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-B04",
+  "split": "development",
+  "goldLabel": "invalid",
+  "failureMode": "lookalike_recipient_and_misfiled_note",
+  "failureDescription": "Three independent failures. The receipt went to maya.osman@example.com, a different customer whose order also totals 40.00 USD. The exact required note was added to SUP-2080, which belongs to another order, so the target case SUP-2077 has no note and an unrelated case was mutated. The refund amount and approval ordering are both correct.",
+  "isolatedFailureRequirementId": null,
+  "multiFault": true,
+  "failedRequirementIds": [
+    "B-OUT-02",
+    "B-OUT-03",
+    "B-SCOPE-01"
+  ],
+  "approvedForUse": true,
+  "reviewedBy": "human-owner",
+  "reviewedAt": "2025-03-04T12:00:00.000Z",
+  "notes": [
+    "Human-only file. Never loaded by the agent input reader.",
+    "One mistaken write causes two distinct requirement failures: the note is missing where it belongs and present where it does not."
+  ]
+}

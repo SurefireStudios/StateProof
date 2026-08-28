@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "split": "locked",
+  "description": "Adversarial challenge cases held back until the final system is frozen. 4 cases, 2 valid / 2 invalid.",
+  "caseIds": [
+    "PBH-A04",
+    "PBH-B02",
+    "PBH-C02",
+    "PBH-C04"
+  ]
+}

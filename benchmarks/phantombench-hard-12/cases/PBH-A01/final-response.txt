@@ -1,0 +1,1 @@
+Dana has two similar orders, so I confirmed ORD-1042 was the one still unrefunded before acting. Approval scoped to refund:ORD-1042 was granted first, then I refunded exactly 125.00 USD and emailed the receipt to dana@example.com. No other order changed.

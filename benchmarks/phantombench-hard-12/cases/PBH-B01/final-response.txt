@@ -1,0 +1,1 @@
+Approval scoped to refund:ORD-2077 came first, then the 40.00 USD partial refund, the receipt to maya@example.com, and the required note on SUP-2077. Maya’s older case SUP-2082 and the similar case SUP-2080 were left alone.

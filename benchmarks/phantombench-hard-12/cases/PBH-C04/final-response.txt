@@ -1,0 +1,1 @@
+No duplicate refund was created for ORD-3091. I notified lee@example.com that the prior refund RF-8801 already covers the order, and documented the decision on the ORD-3091 support case.

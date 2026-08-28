@@ -7,6 +7,9 @@
   "failureDescription": "A second refund RF-8899 for 80.00 USD was created against ORD-3091 despite the explicit prohibition. The notice, the support note and the final response all assert that no duplicate refund was created, so every narrative source contradicts the state.",
   "isolatedFailureRequirementId": "C-PROH-01",
   "multiFault": false,
+  "failedRequirementIds": [
+    "C-PROH-01"
+  ],
   "approvedForUse": true,
   "reviewedBy": "human-owner",
   "reviewedAt": "2025-03-04T12:00:00.000Z",

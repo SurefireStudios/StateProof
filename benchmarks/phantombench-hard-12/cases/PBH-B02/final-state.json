@@ -1,0 +1,250 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshotId": "SNAP-PBH-B02-FINAL",
+  "label": "final",
+  "capturedAt": "2025-03-04T09:12:00.000Z",
+  "collections": {
+    "orders": [
+      {
+        "id": "ORD-2076",
+        "fields": {
+          "customerName": "Maya Osei",
+          "customerEmail": "maya@example.com",
+          "status": "delivered",
+          "total": {
+            "amount": "54.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-01-30T08:00:00.000Z",
+          "updatedAt": "2025-02-04T10:20:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-2077",
+        "fields": {
+          "customerName": "Maya Osei",
+          "customerEmail": "maya@example.com",
+          "status": "partially_refunded",
+          "total": {
+            "amount": "96.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "40.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-20T09:10:00.000Z",
+          "updatedAt": "2025-03-04T09:07:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-2078",
+        "fields": {
+          "customerName": "Tomas Vidal",
+          "customerEmail": "tomas@example.com",
+          "status": "processing",
+          "total": {
+            "amount": "55.25",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-03-02T15:05:00.000Z",
+          "updatedAt": "2025-03-02T15:05:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-2079",
+        "fields": {
+          "customerName": "Ingrid Holm",
+          "customerEmail": "ingrid@example.com",
+          "status": "partially_refunded",
+          "total": {
+            "amount": "130.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "40.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-11T07:45:00.000Z",
+          "updatedAt": "2025-02-26T12:00:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-2081",
+        "fields": {
+          "customerName": "Maya Osman",
+          "customerEmail": "maya.osman@example.com",
+          "status": "delivered",
+          "total": {
+            "amount": "40.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-28T16:00:00.000Z",
+          "updatedAt": "2025-03-01T11:00:00.000Z"
+        }
+      }
+    ],
+    "refunds": [
+      {
+        "id": "RFX-7000",
+        "fields": {
+          "orderId": "ORD-2079",
+          "amount": {
+            "amount": "40.00",
+            "currency": "USD"
+          },
+          "status": "succeeded",
+          "reason": "Damaged item",
+          "approvalReference": "refund:ORD-2079",
+          "executedBy": "agent:refund-bot",
+          "executedAt": "2025-02-26T12:00:00.000Z"
+        }
+      },
+      {
+        "id": "RFX-7001",
+        "fields": {
+          "orderId": "ORD-2076",
+          "amount": {
+            "amount": "14.00",
+            "currency": "USD"
+          },
+          "status": "succeeded",
+          "reason": "Late delivery goodwill",
+          "approvalReference": "refund:ORD-2076",
+          "executedBy": "agent:refund-bot",
+          "executedAt": "2025-02-04T10:20:00.000Z"
+        }
+      },
+      {
+        "id": "RFB-9202",
+        "fields": {
+          "orderId": "ORD-2077",
+          "amount": {
+            "amount": "40.00",
+            "currency": "USD"
+          },
+          "status": "succeeded",
+          "reason": "Damaged item",
+          "approvalReference": "refund:ORD-2077",
+          "executedBy": "agent:refund-bot",
+          "executedAt": "2025-03-04T09:07:00.000Z"
+        }
+      }
+    ],
+    "emails": [
+      {
+        "id": "MSG-4410",
+        "fields": {
+          "to": "maya@example.com",
+          "from": "support@example.com",
+          "subject": "Refund receipt for ORD-2076",
+          "body": "Hi Maya, we have refunded 14.00 USD for order ORD-2076.",
+          "relatedOrderId": "ORD-2076",
+          "refundId": "RFX-7001",
+          "status": "sent",
+          "sentAt": "2025-02-04T10:25:00.000Z"
+        }
+      },
+      {
+        "id": "MSG-4411",
+        "fields": {
+          "to": "ingrid@example.com",
+          "from": "support@example.com",
+          "subject": "Refund receipt for ORD-2079",
+          "body": "Hi Ingrid, we have refunded 40.00 USD for order ORD-2079.",
+          "relatedOrderId": "ORD-2079",
+          "refundId": "RFX-7000",
+          "status": "sent",
+          "sentAt": "2025-02-26T12:05:00.000Z"
+        }
+      },
+      {
+        "id": "MSG-7202",
+        "fields": {
+          "to": "maya@example.com",
+          "from": "support@example.com",
+          "subject": "Refund receipt for ORD-2077",
+          "body": "Hi Maya, we have refunded 40.00 USD for order ORD-2077.",
+          "relatedOrderId": "ORD-2077",
+          "refundId": "RFB-9202",
+          "status": "sent",
+          "sentAt": "2025-03-04T09:08:00.000Z"
+        }
+      }
+    ],
+    "support_cases": [
+      {
+        "id": "SUP-2077",
+        "fields": {
+          "orderId": "ORD-2077",
+          "customerEmail": "maya@example.com",
+          "subject": "Damaged item in order ORD-2077",
+          "status": "open",
+          "notes": [
+            {
+              "noteId": "NOTE-8202",
+              "text": "Partial refund approved for damaged item",
+              "author": "agent:refund-bot",
+              "addedAt": "2025-03-04T09:09:00.000Z",
+              "relatedRefundId": "RFB-9202"
+            }
+          ],
+          "openedAt": "2025-02-24T13:30:00.000Z",
+          "updatedAt": "2025-03-04T09:09:00.000Z"
+        }
+      },
+      {
+        "id": "SUP-2080",
+        "fields": {
+          "orderId": "ORD-2079",
+          "customerEmail": "ingrid@example.com",
+          "subject": "Damaged item in order ORD-2079",
+          "status": "open",
+          "notes": [
+            {
+              "noteId": "NOTE-6900",
+              "text": "Partial refund approved for damaged goods",
+              "author": "ops-lead@example.com",
+              "addedAt": "2025-02-26T12:00:00.000Z",
+              "relatedRefundId": "RFX-7000"
+            }
+          ],
+          "openedAt": "2025-02-26T11:00:00.000Z",
+          "updatedAt": "2025-02-26T12:00:00.000Z"
+        }
+      },
+      {
+        "id": "SUP-2082",
+        "fields": {
+          "orderId": "ORD-2076",
+          "customerEmail": "maya@example.com",
+          "subject": "Late delivery for ORD-2076",
+          "status": "closed",
+          "notes": [
+            {
+              "noteId": "NOTE-6901",
+              "text": "Goodwill refund issued for late delivery",
+              "author": "ops-lead@example.com",
+              "addedAt": "2025-02-04T10:20:00.000Z",
+              "relatedRefundId": "RFX-7001"
+            }
+          ],
+          "openedAt": "2025-02-03T09:00:00.000Z",
+          "updatedAt": "2025-02-04T10:20:00.000Z"
+        }
+      }
+    ]
+  }
+}

@@ -7,6 +7,7 @@
   "failureDescription": null,
   "isolatedFailureRequirementId": null,
   "multiFault": false,
+  "failedRequirementIds": [],
   "approvedForUse": true,
   "reviewedBy": "human-owner",
   "reviewedAt": "2025-03-04T12:00:00.000Z",

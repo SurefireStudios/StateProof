@@ -7,7 +7,7 @@ import {
   validateRefundOpsSnapshot,
   verifyFinalStateDerivable,
 } from '@stateproof/core';
-import { approvedCase } from './approved-cases';
+import { type ApprovedCase, approvedCase } from './approved-cases';
 import type { ValidationIssue } from './types';
 
 function issue(caseId: string, check: string, message: string): ValidationIssue {
@@ -19,7 +19,11 @@ function issue(caseId: string, check: string, message: string): ValidationIssue 
  * identifiers, a well-formed trajectory, a domain-valid sandbox, and gold files
  * that actually describe the same case.
  */
-export function validateStructure(benchmarkCase: BenchmarkCase): ValidationIssue[] {
+export function validateStructure(
+  benchmarkCase: BenchmarkCase,
+  /** Registry lookup, so a second dataset checks against its own matrix. */
+  lookupApproved: (caseId: string) => ApprovedCase | undefined = approvedCase,
+): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const { caseId, agentVisible, goldContract, goldVerdict, metadata } = benchmarkCase;
 
@@ -315,13 +319,13 @@ export function validateStructure(benchmarkCase: BenchmarkCase): ValidationIssue
   }
 
   // --- the case must match the approved canonical matrix -------------------
-  const approved = approvedCase(caseId);
+  const approved = lookupApproved(caseId);
   if (approved === undefined) {
     issues.push(
       issue(
         caseId,
         'approved-case',
-        'case is not in the approved PhantomBench-12 matrix; unapproved core cases are not permitted',
+        'case is not in the approved matrix for its dataset; unapproved cases are not permitted',
       ),
     );
   } else {
@@ -343,7 +347,10 @@ export function validateStructure(benchmarkCase: BenchmarkCase): ValidationIssue
         ),
       );
     }
-    if (approved.isolatedFailureRequirementId !== metadata.isolatedFailureRequirementId) {
+    if (
+      !metadata.multiFault &&
+      approved.isolatedFailureRequirementId !== metadata.isolatedFailureRequirementId
+    ) {
       issues.push(
         issue(
           caseId,

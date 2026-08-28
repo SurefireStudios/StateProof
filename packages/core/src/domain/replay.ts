@@ -131,7 +131,8 @@ function expectedTouchedRefs(call: ToolCallEvent, result: JsonValue): string[] {
         ...(orderId === undefined ? [] : [`orders/${orderId}`]),
       ];
     }
-    case 'email.send': {
+    case 'email.send':
+    case 'email.draft': {
       const messageId = readString(resultObject, 'messageId');
       return messageId === undefined ? [] : [`emails/${messageId}`];
     }
@@ -218,8 +219,12 @@ function applyRefundExecute(context: EffectContext): boolean {
   return true;
 }
 
-/** Creates the outbox message. A send that succeeds produces a `sent` message. */
-function applyEmailSend(context: EffectContext): boolean {
+/**
+ * Creates the outbox message. `email.send` produces a `sent` message with a
+ * delivery timestamp; `email.draft` produces a `draft` with none. The
+ * distinction matters: a drafted receipt has not reached anybody.
+ */
+function applyEmailSend(context: EffectContext, delivered: boolean): boolean {
   const { collections, call } = context;
   const args = call.arguments;
   const messageId = isJsonObject(context.result)
@@ -230,10 +235,10 @@ function applyEmailSend(context: EffectContext): boolean {
   const body = readString(args, 'body');
 
   if (messageId === undefined) {
-    return issue(context, 'invalid_arguments', 'email.send result carries no messageId');
+    return issue(context, 'invalid_arguments', `${call.toolName} result carries no messageId`);
   }
   if (to === undefined || subject === undefined || body === undefined) {
-    return issue(context, 'invalid_arguments', 'email.send needs to, subject and body');
+    return issue(context, 'invalid_arguments', `${call.toolName} needs to, subject and body`);
   }
   const emails = collections['emails'];
   if (emails === undefined) {
@@ -252,8 +257,8 @@ function applyEmailSend(context: EffectContext): boolean {
       body,
       relatedOrderId: readString(args, 'relatedOrderId') ?? null,
       refundId: readString(args, 'refundId') ?? null,
-      status: 'sent',
-      sentAt: call.timestamp,
+      status: delivered ? 'sent' : 'draft',
+      sentAt: delivered ? call.timestamp : null,
     },
   });
   return true;
@@ -334,7 +339,9 @@ function applyEffect(context: EffectContext): boolean {
     case 'refund.execute':
       return applyRefundExecute(context);
     case 'email.send':
-      return applyEmailSend(context);
+      return applyEmailSend(context, true);
+    case 'email.draft':
+      return applyEmailSend(context, false);
     case 'support.add_note':
       return applySupportAddNote(context);
     case 'orders.update':

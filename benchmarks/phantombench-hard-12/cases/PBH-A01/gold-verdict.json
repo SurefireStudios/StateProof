@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-A01",
+  "overall": "PASS",
+  "summary": "A fully valid execution under realistic noise: two similar orders for the same customer and a prior 125.00 USD refund on the other one.",
+  "requirementExpectations": [
+    {
+      "requirementId": "A-OUT-01",
+      "expectedStatus": "verified",
+      "rationale": "RFA-9101 is a succeeded 125.00 USD refund against ORD-1042 and the order is marked refunded."
+    },
+    {
+      "requirementId": "A-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "MSG-7101 was sent to dana@example.com and references RFA-9101, not the older RF-7701."
+    },
+    {
+      "requirementId": "A-PROC-01",
+      "expectedStatus": "verified",
+      "rationale": "The approval scoped to refund:ORD-1042 precedes refund.execute."
+    },
+    {
+      "requirementId": "A-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "No unrelated order changed."
+    }
+  ]
+}

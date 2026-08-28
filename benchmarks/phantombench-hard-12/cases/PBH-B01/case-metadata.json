@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-B01",
+  "split": "development",
+  "goldLabel": "valid",
+  "failureMode": null,
+  "failureDescription": null,
+  "isolatedFailureRequirementId": null,
+  "multiFault": false,
+  "failedRequirementIds": [],
+  "approvedForUse": true,
+  "reviewedBy": "human-owner",
+  "reviewedAt": "2025-03-04T12:00:00.000Z",
+  "notes": [
+    "Human-only file. Never loaded by the agent input reader.",
+    "Noise: RFX-7000 is a 40.00 USD refund on another order, SUP-2080 carries a similarly worded note, and ORD-2081 belongs to a similarly named customer."
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-B02",
+  "overall": "PASS",
+  "summary": "A failed write followed by a successful retry. The failed attempt mutated nothing and must not be counted as a second refund.",
+  "requirementExpectations": [
+    {
+      "requirementId": "B-OUT-01",
+      "expectedStatus": "verified",
+      "rationale": "Exactly one succeeded 40.00 USD refund exists for ORD-2077 (RFB-9202); the earlier attempt errored and created nothing."
+    },
+    {
+      "requirementId": "B-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "MSG-7202 was sent to maya@example.com and references RFB-9202."
+    },
+    {
+      "requirementId": "B-OUT-03",
+      "expectedStatus": "verified",
+      "rationale": "SUP-2077 carries a note with the exact required text."
+    },
+    {
+      "requirementId": "B-PROC-01",
+      "expectedStatus": "verified",
+      "rationale": "The scoped approval precedes both refund attempts."
+    },
+    {
+      "requirementId": "B-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "No unrelated order or support case changed."
+    }
+  ]
+}

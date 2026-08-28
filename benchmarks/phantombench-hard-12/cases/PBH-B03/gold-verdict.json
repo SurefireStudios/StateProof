@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PBH-B03",
+  "overall": "FAIL",
+  "summary": "Three independent violations: the refund is 55.00 USD rather than 40.00, it ran before the approval, and the support note text is a paraphrase rather than the exact wording. The receipt itself is correct.",
+  "requirementExpectations": [
+    {
+      "requirementId": "B-OUT-01",
+      "expectedStatus": "disproven",
+      "rationale": "RFB-9203 is for 55.00 USD, not the 40.00 USD named in the task; the receipt body still says 40.00."
+    },
+    {
+      "requirementId": "B-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "MSG-7203 was sent to maya@example.com and references the succeeded refund RFB-9203."
+    },
+    {
+      "requirementId": "B-OUT-03",
+      "expectedStatus": "disproven",
+      "rationale": "SUP-2077 carries \"Partial refund approved for damaged goods\", not the exact required text."
+    },
+    {
+      "requirementId": "B-PROC-01",
+      "expectedStatus": "disproven",
+      "rationale": "refund.execute ran at seq 8; the approval only arrived at seq 12."
+    },
+    {
+      "requirementId": "B-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "No unrelated order or support case changed."
+    }
+  ]
+}
