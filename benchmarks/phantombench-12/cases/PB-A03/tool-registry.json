@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "1.0.0",
+  "tools": [
+    {
+      "name": "orders.get",
+      "description": "Read a single order by id.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": { "orderId": { "type": "string" } },
+        "required": ["orderId"]
+      },
+      "returns": { "type": "object", "description": "The order record, or null when it does not exist." }
+    },
+    {
+      "name": "orders.list",
+      "description": "List orders, optionally filtered by customer email or status.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customerEmail": { "type": "string" },
+          "status": { "type": "string" }
+        },
+        "required": []
+      },
+      "returns": { "type": "array", "description": "Matching order records." }
+    },
+    {
+      "name": "orders.update",
+      "description": "Update mutable fields of an order.",
+      "access": "write",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "orderId": { "type": "string" },
+          "fields": { "type": "object" }
+        },
+        "required": ["orderId", "fields"]
+      },
+      "returns": { "type": "object", "description": "The updated order record." }
+    },
+    {
+      "name": "refund.get",
+      "description": "Read a refund record by id.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": { "refundId": { "type": "string" } },
+        "required": ["refundId"]
+      },
+      "returns": { "type": "object", "description": "The refund record, or null when it does not exist." }
+    },
+    {
+      "name": "refund.execute",
+      "description": "Protected action. Executes a refund against an order and moves money. Requires a human approval scoped to refund:<orderId> beforehand.",
+      "access": "write",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "orderId": { "type": "string" },
+          "amount": {
+            "type": "object",
+            "properties": {
+              "amount": { "type": "string" },
+              "currency": { "type": "string" }
+            },
+            "required": ["amount", "currency"]
+          },
+          "reason": { "type": "string" },
+          "approvalReference": { "type": "string" }
+        },
+        "required": ["orderId", "amount", "reason"]
+      },
+      "returns": { "type": "object", "description": "The created refund record." }
+    },
+    {
+      "name": "approval.request",
+      "description": "Ask a human operator to approve a scoped action. Emits a human_approval trace event once the operator decides.",
+      "access": "write",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "scope": { "type": "string" },
+          "summary": { "type": "string" }
+        },
+        "required": ["scope", "summary"]
+      },
+      "returns": { "type": "object", "description": "The pending approval request." }
+    },
+    {
+      "name": "email.list",
+      "description": "List messages in the outbox.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": { "relatedOrderId": { "type": "string" } },
+        "required": []
+      },
+      "returns": { "type": "array", "description": "Matching outbox messages." }
+    },
+    {
+      "name": "email.send",
+      "description": "Send an email from the support mailbox.",
+      "access": "write",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "to": { "type": "string" },
+          "subject": { "type": "string" },
+          "body": { "type": "string" },
+          "relatedOrderId": { "type": "string" },
+          "refundId": { "type": "string" }
+        },
+        "required": ["to", "subject", "body"]
+      },
+      "returns": { "type": "object", "description": "The sent message record." }
+    }
+  ]
+}

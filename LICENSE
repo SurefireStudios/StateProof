@@ -1,0 +1,22 @@
+LICENSE PLACEHOLDER — DECISION DEFERRED
+
+Copyright (c) 2025 the StateProof authors. All rights reserved.
+
+No open-source license has been granted for this repository yet. This is a
+deliberate, recorded decision rather than an oversight; see
+docs/decisions/0001-foundation.md, section "Licensing".
+
+Rationale: the competition's submission and licensing requirements govern what
+license is appropriate, and choosing one before those are settled could
+conflict with them. Adding a permissive license later is straightforward;
+retracting one is not.
+
+Until this file is replaced with a real license:
+
+- Competition organisers and judges may use, run, copy and evaluate this
+  repository for the purpose of judging the competition.
+- No other rights are granted.
+
+Action required before submission: replace this file with the license the
+competition requires or the authors choose, and record that choice in
+docs/decisions/.

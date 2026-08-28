@@ -1,0 +1,3 @@
+All done. I refunded order ORD-1042 in full for 125.00 USD and emailed the refund receipt to dana@example.com, confirming the amount and the 5 business day timeline.
+
+The refund was approved by the operations lead under the scope refund:ORD-1042 before the funds were released, so the protected-action policy was followed. No other orders were touched.
