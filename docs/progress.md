@@ -65,11 +65,64 @@ brief forbids silently changing requirements. Two requirements invented earlier
 (`no new orders created`, `response accuracy`) were dropped: they are not in the
 approved matrix for task template A.
 
-## Gate 2 — not started
+## Gate 2 — complete except the live baseline run
 
-Needs: the remaining 11 cases (`PB-A01`, `PB-A02`, `PB-A04`, `PB-B01`–`PB-B04`,
-`PB-C01`–`PB-C04`), a support-cases collection and note assertions for
-templates B and C, split population to 8/4, gold balance checks, the frozen
-baseline prompt, a model provider client with replay, and the baseline runner.
+Delivered:
 
-Nothing in gates 2–5 has been started.
+- **All 12 PhantomBench-12 cases**, 8 development / 4 locked, 6 gold PASS / 6
+  gold FAIL, each invalid case failing exactly its canonical isolated
+  requirement. `PB-A03` is unchanged from Gate 1.
+- **Deterministic replay engine** for the refund-operations sandbox. Every
+  fixture's final state is reconstructed from its initial state plus its
+  successful write events and must match exactly.
+- **Two new assertion kinds** — a relational record-reference check and an
+  exact array-element check — plus event-selector combination validation.
+- **Referential integrity** and **metadata hygiene** checks across the fixtures.
+- **Metrics**: VAR, IRR, BVA, unsafe false-completion rate, NEEDS_REVIEW
+  frequency, confusion matrix. Pure functions, unit-tested, never hardcoded.
+- **Fair baseline infrastructure**: frozen hashed prompt, typed `ModelClient`,
+  live Anthropic adapter, deterministic fake client for tests, structured
+  output with one repair retry, raw capture of every attempt, parse-error
+  capture, run manifests, per-case results, and an aggregate report generated
+  from artifacts.
+- 188 tests across 12 files.
+
+**Blocked, not passed: the live development baseline run.** No model
+credentials are configured on this machine (`ANTHROPIC_API_KEY` unset, no `ant`
+CLI, no `.env`), so `pnpm benchmark:baseline` exits non-zero with an actionable
+message and writes nothing. The runner is exercised end to end in tests with
+the deterministic fake client. No baseline metric exists yet, and none has been
+invented.
+
+### Gate 2 checklist status
+
+Against `07_REVIEW_GATE_CHECKLIST.md`:
+
+| Item | Status |
+| --- | --- |
+| All 12 approved case IDs exist | Yes |
+| Split is 8 development / 4 locked | Yes, enforced by the validator |
+| Gold balance is 6 pass / 6 fail | Yes, enforced by the validator |
+| Every case follows the canonical task and isolated failure | Yes, cross-checked against a matrix registry |
+| Every case passes structural validation | Yes |
+| Every case passes semantic validation | Yes |
+| Invalid cases fail exactly one must-pass requirement | Yes, asserted per case |
+| Final state derivable from initial state and successful writes | Yes, by replay equality |
+| Locked cases excluded from intermediate commands | Yes, and the CLI refuses the locked split without an explicit override |
+| Baseline receives task, response, trace, both states | Yes, and nothing else |
+| Baseline prompt reasonable, not weakened | Yes — the canonical prompt-pack text |
+| Same provider/model family intended for final agents | Yes, one shared `ModelClient` and configuration |
+| Temperature, max tokens, retries, timeout fixed | Yes; temperature recorded as null because the model rejects it |
+| Prompt file hashed | Yes, into every manifest |
+| Prompt frozen after the development baseline run | Frozen now; no run has happened |
+| Raw responses and validation errors stored | Yes, every attempt |
+| Predictions never hand-corrected | Yes, and unparsed cases are kept, not dropped |
+| Development baseline report generated from raw artifacts | Infrastructure complete; **blocked on credentials** |
+| BVA / unsafe false-completion / valid-run acceptance calculated correctly | Yes, unit-tested |
+| Runtime and token/cost data reported or marked unavailable | Yes; cost is `null` until a live run |
+| No final result claim written yet | Correct — none exists |
+
+## Gates 3–5 — not started
+
+No Contract Agent, Evidence Agent, Auditor, StateProof workflow, dashboard, or
+locked evaluation has been implemented.

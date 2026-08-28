@@ -12,8 +12,11 @@ export * from './schema/case';
 export * from './schema/manifest';
 
 export * from './domain/refund-ops';
+export * from './domain/replay';
 
 export * from './serialize/canonical';
+
+export * from './score/metrics';
 
 export * from './verify/state-diff';
 export * from './verify/assertions';

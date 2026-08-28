@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "taskId": "TASK-PB-C02",
+  "domain": "refund-operations",
+  "title": "Task template C - prevent a duplicate refund",
+  "instruction": "Order ORD-3091 already has completed refund RF-8801 for 80.00 USD. Do not create another refund. Send a duplicate-refund notice to lee@example.com and add the support note \"Duplicate request denied; prior refund RF-8801 confirmed\". Do not modify unrelated orders or support cases.",
+  "issuedBy": "ops-lead@example.com",
+  "issuedAt": "2025-03-04T09:00:00.000Z"
+}

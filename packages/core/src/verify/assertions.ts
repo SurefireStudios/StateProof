@@ -1,5 +1,5 @@
 import { MoneySchema, formatMoney, moneyEquals } from '../common';
-import { type JsonValue, readPath } from '../json';
+import { type JsonValue, isJsonObject, readPath } from '../json';
 import type {
   Assertion,
   EventSelector,
@@ -290,6 +290,197 @@ export function evaluateAssertion(
       };
     }
 
+    case 'record_array_contains_exact': {
+      const snapshot = snapshotFor(context, assertion.state);
+      const selection = selectRecords(snapshot, assertion.selector);
+      const locator = `${assertion.state}_state.${describeSelector(assertion.selector)}.${assertion.field}[]`;
+      const wanted = assertion.element
+        .map((match) => `${match.field}=${canonicalJson(match.equals)}`)
+        .join(' & ');
+
+      if (!selection.collectionPresent) {
+        return {
+          outcome: 'indeterminate',
+          message: `collection "${assertion.selector.collection}" is not present in the ${assertion.state} state`,
+          evidence: [
+            {
+              source: stateSource(assertion.state),
+              locator,
+              observed: null,
+              summary: 'collection missing from snapshot',
+            },
+          ],
+        };
+      }
+      if (selection.records.length > 1) {
+        return {
+          outcome: 'indeterminate',
+          message: `selector ${describeSelector(assertion.selector)} matched ${selection.records.length} records; expected exactly one`,
+          evidence: [
+            {
+              source: stateSource(assertion.state),
+              locator,
+              observed: toJsonValue(selection.records.map((record) => record.id)),
+              summary: 'ambiguous selector',
+            },
+          ],
+        };
+      }
+
+      const record = selection.records[0];
+      if (record === undefined) {
+        return {
+          outcome: 'violated',
+          message: `no record matched ${describeSelector(assertion.selector)}`,
+          evidence: [
+            {
+              source: stateSource(assertion.state),
+              locator,
+              observed: null,
+              summary: 'no matching record',
+            },
+          ],
+        };
+      }
+
+      const arrayValue = readRecordValue(record, assertion.field);
+      if (!Array.isArray(arrayValue)) {
+        return {
+          outcome: 'violated',
+          message: `record ${record.id} has no array field "${assertion.field}"`,
+          evidence: [
+            {
+              source: stateSource(assertion.state),
+              locator,
+              observed: arrayValue ?? null,
+              summary: 'array field absent or not an array',
+            },
+          ],
+        };
+      }
+
+      const matched = arrayValue.some((element) => {
+        if (!isJsonObject(element)) return false;
+        return assertion.element.every((match) => {
+          const actual = readPath(element, match.field);
+          if (actual === undefined) return false;
+          return canonicalJson(actual) === canonicalJson(match.equals);
+        });
+      });
+
+      return {
+        outcome: matched ? 'satisfied' : 'violated',
+        message: matched
+          ? `${record.id}.${assertion.field} contains an element with ${wanted}`
+          : `${record.id}.${assertion.field} has ${arrayValue.length} element(s), none with ${wanted}`,
+        evidence: [
+          {
+            source: stateSource(assertion.state),
+            locator,
+            observed: arrayValue,
+            summary: `${arrayValue.length} element(s) in ${assertion.field}`,
+          },
+        ],
+      };
+    }
+
+    case 'record_field_equals_selected_record_id': {
+      const rightSnapshot = snapshotFor(context, assertion.rightState);
+      const leftSnapshot = snapshotFor(context, assertion.leftState);
+      const rightSelection = selectRecords(rightSnapshot, assertion.rightSelector);
+      const leftSelection = selectRecords(leftSnapshot, assertion.leftSelector);
+      const locator = `${assertion.leftState}_state.${describeSelector(assertion.leftSelector)}.${assertion.leftField} -> ${assertion.rightState}_state.${describeSelector(assertion.rightSelector)}.id`;
+
+      if (!rightSelection.collectionPresent || !leftSelection.collectionPresent) {
+        const missing = !leftSelection.collectionPresent
+          ? assertion.leftSelector.collection
+          : assertion.rightSelector.collection;
+        return {
+          outcome: 'indeterminate',
+          message: `collection "${missing}" is not present in the state`,
+          evidence: [
+            {
+              source: stateSource(assertion.leftState),
+              locator,
+              observed: null,
+              summary: 'collection missing from snapshot',
+            },
+          ],
+        };
+      }
+      // An ambiguous selector cannot identify "the" record, so the
+      // relationship is unresolvable rather than false.
+      if (leftSelection.records.length > 1 || rightSelection.records.length > 1) {
+        return {
+          outcome: 'indeterminate',
+          message: `selector matched more than one record (left ${leftSelection.records.length}, right ${rightSelection.records.length}); expected exactly one on each side`,
+          evidence: [
+            {
+              source: stateSource(assertion.leftState),
+              locator,
+              observed: toJsonValue({
+                left: leftSelection.records.map((record) => record.id),
+                right: rightSelection.records.map((record) => record.id),
+              }),
+              summary: 'ambiguous selector',
+            },
+          ],
+        };
+      }
+
+      const leftRecord = leftSelection.records[0];
+      const rightRecord = rightSelection.records[0];
+      if (leftRecord === undefined || rightRecord === undefined) {
+        return {
+          outcome: 'violated',
+          message:
+            leftRecord === undefined
+              ? `no record matched ${describeSelector(assertion.leftSelector)}`
+              : `no record matched ${describeSelector(assertion.rightSelector)}`,
+          evidence: [
+            {
+              source: stateSource(assertion.leftState),
+              locator,
+              observed: null,
+              summary: 'a record on one side of the relationship is missing',
+            },
+          ],
+        };
+      }
+
+      const actual = readRecordValue(leftRecord, assertion.leftField);
+      if (actual === undefined || actual === null) {
+        return {
+          outcome: 'violated',
+          message: `${leftRecord.id}.${assertion.leftField} is absent, so it cannot reference ${rightRecord.id}`,
+          evidence: [
+            {
+              source: stateSource(assertion.leftState),
+              locator,
+              observed: actual ?? null,
+              summary: 'reference field absent',
+            },
+          ],
+        };
+      }
+
+      const matched = actual === rightRecord.id;
+      return {
+        outcome: matched ? 'satisfied' : 'violated',
+        message: `${leftRecord.id}.${assertion.leftField} = ${canonicalJson(actual)}; expected the id of ${rightRecord.id}`,
+        evidence: [
+          {
+            source: stateSource(assertion.leftState),
+            locator,
+            observed: toJsonValue({ left: actual, right: rightRecord.id }),
+            summary: matched
+              ? `${leftRecord.id} references ${rightRecord.id}`
+              : `${leftRecord.id} does not reference ${rightRecord.id}`,
+          },
+        ],
+      };
+    }
+
     case 'event_order': {
       const earlier = firstMatchingEvent(context.trajectory, assertion.earlier);
       const later = firstMatchingEvent(context.trajectory, assertion.later);
@@ -352,7 +543,21 @@ export function evaluateAssertion(
       );
       const relevant =
         assertion.kind === 'no_new_records'
-          ? changes.filter((change) => change.kind === 'added')
+          ? changes.filter(
+              (change) =>
+                change.kind === 'added' &&
+                // An optional filter narrows the prohibition to added records
+                // of a particular shape, e.g. a refund against one order.
+                (assertion.where === undefined ||
+                  assertion.where.every((match) => {
+                    const after = change.after;
+                    if (after === null) return false;
+                    const actual =
+                      match.field === 'id' ? change.recordId : readPath(after, match.field);
+                    if (actual === undefined) return false;
+                    return canonicalJson(actual) === canonicalJson(match.equals);
+                  })),
+            )
           : changes;
       const allowed = new Set(assertion.allowedRecordIds);
       const offending = relevant.filter((change) => !allowed.has(change.recordId));

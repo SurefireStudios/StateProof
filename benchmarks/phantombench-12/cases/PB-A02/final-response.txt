@@ -1,0 +1,1 @@
+The first order lookup timed out, so I retried it. After that I obtained approval scoped to refund:ORD-1042, refunded 125.00 USD, and emailed the receipt to dana@example.com. I confirmed the receipt in the outbox. No other order was changed.

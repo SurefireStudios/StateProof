@@ -1,0 +1,319 @@
+{
+  "schemaVersion": "1.0.0",
+  "tools": [
+    {
+      "name": "orders.get",
+      "description": "Read a single order by id.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderId"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "description": "The order record, or null when it does not exist."
+      }
+    },
+    {
+      "name": "orders.list",
+      "description": "List orders, optionally filtered by customer email or status.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customerEmail": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "returns": {
+        "type": "array",
+        "description": "Matching order records."
+      }
+    },
+    {
+      "name": "orders.update",
+      "description": "Update mutable fields of an order.",
+      "access": "write",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "orderId",
+          "fields"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "description": "The updated order record."
+      }
+    },
+    {
+      "name": "refund.get",
+      "description": "Read a refund record by id.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "refundId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refundId"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "description": "The refund record, or null when it does not exist."
+      }
+    },
+    {
+      "name": "refund.execute",
+      "description": "Protected action. Executes a refund against an order and moves money. Requires a human approval scoped to refund:<orderId> beforehand.",
+      "access": "write",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "amount",
+              "currency"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "approvalReference": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderId",
+          "amount",
+          "reason"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "description": "The created refund record."
+      }
+    },
+    {
+      "name": "approval.request",
+      "description": "Ask a human operator to approve a scoped action. Emits a human_approval trace event once the operator decides.",
+      "access": "write",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope",
+          "summary"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "description": "The pending approval request."
+      }
+    },
+    {
+      "name": "email.list",
+      "description": "List messages in the outbox.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "relatedOrderId": {
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "returns": {
+        "type": "array",
+        "description": "Matching outbox messages."
+      }
+    },
+    {
+      "name": "email.send",
+      "description": "Send an email from the support mailbox.",
+      "access": "write",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "relatedOrderId": {
+            "type": "string"
+          },
+          "refundId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "body"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "description": "The sent message record."
+      }
+    },
+    {
+      "name": "support.get",
+      "description": "Read a support case by id, including its notes.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "caseId"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "description": "The support case, or null when it does not exist."
+      }
+    },
+    {
+      "name": "support.list",
+      "description": "List support cases, optionally filtered by order id or status.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "returns": {
+        "type": "array",
+        "description": "Matching support cases."
+      }
+    },
+    {
+      "name": "support.add_note",
+      "description": "Append a note to a support case. Notes cannot be edited or removed.",
+      "access": "write",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "relatedRefundId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "caseId",
+          "text"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "description": "The created note."
+      }
+    },
+    {
+      "name": "support.update",
+      "description": "Update mutable fields of a support case.",
+      "access": "write",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "caseId",
+          "fields"
+        ]
+      },
+      "returns": {
+        "type": "object",
+        "description": "The updated support case."
+      }
+    },
+    {
+      "name": "refund.list",
+      "description": "List refund records, optionally filtered by order id.",
+      "access": "read",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          }
+        },
+        "required": []
+      },
+      "returns": {
+        "type": "array",
+        "description": "Matching refund records."
+      }
+    }
+  ]
+}

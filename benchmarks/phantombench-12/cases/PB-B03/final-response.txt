@@ -1,0 +1,1 @@
+Approval scoped to refund:ORD-2077 was obtained first. I then refunded exactly 40.00 USD against ORD-2077, emailed the receipt to maya@example.com confirming the 40.00 USD amount, and recorded the support note on SUP-2077.

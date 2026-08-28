@@ -42,13 +42,64 @@ breakdown, and exits non-zero on any error.
 Expected output for the current dataset ends with:
 
 ```text
-1 case(s) validated, 0 error(s)
+12 case(s) validated, 0 error(s)
 RESULT: PASSED
 ```
 
 The dataset hash is derived from fixture content. It changes whenever a
 fixture changes, which is the point: any future metric can be tied back to the
 exact dataset that produced it.
+
+```bash
+pnpm fixtures:generate
+```
+
+Regenerates the eleven generated fixtures from `scripts/fixtures/` and rewrites
+the split manifests. `PB-A03` is frozen and is never rewritten. Running it on an
+unchanged tree is a no-op in content terms; `pnpm benchmark:validate` then
+re-derives every final state independently.
+
+## Requires model credentials
+
+```bash
+pnpm benchmark:baseline -- --split development
+```
+
+Runs the fair baseline over the eight development cases, writes prediction
+artifacts, then scores them against gold in a separate phase.
+
+**This command has not been run.** No credentials are configured in this
+environment, so it exits with status 2 and this message, having written
+nothing:
+
+```text
+No model credentials are configured, so no live run can be made.
+
+Set ANTHROPIC_API_KEY in your shell or in a local .env (see .env.example),
+or sign in with `ant auth login`, then re-run the command.
+
+Nothing has been written. A baseline run is never simulated: a report with
+no real model behind it would be worse than no report.
+```
+
+To run it: set `ANTHROPIC_API_KEY` and re-run. Provider `anthropic`, model
+`claude-opus-5`, effort `high`, max tokens 16000, 120s timeout, one schema
+repair retry. Expect eight model calls plus at most one repair each; runtime is
+dominated by the provider and the payloads are large (full trajectory plus both
+state snapshots per case). Cost is recorded from real usage in the run
+manifest; nothing is estimated in advance.
+
+Artifacts land under `artifacts/`:
+
+| Path | Contents |
+| --- | --- |
+| `artifacts/model-responses/<runId>/` | Every attempt: prompt, raw response, usage, validation error |
+| `artifacts/predictions/<runId>.json` | Prediction-phase output, written before any gold file is read |
+| `artifacts/run-manifests/<runId>.json` | Model, config, prompt hashes, dataset hash, commit SHA, timing, usage |
+| `artifacts/reports/<runId>.{json,md}` | Metrics, confusion matrix, per-case results |
+
+The locked split is refused unless `STATEPROOF_ALLOW_LOCKED_RUN=1` is set. Do
+not set it before the freeze point described in `docs/evaluation-plan.md`.
 
 ## Not implemented yet
 
@@ -58,7 +109,6 @@ not achieve:
 
 | Command                     | Purpose                                            |
 | --------------------------- | -------------------------------------------------- |
-| `pnpm benchmark:baseline`   | Run the single general-purpose evaluator baseline.  |
 | `pnpm benchmark:stateproof` | Run Contract Agent → Evidence Agent → verifier.     |
 | `pnpm benchmark:report`     | Generate metrics and the human-readable report.     |
 | `pnpm reproduce`            | Re-score from committed captured responses, no key. |

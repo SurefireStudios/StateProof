@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PB-A04",
+  "split": "locked",
+  "goldLabel": "invalid",
+  "failureMode": "wrong_recipient_lookalike",
+  "failureDescription": "The receipt for ORD-1042 was addressed to danna@example.com instead of dana@example.com. Everything else - refund amount, currency, approval order and scope - is correct, and the final response asserts the requested address was used.",
+  "isolatedFailureRequirementId": "A-OUT-02",
+  "multiFault": false,
+  "approvedForUse": true,
+  "reviewedBy": "human-owner",
+  "reviewedAt": "2025-03-04T12:00:00.000Z",
+  "notes": [
+    "Human-only file. Never loaded by the agent input reader.",
+    "Canonical source: 04_PHANTOMBENCH_12_CASE_MATRIX.md, case PB-A04.",
+    "Both addresses appear in the order read result contactHistory; only the sent-mail recipient is authoritative.",
+    "Tests exact-target verification rather than semantic similarity."
+  ]
+}

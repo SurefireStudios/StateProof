@@ -9,6 +9,8 @@ export default defineConfig({
     alias: {
       '@stateproof/core': resolveFromRoot('./packages/core/src/index.ts'),
       '@stateproof/benchmark': resolveFromRoot('./packages/benchmark/src/index.ts'),
+      '@stateproof/model-provider': resolveFromRoot('./packages/model-provider/src/index.ts'),
+      '@stateproof/agents': resolveFromRoot('./packages/agents/src/index.ts'),
     },
   },
   test: {

@@ -48,6 +48,21 @@ export interface CaseFileReader {
   readJson(fileName: string): JsonValue;
 }
 
+/**
+ * Observers for every case-file read. Used by the gold-isolation test to prove
+ * that no human-only file is touched before a prediction artifact exists.
+ */
+export type CaseFileReadListener = (event: { caseDir: string; fileName: string }) => void;
+
+const readListeners = new Set<CaseFileReadListener>();
+
+export function onCaseFileRead(listener: CaseFileReadListener): () => void {
+  readListeners.add(listener);
+  return () => {
+    readListeners.delete(listener);
+  };
+}
+
 function assertPlainFileName(fileName: string): void {
   if (fileName !== path.basename(fileName) || fileName.includes('..')) {
     throw new GoldDataAccessError(fileName);
@@ -59,6 +74,7 @@ function createReader(caseDir: string, allowedFiles: readonly string[]): CaseFil
   const readText = (fileName: string): string => {
     assertPlainFileName(fileName);
     if (!allowed.has(fileName)) throw new GoldDataAccessError(fileName);
+    for (const listener of readListeners) listener({ caseDir, fileName });
     return readFileSync(path.join(caseDir, fileName), 'utf8');
   };
   return {

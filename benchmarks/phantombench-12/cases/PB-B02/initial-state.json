@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshotId": "SNAP-PB-B02-INITIAL",
+  "label": "initial",
+  "capturedAt": "2025-03-04T09:00:00.000Z",
+  "collections": {
+    "orders": [
+      {
+        "id": "ORD-2077",
+        "fields": {
+          "customerName": "Maya Osei",
+          "customerEmail": "maya@example.com",
+          "status": "delivered",
+          "total": {
+            "amount": "96.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-20T09:10:00.000Z",
+          "updatedAt": "2025-02-24T13:30:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-2078",
+        "fields": {
+          "customerName": "Tomas Vidal",
+          "customerEmail": "tomas@example.com",
+          "status": "processing",
+          "total": {
+            "amount": "55.25",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-03-02T15:05:00.000Z",
+          "updatedAt": "2025-03-02T15:05:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-2079",
+        "fields": {
+          "customerName": "Ingrid Holm",
+          "customerEmail": "ingrid@example.com",
+          "status": "partially_refunded",
+          "total": {
+            "amount": "130.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "40.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-11T07:45:00.000Z",
+          "updatedAt": "2025-02-26T12:00:00.000Z"
+        }
+      }
+    ],
+    "refunds": [
+      {
+        "id": "RFX-7000",
+        "fields": {
+          "orderId": "ORD-2079",
+          "amount": {
+            "amount": "40.00",
+            "currency": "USD"
+          },
+          "status": "succeeded",
+          "reason": "Damaged item",
+          "approvalReference": "refund:ORD-2079",
+          "executedBy": "agent:refund-bot",
+          "executedAt": "2025-02-26T12:00:00.000Z"
+        }
+      }
+    ],
+    "emails": [],
+    "support_cases": [
+      {
+        "id": "SUP-2077",
+        "fields": {
+          "orderId": "ORD-2077",
+          "customerEmail": "maya@example.com",
+          "subject": "Damaged item in order ORD-2077",
+          "status": "open",
+          "notes": [],
+          "openedAt": "2025-02-24T13:30:00.000Z",
+          "updatedAt": "2025-02-24T13:30:00.000Z"
+        }
+      },
+      {
+        "id": "SUP-2080",
+        "fields": {
+          "orderId": "ORD-2079",
+          "customerEmail": "ingrid@example.com",
+          "subject": "Damaged item in order ORD-2079",
+          "status": "open",
+          "notes": [
+            {
+              "noteId": "NOTE-6900",
+              "text": "Partial refund approved for damaged goods",
+              "author": "ops-lead@example.com",
+              "addedAt": "2025-02-26T12:00:00.000Z",
+              "relatedRefundId": "RFX-7000"
+            }
+          ],
+          "openedAt": "2025-02-26T11:00:00.000Z",
+          "updatedAt": "2025-02-26T12:00:00.000Z"
+        }
+      }
+    ]
+  }
+}

@@ -40,7 +40,7 @@ describe('agent input reader', () => {
 
 describe('gold reader', () => {
   it('is the only path to gold data, and is never handed to an agent', () => {
-    const gold = loadGoldBundle('PB-A03', createGoldReader(caseDir));
+    const gold = loadGoldBundle('PB-A03', { reader: createGoldReader(caseDir) });
     expect(gold.goldVerdict.overall).toBe('FAIL');
     expect(gold.metadata.split).toBe('development');
   });

@@ -1,0 +1,1 @@
+No duplicate refund was created for ORD-3091. I sent the notice to lee@example.com and documented the decision on SUP-3091, confirming the prior refund RF-8801.

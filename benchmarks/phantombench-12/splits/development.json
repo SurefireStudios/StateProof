@@ -2,5 +2,14 @@
   "schemaVersion": "1.0.0",
   "split": "development",
   "description": "Cases used while building and tuning StateProof. Target size 8 (4 gold PASS / 4 gold FAIL) per the approved case matrix.",
-  "caseIds": ["PB-A03"]
+  "caseIds": [
+    "PB-A01",
+    "PB-A02",
+    "PB-A03",
+    "PB-B01",
+    "PB-B03",
+    "PB-B04",
+    "PB-C01",
+    "PB-C03"
+  ]
 }

@@ -1,4 +1,6 @@
 export * from './paths';
 export * from './fs-guard';
-export * from './load';
+export * from './splits';
+export * from './load-agent-input';
+export * from './load-gold';
 export * from './validate';

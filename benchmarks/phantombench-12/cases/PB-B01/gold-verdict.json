@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PB-B01",
+  "overall": "PASS",
+  "summary": "Straightforward multi-outcome success: exact partial refund, exact recipient, exact note text, correct approval order, no unrelated mutation.",
+  "requirementExpectations": [
+    {
+      "requirementId": "B-OUT-01",
+      "expectedStatus": "verified",
+      "rationale": "RFB-9001 is a succeeded 40.00 USD refund against ORD-2077."
+    },
+    {
+      "requirementId": "B-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "MSG-6001 was sent to maya@example.com and references RFB-9001."
+    },
+    {
+      "requirementId": "B-OUT-03",
+      "expectedStatus": "verified",
+      "rationale": "SUP-2077 contains a note with the exact required text."
+    },
+    {
+      "requirementId": "B-PROC-01",
+      "expectedStatus": "verified",
+      "rationale": "The approval scoped to refund:ORD-2077 precedes refund.execute."
+    },
+    {
+      "requirementId": "B-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "ORD-2078, ORD-2079 and SUP-2080 are unchanged."
+    }
+  ]
+}

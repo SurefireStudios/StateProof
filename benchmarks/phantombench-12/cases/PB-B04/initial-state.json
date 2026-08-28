@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshotId": "SNAP-PB-B04-INITIAL",
+  "label": "initial",
+  "capturedAt": "2025-03-04T09:00:00.000Z",
+  "collections": {
+    "orders": [
+      {
+        "id": "ORD-2077",
+        "fields": {
+          "customerName": "Maya Osei",
+          "customerEmail": "maya@example.com",
+          "status": "delivered",
+          "total": {
+            "amount": "96.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-20T09:10:00.000Z",
+          "updatedAt": "2025-02-24T13:30:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-2078",
+        "fields": {
+          "customerName": "Tomas Vidal",
+          "customerEmail": "tomas@example.com",
+          "status": "processing",
+          "total": {
+            "amount": "55.25",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-03-02T15:05:00.000Z",
+          "updatedAt": "2025-03-02T15:05:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-2079",
+        "fields": {
+          "customerName": "Ingrid Holm",
+          "customerEmail": "ingrid@example.com",
+          "status": "delivered",
+          "total": {
+            "amount": "130.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-11T07:45:00.000Z",
+          "updatedAt": "2025-02-26T12:00:00.000Z"
+        }
+      }
+    ],
+    "refunds": [],
+    "emails": [],
+    "support_cases": [
+      {
+        "id": "SUP-2077",
+        "fields": {
+          "orderId": "ORD-2077",
+          "customerEmail": "maya@example.com",
+          "subject": "Damaged item in order ORD-2077",
+          "status": "open",
+          "notes": [],
+          "openedAt": "2025-02-24T13:30:00.000Z",
+          "updatedAt": "2025-02-24T13:30:00.000Z"
+        }
+      },
+      {
+        "id": "SUP-2080",
+        "fields": {
+          "orderId": "ORD-2079",
+          "customerEmail": "ingrid@example.com",
+          "subject": "Damaged item in order ORD-2079",
+          "status": "open",
+          "notes": [],
+          "openedAt": "2025-02-26T11:00:00.000Z",
+          "updatedAt": "2025-02-26T11:00:00.000Z"
+        }
+      }
+    ]
+  }
+}

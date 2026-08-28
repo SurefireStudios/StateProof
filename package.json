@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "benchmark:validate": "tsx packages/benchmark/src/cli/validate.ts"
+    "benchmark:validate": "tsx packages/benchmark/src/cli/validate.ts",
+    "benchmark:baseline": "tsx packages/agents/src/cli/baseline.ts",
+    "fixtures:generate": "tsx scripts/generate-fixtures.ts"
   },
   "devDependencies": {
     "@types/node": "20.14.10",

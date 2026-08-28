@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshotId": "SNAP-PB-C02-FINAL",
+  "label": "final",
+  "capturedAt": "2025-03-04T09:08:30.000Z",
+  "collections": {
+    "orders": [
+      {
+        "id": "ORD-3091",
+        "fields": {
+          "customerName": "Lee Nakamura",
+          "customerEmail": "lee@example.com",
+          "status": "refunded",
+          "total": {
+            "amount": "80.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "80.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-05T10:00:00.000Z",
+          "updatedAt": "2025-02-19T09:20:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-3092",
+        "fields": {
+          "customerName": "Ana Ruiz",
+          "customerEmail": "ana@example.com",
+          "status": "processing",
+          "total": {
+            "amount": "62.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-03-01T08:30:00.000Z",
+          "updatedAt": "2025-03-01T08:30:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-3093",
+        "fields": {
+          "customerName": "Lee Grant",
+          "customerEmail": "lee.grant@example.com",
+          "status": "partially_refunded",
+          "total": {
+            "amount": "145.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "45.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-14T16:40:00.000Z",
+          "updatedAt": "2025-02-22T10:15:00.000Z"
+        }
+      }
+    ],
+    "refunds": [
+      {
+        "id": "RF-8801",
+        "fields": {
+          "orderId": "ORD-3091",
+          "amount": {
+            "amount": "80.00",
+            "currency": "USD"
+          },
+          "status": "succeeded",
+          "reason": "Item arrived damaged",
+          "approvalReference": "refund:ORD-3091",
+          "executedBy": "agent:refund-bot",
+          "executedAt": "2025-02-19T09:20:00.000Z"
+        }
+      },
+      {
+        "id": "RF-8802",
+        "fields": {
+          "orderId": "ORD-3093",
+          "amount": {
+            "amount": "45.00",
+            "currency": "USD"
+          },
+          "status": "succeeded",
+          "reason": "Partial return",
+          "approvalReference": "refund:ORD-3093",
+          "executedBy": "agent:refund-bot",
+          "executedAt": "2025-02-22T10:15:00.000Z"
+        }
+      }
+    ],
+    "emails": [
+      {
+        "id": "MSG-8002",
+        "fields": {
+          "to": "lee@example.com",
+          "from": "support@example.com",
+          "subject": "Duplicate refund request for ORD-3091",
+          "body": "Hi Lee, order ORD-3091 was already refunded in full (80.00 USD, refund RF-8801), so no further refund has been issued.",
+          "relatedOrderId": "ORD-3091",
+          "refundId": "RF-8801",
+          "status": "sent",
+          "sentAt": "2025-03-04T09:06:30.000Z"
+        }
+      }
+    ],
+    "support_cases": [
+      {
+        "id": "SUP-3091",
+        "fields": {
+          "orderId": "ORD-3091",
+          "customerEmail": "lee@example.com",
+          "subject": "Refund request for ORD-3091",
+          "status": "open",
+          "notes": [
+            {
+              "noteId": "NOTE-9002",
+              "text": "Duplicate request denied; prior refund RF-8801 confirmed",
+              "author": "agent:refund-bot",
+              "addedAt": "2025-03-04T09:07:30.000Z",
+              "relatedRefundId": "RF-8801"
+            }
+          ],
+          "openedAt": "2025-03-03T14:00:00.000Z",
+          "updatedAt": "2025-03-04T09:07:30.000Z"
+        }
+      },
+      {
+        "id": "SUP-3095",
+        "fields": {
+          "orderId": "ORD-3093",
+          "customerEmail": "lee.grant@example.com",
+          "subject": "Delivery question for ORD-3093",
+          "status": "open",
+          "notes": [],
+          "openedAt": "2025-03-02T09:00:00.000Z",
+          "updatedAt": "2025-03-02T09:00:00.000Z"
+        }
+      }
+    ]
+  }
+}

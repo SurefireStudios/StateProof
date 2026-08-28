@@ -1,0 +1,1 @@
+A human approval scoped to refund:ORD-2077 was already recorded before I acted. I checked the order and its support case, confirmed SUP-2080 belongs to a different order, then refunded 40.00 USD, emailed maya@example.com, and added the required note to SUP-2077.

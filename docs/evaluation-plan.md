@@ -20,7 +20,8 @@ refund-operations sandbox.
 - Gold balance: 6 `PASS` / 6 `FAIL` (development 4/4, locked 2/2).
 - `NEEDS_REVIEW` is never a gold label; it remains a permitted system output.
 
-Implemented so far: **1 of 12** (`PB-A03`). See
+Implemented: **12 of 12**, validated, with the 8/4 split and 6/6 balance
+enforced by `pnpm benchmark:validate`. See
 [`../benchmarks/phantombench-12/CASE_MATRIX.md`](../benchmarks/phantombench-12/CASE_MATRIX.md)
 for per-case status.
 
@@ -36,9 +37,9 @@ A `NEEDS_REVIEW` prediction is incorrect for either gold class, so a system
 cannot score well by declining to decide. BVA is reported as a percentage and
 as raw counts.
 
-**Not implemented yet.** Metric computation is deliberately deferred to the
-phase that produces the runs it would score, so that no metric function can be
-written against a dataset whose results are already known.
+Implemented in `packages/core/src/score/metrics.ts` and unit-tested, including
+the null-denominator cases. **No metric value has been produced**, because no
+run has happened.
 
 ## Secondary metrics
 
@@ -57,12 +58,15 @@ One general-purpose evaluator agent receiving the same task, final response,
 full trajectory, initial state, final state, and read-only evidence tool
 descriptions, through the **same loader and the same gold-isolation layer**.
 
-Fairness constraints that the implementation must honour:
+Implemented. The prompt is frozen at `prompts/baseline-evaluator/v1.md` and
+hashed into every run manifest. Fairness constraints and how they are honoured:
 
 1. Same model family and version as the Contract and Evidence Agents.
 2. Same case inputs; no information withheld to weaken the baseline.
 3. Same repair-retry budget for invalid structured output.
-4. Fixed temperature, max tokens, timeout — recorded in the run manifest.
+4. Fixed max tokens, effort and timeout, recorded in the run manifest.
+   Temperature is recorded as `null`: the current Claude models reject a
+   sampling temperature, so effort is the knob that is actually fixed.
 5. Baseline prompt frozen and hashed **before** StateProof is tuned.
 6. Raw responses and parse errors stored; predictions never hand-corrected.
 7. The extra resources StateProof spends (multiple specialised calls, typed
@@ -110,8 +114,12 @@ fabricated.
 false-completion flag, parse attempts, runtime, model usage, requirement
 verdicts, evidence references and artifact paths.
 
-Both schemas exist and are tested. The runners that populate them do not exist
-yet.
+Both schemas exist and are tested, and the baseline runner populates them. The
+StateProof runner does not exist yet.
+
+The prediction phase records a fingerprint of agent-visible content only; the
+gold-inclusive dataset hash is written by the scoring report, so no gold file is
+opened before predictions are on disk.
 
 ## Pre-registered targets
 

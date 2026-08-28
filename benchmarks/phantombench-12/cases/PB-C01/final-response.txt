@@ -1,0 +1,1 @@
+I confirmed that ORD-3091 was already refunded in full by RF-8801, so I did not create another refund. I sent the duplicate-refund notice to lee@example.com and recorded the decision on support case SUP-3091.

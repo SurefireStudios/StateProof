@@ -13,7 +13,7 @@ export const OrderFieldsSchema = z
   .object({
     customerName: NonEmptyStringSchema,
     customerEmail: EmailAddressSchema,
-    status: z.enum(['processing', 'delivered', 'refunded', 'cancelled']),
+    status: z.enum(['processing', 'delivered', 'partially_refunded', 'refunded', 'cancelled']),
     total: MoneySchema,
     refundedTotal: MoneySchema,
     placedAt: IsoTimestampSchema,
@@ -48,10 +48,37 @@ export const EmailFieldsSchema = z
   })
   .strict();
 
+/** One note appended to a support case. Notes are never edited or removed. */
+export const SupportNoteSchema = z
+  .object({
+    noteId: NonEmptyStringSchema,
+    text: NonEmptyStringSchema,
+    author: NonEmptyStringSchema,
+    addedAt: IsoTimestampSchema,
+    /** Set when the note refers to a specific refund record. */
+    relatedRefundId: NonEmptyStringSchema.nullable(),
+  })
+  .strict();
+
+export type SupportNote = z.infer<typeof SupportNoteSchema>;
+
+export const SupportCaseFieldsSchema = z
+  .object({
+    orderId: NonEmptyStringSchema,
+    customerEmail: EmailAddressSchema,
+    subject: NonEmptyStringSchema,
+    status: z.enum(['open', 'pending', 'closed']),
+    notes: z.array(SupportNoteSchema),
+    openedAt: IsoTimestampSchema,
+    updatedAt: IsoTimestampSchema,
+  })
+  .strict();
+
 export const REFUND_OPS_COLLECTIONS = {
   orders: OrderFieldsSchema,
   refunds: RefundFieldsSchema,
   emails: EmailFieldsSchema,
+  support_cases: SupportCaseFieldsSchema,
 } as const;
 
 export type RefundOpsCollection = keyof typeof REFUND_OPS_COLLECTIONS;
@@ -66,8 +93,15 @@ export const REFUND_OPS_WRITE_EFFECTS: Readonly<Record<string, readonly RefundOp
   'refund.execute': ['refunds', 'orders'],
   'orders.update': ['orders'],
   'email.send': ['emails'],
+  'support.add_note': ['support_cases'],
+  'support.update': ['support_cases'],
+  /** Requests an approval; the approval itself is a trace event, not state. */
   'approval.request': [],
 };
+
+/** Constants the replay engine uses for fields the sandbox assigns itself. */
+export const REFUND_OPS_ACTOR = 'agent:refund-bot';
+export const REFUND_OPS_SUPPORT_MAILBOX = 'support@example.com';
 
 export interface DomainValidationIssue {
   readonly collection: string;
@@ -103,5 +137,83 @@ export function validateRefundOpsSnapshot(snapshot: StateSnapshot): DomainValida
       }
     }
   }
+  return issues;
+}
+
+/**
+ * Cross-record integrity for a refund-operations snapshot.
+ *
+ * Schema validation proves each record is well shaped; this proves the records
+ * agree with each other. A receipt that references a refund belonging to a
+ * different order is individually valid and jointly nonsense.
+ */
+export function validateRefundOpsReferences(snapshot: StateSnapshot): DomainValidationIssue[] {
+  const issues: DomainValidationIssue[] = [];
+  const orderIds = new Set((snapshot.collections['orders'] ?? []).map((entry) => entry.id));
+  const refunds = snapshot.collections['refunds'] ?? [];
+  const refundOrderById = new Map(
+    refunds.map((entry) => [entry.id, entry.fields['orderId']] as const),
+  );
+
+  const flag = (collection: string, recordId: string, message: string): void => {
+    issues.push({ collection, recordId, message });
+  };
+
+  for (const refund of refunds) {
+    const orderId = refund.fields['orderId'];
+    if (typeof orderId !== 'string' || !orderIds.has(orderId)) {
+      flag('refunds', refund.id, `references order ${String(orderId)}, which does not exist`);
+    }
+  }
+
+  for (const email of snapshot.collections['emails'] ?? []) {
+    const relatedOrderId = email.fields['relatedOrderId'];
+    const refundId = email.fields['refundId'];
+
+    if (typeof relatedOrderId === 'string' && !orderIds.has(relatedOrderId)) {
+      flag('emails', email.id, `references order ${relatedOrderId}, which does not exist`);
+    }
+    if (typeof refundId === 'string' && !refundOrderById.has(refundId)) {
+      flag('emails', email.id, `references refund ${refundId}, which does not exist`);
+    }
+    // A receipt must not point at a refund for some other order.
+    if (typeof refundId === 'string' && typeof relatedOrderId === 'string') {
+      const refundOrderId = refundOrderById.get(refundId);
+      if (refundOrderId !== undefined && refundOrderId !== relatedOrderId) {
+        flag(
+          'emails',
+          email.id,
+          `references refund ${refundId} (order ${String(refundOrderId)}) but is filed under order ${relatedOrderId}`,
+        );
+      }
+    }
+    if (email.fields['status'] === 'sent' && email.fields['sentAt'] === null) {
+      flag('emails', email.id, 'has status "sent" but no sentAt timestamp');
+    }
+    if (email.fields['status'] !== 'sent' && email.fields['sentAt'] !== null) {
+      flag('emails', email.id, `has a sentAt timestamp but status "${String(email.fields['status'])}"`);
+    }
+  }
+
+  for (const supportCase of snapshot.collections['support_cases'] ?? []) {
+    const orderId = supportCase.fields['orderId'];
+    if (typeof orderId !== 'string' || !orderIds.has(orderId)) {
+      flag('support_cases', supportCase.id, `references order ${String(orderId)}, which does not exist`);
+    }
+    const notes = supportCase.fields['notes'];
+    if (!Array.isArray(notes)) continue;
+    for (const note of notes) {
+      if (note === null || typeof note !== 'object' || Array.isArray(note)) continue;
+      const relatedRefundId = note['relatedRefundId'];
+      if (typeof relatedRefundId === 'string' && !refundOrderById.has(relatedRefundId)) {
+        flag(
+          'support_cases',
+          supportCase.id,
+          `note ${String(note['noteId'])} references refund ${relatedRefundId}, which does not exist`,
+        );
+      }
+    }
+  }
+
   return issues;
 }

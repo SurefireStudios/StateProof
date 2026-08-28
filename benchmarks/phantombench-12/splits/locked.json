@@ -1,6 +1,11 @@
 {
   "schemaVersion": "1.0.0",
   "split": "locked",
-  "description": "Challenge cases held back from all prompt tuning until the final locked comparison. Target size 4 (2 gold PASS / 2 gold FAIL). Empty until PB-A04, PB-B02, PB-C02 and PB-C04 are authored.",
-  "caseIds": []
+  "description": "Challenge cases held back from all prompt tuning until the final locked comparison. Target size 4 (2 gold PASS / 2 gold FAIL). Never included in intermediate metric runs.",
+  "caseIds": [
+    "PB-A04",
+    "PB-B02",
+    "PB-C02",
+    "PB-C04"
+  ]
 }

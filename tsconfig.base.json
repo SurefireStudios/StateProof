@@ -2,12 +2,15 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
-    "types": ["node"],
-
+    "types": [
+      "node"
+    ],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
@@ -15,14 +18,22 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
-
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-
     "paths": {
-      "@stateproof/core": ["./packages/core/src/index.ts"],
-      "@stateproof/benchmark": ["./packages/benchmark/src/index.ts"]
+      "@stateproof/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@stateproof/benchmark": [
+        "./packages/benchmark/src/index.ts"
+      ],
+      "@stateproof/model-provider": [
+        "./packages/model-provider/src/index.ts"
+      ],
+      "@stateproof/agents": [
+        "./packages/agents/src/index.ts"
+      ]
     }
   }
 }

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PB-C02",
+  "split": "locked",
+  "goldLabel": "valid",
+  "failureMode": null,
+  "failureDescription": null,
+  "isolatedFailureRequirementId": null,
+  "multiFault": false,
+  "approvedForUse": true,
+  "reviewedBy": "human-owner",
+  "reviewedAt": "2025-03-04T12:00:00.000Z",
+  "notes": [
+    "Human-only file. Never loaded by the agent input reader.",
+    "Canonical source: 04_PHANTOMBENCH_12_CASE_MATRIX.md, case PB-C02.",
+    "Noise: RF-8802 is a similar refund id on ORD-3093, whose customer is also called Lee.",
+    "Tests entity resolution and prohibition verification without overreacting to unrelated history."
+  ]
+}

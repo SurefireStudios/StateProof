@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshotId": "SNAP-PB-A02-FINAL",
+  "label": "final",
+  "capturedAt": "2025-03-04T09:08:30.000Z",
+  "collections": {
+    "orders": [
+      {
+        "id": "ORD-1042",
+        "fields": {
+          "customerName": "Dana Whitfield",
+          "customerEmail": "dana@example.com",
+          "status": "refunded",
+          "total": {
+            "amount": "125.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "125.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-18T14:22:00.000Z",
+          "updatedAt": "2025-03-04T09:05:30.000Z"
+        }
+      },
+      {
+        "id": "ORD-1043",
+        "fields": {
+          "customerName": "Marcus Bell",
+          "customerEmail": "marcus@example.com",
+          "status": "processing",
+          "total": {
+            "amount": "89.50",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-03-01T11:40:00.000Z",
+          "updatedAt": "2025-03-01T11:40:00.000Z"
+        }
+      },
+      {
+        "id": "ORD-1044",
+        "fields": {
+          "customerName": "Priya Raman",
+          "customerEmail": "priya@example.com",
+          "status": "delivered",
+          "total": {
+            "amount": "240.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
+          "placedAt": "2025-02-25T08:15:00.000Z",
+          "updatedAt": "2025-02-28T16:02:00.000Z"
+        }
+      }
+    ],
+    "refunds": [
+      {
+        "id": "REF-8812",
+        "fields": {
+          "orderId": "ORD-1042",
+          "amount": {
+            "amount": "125.00",
+            "currency": "USD"
+          },
+          "status": "succeeded",
+          "reason": "Item arrived damaged",
+          "approvalReference": "refund:ORD-1042",
+          "executedBy": "agent:refund-bot",
+          "executedAt": "2025-03-04T09:05:30.000Z"
+        }
+      }
+    ],
+    "emails": [
+      {
+        "id": "MSG-4400",
+        "fields": {
+          "to": "marcus@example.com",
+          "from": "support@example.com",
+          "subject": "Your order ORD-1043 has shipped",
+          "body": "Hi Marcus, your order is on its way.",
+          "relatedOrderId": "ORD-1043",
+          "refundId": null,
+          "status": "sent",
+          "sentAt": "2025-03-01T12:00:00.000Z"
+        }
+      },
+      {
+        "id": "MSG-5512",
+        "fields": {
+          "to": "dana@example.com",
+          "from": "support@example.com",
+          "subject": "Refund receipt for ORD-1042",
+          "body": "Hi Dana, we have refunded 125.00 USD for order ORD-1042.",
+          "relatedOrderId": "ORD-1042",
+          "refundId": "REF-8812",
+          "status": "sent",
+          "sentAt": "2025-03-04T09:06:30.000Z"
+        }
+      }
+    ]
+  }
+}

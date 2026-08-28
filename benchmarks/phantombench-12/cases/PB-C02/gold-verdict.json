@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PB-C02",
+  "overall": "PASS",
+  "summary": "Entity resolution under noise: a similar refund id and a second customer named Lee are correctly set aside, and the prohibition is honoured.",
+  "requirementExpectations": [
+    {
+      "requirementId": "C-PROH-01",
+      "expectedStatus": "verified",
+      "rationale": "No refund record against ORD-3091 was added; RF-8802 pre-existed and belongs to ORD-3093."
+    },
+    {
+      "requirementId": "C-OUT-01",
+      "expectedStatus": "verified",
+      "rationale": "MSG-8002 was sent to lee@example.com, not to the other Lee."
+    },
+    {
+      "requirementId": "C-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "SUP-3091 contains the exact required note referencing RF-8801."
+    },
+    {
+      "requirementId": "C-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "The extra reads mutated nothing; no unrelated order or support case changed."
+    }
+  ]
+}

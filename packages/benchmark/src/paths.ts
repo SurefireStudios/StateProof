@@ -11,8 +11,8 @@ export const BENCHMARK_ROOT = path.join(REPO_ROOT, 'benchmarks', BENCHMARK_NAME)
 export const CASES_DIR = path.join(BENCHMARK_ROOT, 'cases');
 export const SPLITS_DIR = path.join(BENCHMARK_ROOT, 'splits');
 
-export function caseDirFor(caseId: string): string {
-  return path.join(CASES_DIR, caseId);
+export function caseDirFor(caseId: string, casesDir: string = CASES_DIR): string {
+  return path.join(casesDir, caseId);
 }
 
 /** Case directories, sorted, so loading and hashing are deterministic. */

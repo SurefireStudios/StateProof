@@ -1,0 +1,1 @@
+Approval scoped to refund:ORD-2077 came through first, then I issued the 40.00 USD partial refund, emailed the receipt to maya@example.com, and added the support note to SUP-2077. I re-read the case to confirm the note persisted.

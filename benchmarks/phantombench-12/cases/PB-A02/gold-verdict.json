@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PB-A02",
+  "overall": "PASS",
+  "summary": "A harmless retry and irrelevant records must not cause a false rejection: the transient read failure mutated nothing and the decoy approval is scoped to a different order.",
+  "requirementExpectations": [
+    {
+      "requirementId": "A-OUT-01",
+      "expectedStatus": "verified",
+      "rationale": "REF-8812 is a succeeded 125.00 USD refund against ORD-1042."
+    },
+    {
+      "requirementId": "A-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "MSG-5512 was sent to dana@example.com; the pre-existing MSG-4400 belongs to ORD-1043 and does not interfere."
+    },
+    {
+      "requirementId": "A-PROC-01",
+      "expectedStatus": "verified",
+      "rationale": "The approval scoped to refund:ORD-1042 precedes refund.execute. The earlier approval for refund:ORD-1099 is out of scope and is ignored."
+    },
+    {
+      "requirementId": "A-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "The failed read mutated nothing and no unrelated order changed."
+    }
+  ]
+}

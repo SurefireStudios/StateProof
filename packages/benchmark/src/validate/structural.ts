@@ -2,11 +2,12 @@ import {
   type BenchmarkCase,
   CURRENT_SCHEMA_VERSION,
   REFUND_OPS_DOMAIN,
-  REFUND_OPS_WRITE_EFFECTS,
-  diffSnapshots,
   findTool,
+  validateRefundOpsReferences,
   validateRefundOpsSnapshot,
+  verifyFinalStateDerivable,
 } from '@stateproof/core';
+import { approvedCase } from './approved-cases';
 import type { ValidationIssue } from './types';
 
 function issue(caseId: string, check: string, message: string): ValidationIssue {
@@ -104,6 +105,16 @@ export function validateStructure(benchmarkCase: BenchmarkCase): ValidationIssue
           ),
         );
       }
+      // Records must also agree with each other, not merely be well shaped.
+      for (const referenceIssue of validateRefundOpsReferences(snapshot)) {
+        issues.push(
+          issue(
+            caseId,
+            'referential-integrity',
+            `${label} ${referenceIssue.collection}/${referenceIssue.recordId}: ${referenceIssue.message}`,
+          ),
+        );
+      }
     }
   }
 
@@ -166,50 +177,21 @@ export function validateStructure(benchmarkCase: BenchmarkCase): ValidationIssue
     }
   }
 
-  // --- the final state must be explainable by successful writes ------------
-  if (agentVisible.task.domain === REFUND_OPS_DOMAIN) {
-    const successfulWriteTools = new Set<string>();
-    const okResults = new Set(
-      agentVisible.trajectory
-        .filter((event) => event.type === 'tool_result' && event.status === 'ok')
-        .map((event) => (event.type === 'tool_result' ? event.callId : '')),
+  // --- the final state must be derivable from the successful writes --------
+  // Read-only calls and failed calls must leave the sandbox untouched, and
+  // every successful write must produce its declared effect. Replaying is a
+  // stronger claim than "something changed somewhere".
+  {
+    const replay = verifyFinalStateDerivable(
+      agentVisible.initialState,
+      agentVisible.finalState,
+      agentVisible.trajectory,
+      agentVisible.toolRegistry,
     );
-    for (const event of agentVisible.trajectory) {
-      if (event.type !== 'tool_call') continue;
-      const tool = findTool(agentVisible.toolRegistry, event.toolName);
-      if (tool?.access === 'write' && okResults.has(event.callId)) {
-        successfulWriteTools.add(event.toolName);
-      }
-    }
-
-    const explainable = new Set<string>();
-    for (const toolName of successfulWriteTools) {
-      for (const collection of REFUND_OPS_WRITE_EFFECTS[toolName] ?? []) explainable.add(collection);
-    }
-
-    const changedCollections = new Set(
-      diffSnapshots(agentVisible.initialState, agentVisible.finalState).map(
-        (change) => change.collection,
-      ),
-    );
-    for (const collection of [...changedCollections].sort()) {
-      if (!explainable.has(collection)) {
-        issues.push(
-          issue(
-            caseId,
-            'state-derivability',
-            `collection "${collection}" changed, but no successful write tool call in the trajectory can account for it`,
-          ),
-        );
-      }
-    }
-    if (changedCollections.size === 0 && successfulWriteTools.size > 0) {
+    for (const replayIssue of replay.issues) {
+      const where = replayIssue.seq === null ? '' : ` (seq ${replayIssue.seq})`;
       issues.push(
-        issue(
-          caseId,
-          'state-derivability',
-          `successful write calls (${[...successfulWriteTools].sort().join(', ')}) left the sandbox unchanged`,
-        ),
+        issue(caseId, 'state-derivability', `${replayIssue.kind}${where}: ${replayIssue.message}`),
       );
     }
   }
@@ -241,20 +223,24 @@ export function validateStructure(benchmarkCase: BenchmarkCase): ValidationIssue
   // --- assertions point at collections that exist --------------------------
   for (const requirement of goldContract.requirements) {
     for (const assertion of requirement.assertions) {
-    const collection =
+    const collections: string[] =
       assertion.kind === 'no_new_records' || assertion.kind === 'no_unrelated_mutations'
-        ? assertion.collection
+        ? [assertion.collection]
         : assertion.kind === 'event_order'
-          ? null
-          : assertion.selector.collection;
-    if (collection !== null && !finalCollections.includes(collection)) {
-      issues.push(
-        issue(
-          caseId,
-          'assertion-target',
-          `${requirement.requirementId} targets collection "${collection}", which does not exist in the sandbox state`,
-        ),
-      );
+          ? []
+          : assertion.kind === 'record_field_equals_selected_record_id'
+            ? [assertion.leftSelector.collection, assertion.rightSelector.collection]
+            : [assertion.selector.collection];
+    for (const collection of collections) {
+      if (!finalCollections.includes(collection)) {
+        issues.push(
+          issue(
+            caseId,
+            'assertion-target',
+            `${requirement.requirementId} targets collection "${collection}", which does not exist in the sandbox state`,
+          ),
+        );
+      }
     }
     if (assertion.kind === 'event_order') {
       for (const selector of [assertion.earlier, assertion.later]) {
@@ -275,7 +261,25 @@ export function validateStructure(benchmarkCase: BenchmarkCase): ValidationIssue
     }
   }
 
+  // --- gold expectation ids are unique -------------------------------------
+  {
+    const seen = new Set<string>();
+    for (const expectationId of expectationIds) {
+      if (seen.has(expectationId)) {
+        issues.push(
+          issue(caseId, 'gold-coverage', `gold verdict repeats expectation ${expectationId}`),
+        );
+      }
+      seen.add(expectationId);
+    }
+  }
+
   // --- metadata hygiene -----------------------------------------------------
+  if (!metadata.approvedForUse) {
+    issues.push(
+      issue(caseId, 'metadata', 'every core case must carry approvedForUse: true'),
+    );
+  }
   if (metadata.multiFault && !metadata.approvedForUse) {
     issues.push(
       issue(
@@ -284,6 +288,18 @@ export function validateStructure(benchmarkCase: BenchmarkCase): ValidationIssue
         'multi-fault cases must be explicitly approved before they may be used',
       ),
     );
+  }
+  if (metadata.goldLabel === 'valid') {
+    const populated = [
+      ['failureMode', metadata.failureMode],
+      ['failureDescription', metadata.failureDescription],
+      ['isolatedFailureRequirementId', metadata.isolatedFailureRequirementId],
+    ].filter(([, value]) => value !== null);
+    for (const [field] of populated) {
+      issues.push(
+        issue(caseId, 'metadata', `valid cases must leave ${String(field)} null`),
+      );
+    }
   }
   if (
     metadata.isolatedFailureRequirementId !== null &&
@@ -296,6 +312,46 @@ export function validateStructure(benchmarkCase: BenchmarkCase): ValidationIssue
         `isolatedFailureRequirementId ${metadata.isolatedFailureRequirementId} is not a requirement of the gold contract`,
       ),
     );
+  }
+
+  // --- the case must match the approved canonical matrix -------------------
+  const approved = approvedCase(caseId);
+  if (approved === undefined) {
+    issues.push(
+      issue(
+        caseId,
+        'approved-case',
+        'case is not in the approved PhantomBench-12 matrix; unapproved core cases are not permitted',
+      ),
+    );
+  } else {
+    if (approved.split !== metadata.split) {
+      issues.push(
+        issue(
+          caseId,
+          'approved-case',
+          `matrix places this case in the ${approved.split} split but its metadata says ${metadata.split}`,
+        ),
+      );
+    }
+    if (approved.goldVerdict !== goldVerdict.overall) {
+      issues.push(
+        issue(
+          caseId,
+          'approved-case',
+          `matrix gold verdict is ${approved.goldVerdict} but gold-verdict.json says ${goldVerdict.overall}`,
+        ),
+      );
+    }
+    if (approved.isolatedFailureRequirementId !== metadata.isolatedFailureRequirementId) {
+      issues.push(
+        issue(
+          caseId,
+          'approved-case',
+          `matrix isolated failure is ${String(approved.isolatedFailureRequirementId)} but metadata says ${String(metadata.isolatedFailureRequirementId)}`,
+        ),
+      );
+    }
   }
 
   return issues;

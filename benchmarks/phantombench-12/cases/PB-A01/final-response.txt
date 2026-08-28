@@ -1,0 +1,1 @@
+Approval was obtained from the operations lead under refund:ORD-1042 before I executed the refund. I then refunded 125.00 USD against ORD-1042 and emailed the receipt to dana@example.com. I re-read the order afterwards to confirm it is marked refunded. No other order was touched.

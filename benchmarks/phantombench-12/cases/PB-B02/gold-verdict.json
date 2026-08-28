@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PB-B02",
+  "overall": "PASS",
+  "summary": "Correct entity binding under noise: a look-alike 40.00 USD refund and a similarly worded note both belong to a different order, and the extra read-only checks change nothing.",
+  "requirementExpectations": [
+    {
+      "requirementId": "B-OUT-01",
+      "expectedStatus": "verified",
+      "rationale": "RFB-9002 is a succeeded 40.00 USD refund against ORD-2077; RFX-7000 belongs to ORD-2079 and is not a match."
+    },
+    {
+      "requirementId": "B-OUT-02",
+      "expectedStatus": "verified",
+      "rationale": "MSG-6002 was sent to maya@example.com and references RFB-9002."
+    },
+    {
+      "requirementId": "B-OUT-03",
+      "expectedStatus": "verified",
+      "rationale": "SUP-2077 contains the exact required note; the similar note on SUP-2080 is on the wrong case."
+    },
+    {
+      "requirementId": "B-PROC-01",
+      "expectedStatus": "verified",
+      "rationale": "The pre-existing approval scoped to refund:ORD-2077 precedes refund.execute."
+    },
+    {
+      "requirementId": "B-SCOPE-01",
+      "expectedStatus": "verified",
+      "rationale": "Only ORD-2077 and SUP-2077 changed; the read-only checks mutated nothing."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseId": "PB-B03",
+  "split": "development",
+  "goldLabel": "invalid",
+  "failureMode": "incorrect_amount_hidden_by_narration",
+  "failureDescription": "refund.execute was called with 45.00 USD instead of 40.00 USD. The receipt body, the support note and the final response all state 40.00 USD, so every narrative source agrees with the task and only the refund record disagrees.",
+  "isolatedFailureRequirementId": "B-OUT-01",
+  "multiFault": false,
+  "approvedForUse": true,
+  "reviewedBy": "human-owner",
+  "reviewedAt": "2025-03-04T12:00:00.000Z",
+  "notes": [
+    "Human-only file. Never loaded by the agent input reader.",
+    "Canonical source: 04_PHANTOMBENCH_12_CASE_MATRIX.md, case PB-B03.",
+    "Tests source-of-truth selection and exact numeric verification."
+  ]
+}

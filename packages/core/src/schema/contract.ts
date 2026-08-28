@@ -32,6 +32,12 @@ export const RecordSelectorSchema = z
   .strict();
 export type RecordSelector = z.infer<typeof RecordSelectorSchema>;
 
+/**
+ * A field is only meaningful on the event types that carry it. Rejecting
+ * nonsensical-but-shaped combinations at the schema boundary matters most once
+ * contracts are model-generated: a selector like `status` on a `tool_call`
+ * would otherwise silently match nothing and read as a passing check.
+ */
 export const EventSelectorSchema = z
   .object({
     eventType: z.enum(['agent_message', 'tool_call', 'tool_result', 'human_approval']),
@@ -41,7 +47,28 @@ export const EventSelectorSchema = z
     status: z.enum(['ok', 'error']).optional(),
     argumentMatches: z.array(FieldMatchSchema).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((selector, ctx) => {
+    const allowed: Record<string, ReadonlyArray<EventSelectorEventType>> = {
+      toolName: ['tool_call', 'tool_result'],
+      status: ['tool_result'],
+      argumentMatches: ['tool_call'],
+      scope: ['human_approval'],
+      decision: ['human_approval'],
+    };
+    for (const [field, eventTypes] of Object.entries(allowed)) {
+      const present = selector[field as keyof typeof selector] !== undefined;
+      if (present && !eventTypes.includes(selector.eventType)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message: `"${field}" is only valid on ${eventTypes.join(' or ')} events, not ${selector.eventType}`,
+        });
+      }
+    }
+  });
+
+type EventSelectorEventType = 'agent_message' | 'tool_call' | 'tool_result' | 'human_approval';
 export type EventSelector = z.infer<typeof EventSelectorSchema>;
 
 const StateRefSchema = SnapshotLabelSchema.default('final');
@@ -76,6 +103,37 @@ export const AssertionSchema = z.discriminatedUnion('kind', [
     .strict(),
   z
     .object({
+      kind: z.literal('record_array_contains_exact'),
+      state: StateRefSchema,
+      selector: RecordSelectorSchema,
+      /** Dotted path to an array field on the selected record. */
+      field: NonEmptyStringSchema,
+      /**
+       * An element must match every criterion exactly. Comparison is literal:
+       * no case folding, trimming, or substring matching.
+       */
+      element: z.array(FieldMatchSchema).min(1),
+    })
+    .strict(),
+  z
+    .object({
+      /**
+       * Proves a relationship between two records without knowing either
+       * generated id in advance: the left record's field must equal the id of
+       * the record the right selector resolves to. This is how a compiled
+       * contract can require "the receipt references the completed refund"
+       * before it has ever seen the run.
+       */
+      kind: z.literal('record_field_equals_selected_record_id'),
+      leftState: StateRefSchema,
+      leftSelector: RecordSelectorSchema,
+      leftField: NonEmptyStringSchema,
+      rightState: StateRefSchema,
+      rightSelector: RecordSelectorSchema,
+    })
+    .strict(),
+  z
+    .object({
       kind: z.literal('event_order'),
       earlier: EventSelectorSchema,
       later: EventSelectorSchema,
@@ -85,6 +143,11 @@ export const AssertionSchema = z.discriminatedUnion('kind', [
     .object({
       kind: z.literal('no_new_records'),
       collection: NonEmptyStringSchema,
+      /**
+       * Restricts the prohibition to added records matching these criteria,
+       * e.g. "no new refund *for ORD-3091*". Omit to prohibit any addition.
+       */
+      where: z.array(FieldMatchSchema).optional(),
       allowedRecordIds: z.array(NonEmptyStringSchema),
     })
     .strict(),
