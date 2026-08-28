@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "RUN-baseline-development-live-20260828T222134Z",
+  "createdAt": "2026-08-28T22:21:34.907Z",
+  "system": "baseline",
+  "stage": "gate-2-development-baseline",
+  "mode": "live",
+  "gitCommitSha": "a470aa80deccfb97459b8a683a907602426e6e95",
+  "runtimeVersion": "node-20.10.0",
+  "packageLockHash": "673e1485a8b9793ba55fdcce3a210e5bcad0a7cd6d6b2111d90adbd5c46dce94",
+  "datasetName": "phantombench-12",
+  "agentVisibleDatasetHash": "3331475fad91ffc61b051af180ed1cace6c203c7b7b88bcc92166a8932fae117",
+  "datasetHash": "1eede7dfe018c0858422ec634b03026e2eeede6d9224455fe4dffe313b621d73",
+  "splits": [
+    "development"
+  ],
+  "caseIds": [
+    "PB-A01",
+    "PB-A02",
+    "PB-A03",
+    "PB-B01",
+    "PB-B03",
+    "PB-B04",
+    "PB-C01",
+    "PB-C03"
+  ],
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "maxRetries": 1,
+  "timeoutPolicy": "120000",
+  "promptFilePaths": [
+    "prompts/baseline-evaluator/v1.md"
+  ],
+  "promptHashes": {
+    "prompts/baseline-evaluator/v1.md": "c2bcb3f7adb43e6c8c3c5ba0efb223373ac31500107860c4cd57e203f6646d62"
+  },
+  "startedAt": "2026-08-28T22:21:34.907Z",
+  "finishedAt": "2026-08-28T22:23:06.286Z",
+  "wallClockMs": 91409,
+  "modelUsage": {
+    "inputTokens": 41345,
+    "outputTokens": 7994,
+    "calls": 8,
+    "retries": 0,
+    "estimatedCostUsd": null
+  },
+  "rawResponsePaths": [
+    "model-responses/RUN-baseline-development-live-20260828T222134Z/PB-A01-attempt-1.json",
+    "model-responses/RUN-baseline-development-live-20260828T222134Z/PB-A02-attempt-1.json",
+    "model-responses/RUN-baseline-development-live-20260828T222134Z/PB-A03-attempt-1.json",
+    "model-responses/RUN-baseline-development-live-20260828T222134Z/PB-B01-attempt-1.json",
+    "model-responses/RUN-baseline-development-live-20260828T222134Z/PB-B03-attempt-1.json",
+    "model-responses/RUN-baseline-development-live-20260828T222134Z/PB-B04-attempt-1.json",
+    "model-responses/RUN-baseline-development-live-20260828T222134Z/PB-C01-attempt-1.json",
+    "model-responses/RUN-baseline-development-live-20260828T222134Z/PB-C03-attempt-1.json"
+  ],
+  "trajectoryPaths": [
+    "benchmarks/phantombench-12/cases/PB-A01/trajectory.jsonl",
+    "benchmarks/phantombench-12/cases/PB-A02/trajectory.jsonl",
+    "benchmarks/phantombench-12/cases/PB-A03/trajectory.jsonl",
+    "benchmarks/phantombench-12/cases/PB-B01/trajectory.jsonl",
+    "benchmarks/phantombench-12/cases/PB-B03/trajectory.jsonl",
+    "benchmarks/phantombench-12/cases/PB-B04/trajectory.jsonl",
+    "benchmarks/phantombench-12/cases/PB-C01/trajectory.jsonl",
+    "benchmarks/phantombench-12/cases/PB-C03/trajectory.jsonl"
+  ],
+  "predictionPath": "predictions/RUN-baseline-development-live-20260828T222134Z.json",
+  "reportPath": "reports/RUN-baseline-development-live-20260828T222134Z.md",
+  "notes": [
+    "Predictions were written before any gold file was read.",
+    "No prediction was hand-corrected.",
+    "agentVisibleDatasetHash covers only what the model was shown; datasetHash and reportPath are completed by the scoring phase."
+  ]
+}

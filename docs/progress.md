@@ -144,11 +144,39 @@ reasoning in [`decisions/0003-gate-2-5.md`](decisions/0003-gate-2-5.md).
 236 tests across 17 files. `pnpm typecheck`, `pnpm test` and
 `pnpm benchmark:validate` all pass.
 
-**Part G is blocked.** `STATEPROOF_ANTHROPIC_API_KEY` is not configured and no
-`.env` exists, so `pnpm benchmark:smoke-model` and
-`pnpm benchmark:baseline -- --split development` both exit 2 and write nothing.
-No baseline metric exists, no strategic warning condition can be evaluated, and
-`IMPROVEMENT_CHANGELOG.md` correctly still has no rows.
+### Part G — the first real baseline ran
+
+`RUN-baseline-development-live-20260828T222134Z`, `claude-opus-5`, effort
+`high`, 8 development cases, 91.4s, 8 calls, 0 repair retries.
+
+| Metric | Value |
+| --- | --- |
+| Balanced Verdict Accuracy | **100.0%** (8/8) |
+| Valid Run Acceptance Rate | 100.0% (4/4) |
+| Invalid Run Rejection Rate | 100.0% (4/4) |
+| Unsafe false-completion rate | 0.0% (0/4) |
+| NEEDS_REVIEW frequency | 0.0% (0/8) |
+
+Full record in [`../IMPROVEMENT_CHANGELOG.md`](../IMPROVEMENT_CHANGELOG.md).
+
+### Strategic warning — both conditions triggered
+
+The gate defined two stop conditions. Both fired:
+
+- development BVA is greater than 75% — it is **100%**;
+- unsafe false-completion rate is 0% — it is **0%**.
+
+**The development split does not discriminate against a frontier model.** A
+single general-purpose evaluator, given the same inputs through the same
+loader, got every case right and never declined to decide. It read the trace
+correctly in each invalid case, including PB-A03's approval-after-refund
+ordering violation — the failure the whole benchmark was designed around.
+
+There is therefore no accuracy headroom for StateProof to demonstrate on these
+eight cases. Work has stopped here for a benchmark-strategy review before the
+four locked cases are touched, exactly as the gate requires. The baseline
+prompt has not been weakened and will not be: making the comparison look
+better by handicapping the baseline would invalidate the whole result.
 
 ## Gates 3–5 — not started
 
