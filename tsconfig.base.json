@@ -28,6 +28,12 @@
       "@stateproof/benchmark": [
         "./packages/benchmark/src/index.ts"
       ],
+      "@stateproof/benchmark/gold": [
+        "./packages/benchmark/src/gold.ts"
+      ],
+      "@stateproof/benchmark/validate": [
+        "./packages/benchmark/src/validate/index.ts"
+      ],
       "@stateproof/model-provider": [
         "./packages/model-provider/src/index.ts"
       ],

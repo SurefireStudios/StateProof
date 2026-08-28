@@ -213,7 +213,8 @@ describe('EvaluationRunManifestSchema', () => {
     runtimeVersion: 'node-20.10.0',
     packageLockHash: null,
     datasetName: 'phantombench-12',
-    datasetHash: 'a'.repeat(64),
+    agentVisibleDatasetHash: 'a'.repeat(64),
+    datasetHash: null,
     splits: ['development'],
     caseIds: ['PB-A03'],
     modelProvider: null,
@@ -241,6 +242,20 @@ describe('EvaluationRunManifestSchema', () => {
   it('rejects a dataset hash that is not a sha256 digest', () => {
     const result = EvaluationRunManifestSchema.safeParse({ ...manifest, datasetHash: 'nope' });
     expect(result.success).toBe(false);
+  });
+
+  it('accepts a gold-inclusive dataset hash once scoring has filled it in', () => {
+    const completed = EvaluationRunManifestSchema.parse({
+      ...manifest,
+      datasetHash: 'b'.repeat(64),
+      reportPath: 'reports/RUN-1.md',
+    });
+    expect(completed.datasetHash).not.toBe(completed.agentVisibleDatasetHash);
+  });
+
+  it('requires the agent-visible fingerprint, which the prediction phase writes', () => {
+    const { agentVisibleDatasetHash: _omitted, ...withoutFingerprint } = manifest;
+    expect(EvaluationRunManifestSchema.safeParse(withoutFingerprint).success).toBe(false);
   });
 
   it('rejects an unknown field so manifests cannot drift silently', () => {

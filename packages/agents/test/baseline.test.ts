@@ -190,7 +190,10 @@ describe('baseline run over the development split', () => {
       expect(manifest.splits).toEqual(['development']);
       expect(manifest.caseIds).toHaveLength(8);
       expect(Object.keys(manifest.promptHashes)).toEqual(['prompts/baseline-evaluator/v1.md']);
-      expect(manifest.datasetHash).toMatch(/^[0-9a-f]{64}$/);
+      // The prediction phase records only what the model was shown; the
+      // gold-inclusive hash is the scoring phase's job.
+      expect(manifest.agentVisibleDatasetHash).toMatch(/^[0-9a-f]{64}$/);
+      expect(manifest.datasetHash).toBeNull();
       expect(manifest.modelProvider).toBe('fake');
     } finally {
       stopObserving();

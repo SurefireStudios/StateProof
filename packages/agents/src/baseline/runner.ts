@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import {
@@ -10,6 +10,7 @@ import {
 } from '@stateproof/core';
 import {
   CASES_DIR,
+  REPO_ROOT,
   caseIdsForSplit,
   hashAgentVisibleCase,
   loadAgentVisibleCase,
@@ -68,6 +69,13 @@ function isoNow(): string {
 export function makeRunId(split: Split, mode: 'live' | 'replay'): string {
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
   return `RUN-baseline-${split}-${mode}-${stamp}`;
+}
+
+/** sha256 of the lockfile, so a run records the dependency tree it used. */
+function packageLockHash(): string | null {
+  const lockPath = path.join(REPO_ROOT, 'pnpm-lock.yaml');
+  if (!existsSync(lockPath)) return null;
+  return sha256Hex(readFileSync(lockPath, 'utf8'));
 }
 
 function gitCommitSha(): string | null {
@@ -199,12 +207,13 @@ export async function runBaselinePredictions(
     mode: 'live',
     gitCommitSha: gitCommitSha(),
     runtimeVersion: `node-${process.versions.node}`,
-    packageLockHash: null,
+    packageLockHash: packageLockHash(),
     datasetName: 'phantombench-12',
-    // Fingerprints only what the model was shown. The gold-inclusive dataset
-    // hash belongs to the scoring report, so the prediction phase never has a
+    // Fingerprints only what the model was shown. The gold-inclusive hash is
+    // filled in by the scoring phase, so the prediction phase never has a
     // reason to open a gold file.
-    datasetHash: sha256Hex(agentVisibleHashes.join('|')),
+    agentVisibleDatasetHash: sha256Hex(agentVisibleHashes.join('|')),
+    datasetHash: null,
     splits: [options.split],
     caseIds,
     modelProvider: options.client.provider,
@@ -234,7 +243,7 @@ export async function runBaselinePredictions(
     notes: [
       'Predictions were written before any gold file was read.',
       'No prediction was hand-corrected.',
-      'datasetHash fingerprints agent-visible content only; the gold-inclusive dataset hash is recorded in the scoring report.',
+      'agentVisibleDatasetHash covers only what the model was shown; datasetHash and reportPath are completed by the scoring phase.',
     ],
   });
   writeJson(paths.manifestPath, manifest);

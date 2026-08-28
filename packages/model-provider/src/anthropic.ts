@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { loadLocalEnv, readModelEnvOverrides } from './env';
 import {
   ModelCredentialsError,
   type ModelClient,
@@ -28,6 +29,17 @@ export interface AnthropicClientOptions {
   readonly maxTransportRetries?: number;
 }
 
+/**
+ * StateProof reads its own credential variable, never `ANTHROPIC_API_KEY`.
+ *
+ * The repository is developed with Claude Code, which uses `ANTHROPIC_API_KEY`
+ * for its own subscription auth. Sharing the name would let a project key
+ * silently take over the developer's session, so the two are kept apart. The
+ * value is passed straight to the SDK client and is never copied into the
+ * ambient environment.
+ */
+export const CREDENTIAL_ENV_VAR = 'STATEPROOF_ANTHROPIC_API_KEY';
+
 export const DEFAULT_MODEL_ID = 'claude-opus-5';
 export const DEFAULT_MAX_TOKENS = 16000;
 export const DEFAULT_EFFORT = 'high';
@@ -37,8 +49,11 @@ export const DEFAULT_TRANSPORT_RETRIES = 2;
 export const MISSING_CREDENTIALS_MESSAGE = [
   'No model credentials are configured, so no live run can be made.',
   '',
-  'Set ANTHROPIC_API_KEY in your shell or in a local .env (see .env.example),',
-  'or sign in with `ant auth login`, then re-run the command.',
+  `Set ${CREDENTIAL_ENV_VAR} in a local .env at the repository root (see`,
+  '.env.example). .env is git-ignored and is loaded automatically.',
+  '',
+  'StateProof deliberately does not read ANTHROPIC_API_KEY: that variable',
+  "belongs to your Claude Code session's own authentication.",
   '',
   'Nothing has been written. A baseline run is never simulated: a report with',
   'no real model behind it would be worse than no report.',
@@ -54,18 +69,23 @@ export class AnthropicModelClient implements ModelClient {
   private readonly effort: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
   public constructor(options: AnthropicClientOptions = {}) {
-    const apiKey = options.apiKey ?? process.env['ANTHROPIC_API_KEY'];
+    loadLocalEnv();
+    const apiKey = options.apiKey ?? process.env[CREDENTIAL_ENV_VAR];
     if (apiKey === undefined || apiKey.trim() === '') {
       throw new ModelCredentialsError(MISSING_CREDENTIALS_MESSAGE);
     }
 
-    this.modelId = options.modelId ?? DEFAULT_MODEL_ID;
-    this.maxTokens = options.maxTokens ?? DEFAULT_MAX_TOKENS;
-    this.effort = options.effort ?? DEFAULT_EFFORT;
+    // Explicit options win over environment overrides, which win over defaults.
+    const overrides = readModelEnvOverrides();
+    this.modelId = options.modelId ?? overrides.modelId ?? DEFAULT_MODEL_ID;
+    this.maxTokens = options.maxTokens ?? overrides.maxTokens ?? DEFAULT_MAX_TOKENS;
+    this.effort = options.effort ?? overrides.effort ?? DEFAULT_EFFORT;
 
-    const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const timeoutMs = options.timeoutMs ?? overrides.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const maxRetries = options.maxTransportRetries ?? DEFAULT_TRANSPORT_RETRIES;
 
+    // Passed explicitly so the SDK never falls back to an ambient
+    // ANTHROPIC_API_KEY, and never sees one we put there.
     this.client = new Anthropic({ apiKey, timeout: timeoutMs, maxRetries });
 
     this.configuration = {
@@ -108,8 +128,13 @@ export class AnthropicModelClient implements ModelClient {
   }
 }
 
-/** True when a live client can be constructed without prompting for anything. */
+/**
+ * True when a live client can be constructed without prompting for anything.
+ * Loads `.env` first, so the documented path and the checked path agree.
+ * Only presence is ever observed; the value is not read here.
+ */
 export function hasAnthropicCredentials(): boolean {
-  const key = process.env['ANTHROPIC_API_KEY'];
+  loadLocalEnv();
+  const key = process.env[CREDENTIAL_ENV_VAR];
   return key !== undefined && key.trim() !== '';
 }

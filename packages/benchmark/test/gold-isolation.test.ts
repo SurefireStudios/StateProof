@@ -6,10 +6,9 @@ import {
   HUMAN_ONLY_FILES,
   caseDirFor,
   createAgentInputReader,
-  createGoldReader,
   loadAgentVisibleCase,
-  loadGoldBundle,
 } from '@stateproof/benchmark';
+import { createGoldReader, loadGoldBundle } from '@stateproof/benchmark/gold';
 
 const caseDir = caseDirFor('PB-A03');
 

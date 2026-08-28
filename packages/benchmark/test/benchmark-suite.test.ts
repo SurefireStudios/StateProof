@@ -2,17 +2,15 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
+import { CASES_DIR, caseIdsForSplit } from '@stateproof/benchmark';
+import { loadAllCases, loadBenchmarkCase } from '@stateproof/benchmark/gold';
 import {
   APPROVED_CASES,
   APPROVED_TOTALS,
-  CASES_DIR,
   approvedCaseIds,
-  caseIdsForSplit,
-  loadAllCases,
-  loadBenchmarkCase,
   validateBenchmark,
   validateCase,
-} from '@stateproof/benchmark';
+} from '@stateproof/benchmark/validate';
 
 const cases = loadAllCases();
 const report = validateBenchmark();

@@ -124,6 +124,7 @@ async function main(): Promise<void> {
   const score = scorePredictions({
     predictionPath: run.paths.predictionPath,
     artifactsDir: options.artifactsDir,
+    manifestPath: run.paths.manifestPath,
   });
 
   process.stdout.write(`report:      ${score.reportMarkdownPath}\n\n`);

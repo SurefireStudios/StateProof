@@ -4,12 +4,16 @@ import {
   type BenchmarkMetrics,
   type CaseResult,
   CaseResultSchema,
+  type EvaluationRunManifest,
+  EvaluationRunManifestSchema,
   type ScoredPrediction,
   computeMetrics,
   formatRate,
   toJsonValue,
 } from '@stateproof/core';
-import { CASES_DIR, datasetHash, loadAllCases, loadGoldBundle } from '@stateproof/benchmark';
+import { CASES_DIR, caseIdsForSplit } from '@stateproof/benchmark';
+// Deliberate, explicit gold import: this is the scoring layer.
+import { datasetHash, loadAllCases, loadGoldBundle } from '@stateproof/benchmark/gold';
 import { type BaselinePredictionFile, BaselinePredictionFileSchema } from './schema';
 
 /**
@@ -24,6 +28,9 @@ export interface ScoreOptions {
   readonly predictionPath: string;
   readonly artifactsDir: string;
   readonly casesDir?: string;
+  readonly splitsDir?: string;
+  /** Manifest written by the prediction phase, completed here after scoring. */
+  readonly manifestPath?: string;
 }
 
 export interface ScoreResult {
@@ -35,6 +42,32 @@ export interface ScoreResult {
   readonly datasetHash: string;
   /** Cases whose model output never validated, so they have no verdict. */
   readonly unparsedCaseIds: string[];
+  /** The completed manifest, when a manifest path was supplied. */
+  readonly manifest: EvaluationRunManifest | null;
+}
+
+/**
+ * Fills in the two fields the prediction phase could not know: the
+ * gold-inclusive dataset hash and the report path. Everything else was written
+ * before any gold file was opened and is left untouched.
+ */
+export function finalizeManifest(
+  manifestPath: string,
+  patch: { datasetHash: string; reportPath: string },
+): EvaluationRunManifest {
+  if (!existsSync(manifestPath)) {
+    throw new Error(`no run manifest at ${manifestPath}`);
+  }
+  const existing = EvaluationRunManifestSchema.parse(
+    JSON.parse(readFileSync(manifestPath, 'utf8')),
+  );
+  const completed = EvaluationRunManifestSchema.parse({
+    ...existing,
+    datasetHash: patch.datasetHash,
+    reportPath: patch.reportPath,
+  });
+  writeJson(manifestPath, completed);
+  return completed;
 }
 
 function writeJson(filePath: string, value: unknown): void {
@@ -49,6 +82,54 @@ export function readPredictionFile(predictionPath: string): BaselinePredictionFi
   return BaselinePredictionFileSchema.parse(JSON.parse(readFileSync(predictionPath, 'utf8')));
 }
 
+/** Raised when a prediction file does not cover exactly its declared split. */
+export class SplitCoverageError extends Error {
+  public readonly problems: string[];
+
+  public constructor(problems: string[]) {
+    super(`prediction file does not match its declared split:\n  - ${problems.join('\n  - ')}`);
+    this.name = 'SplitCoverageError';
+    this.problems = problems;
+  }
+}
+
+/**
+ * A report may only be produced for exactly the split it claims to cover.
+ *
+ * A silently missing case shrinks the denominator, a duplicate double-counts a
+ * verdict, and a case from the other split is a locked-data leak. All three
+ * would change a headline number without changing anything visible in it, so
+ * they are refused rather than reported.
+ */
+export function assertSplitCoverage(
+  predictionFile: BaselinePredictionFile,
+  splitsDir?: string,
+): void {
+  const expected = caseIdsForSplit(predictionFile.split, splitsDir);
+  const otherSplit = predictionFile.split === 'development' ? 'locked' : 'development';
+  const foreign = new Set(caseIdsForSplit(otherSplit, splitsDir));
+  const problems: string[] = [];
+
+  const seen = new Map<string, number>();
+  for (const entry of predictionFile.predictions) {
+    seen.set(entry.caseId, (seen.get(entry.caseId) ?? 0) + 1);
+  }
+
+  for (const [caseId, count] of [...seen].sort()) {
+    if (count > 1) problems.push(`${caseId} appears ${count} times`);
+    if (foreign.has(caseId)) {
+      problems.push(`${caseId} belongs to the ${otherSplit} split`);
+    } else if (!expected.includes(caseId)) {
+      problems.push(`${caseId} is not part of the ${predictionFile.split} split`);
+    }
+  }
+  for (const caseId of expected) {
+    if (!seen.has(caseId)) problems.push(`${caseId} has no prediction`);
+  }
+
+  if (problems.length > 0) throw new SplitCoverageError(problems.sort());
+}
+
 /**
  * An unparsed prediction is scored as NEEDS_REVIEW: the system did not produce
  * a decision, which is incorrect under the primary metric but is not an unsafe
@@ -57,6 +138,7 @@ export function readPredictionFile(predictionPath: string): BaselinePredictionFi
 export function scorePredictions(options: ScoreOptions): ScoreResult {
   const casesDir = options.casesDir ?? CASES_DIR;
   const predictionFile = readPredictionFile(options.predictionPath);
+  assertSplitCoverage(predictionFile, options.splitsDir);
 
   const caseResults: CaseResult[] = [];
   const scored: ScoredPrediction[] = [];
@@ -138,6 +220,17 @@ export function scorePredictions(options: ScoreOptions): ScoreResult {
     'utf8',
   );
 
+  const manifest =
+    options.manifestPath === undefined
+      ? null
+      : finalizeManifest(options.manifestPath, {
+          datasetHash: fullDatasetHash,
+          reportPath: path
+            .relative(options.artifactsDir, reportMarkdownPath)
+            .split(path.sep)
+            .join('/'),
+        });
+
   return {
     caseResults,
     metrics,
@@ -145,6 +238,7 @@ export function scorePredictions(options: ScoreOptions): ScoreResult {
     reportMarkdownPath,
     datasetHash: fullDatasetHash,
     unparsedCaseIds,
+    manifest,
   };
 }
 

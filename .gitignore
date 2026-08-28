@@ -9,8 +9,11 @@ build/
 
 # environment
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+# stray copies (e.g. Windows "Copy" duplicates) can contain a real key
+.env*Copy*
+*.env
 
 # generated run output (artifacts are committed selectively, never automatically)
 artifacts/tmp/
@@ -22,6 +25,9 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# local-only Claude Code settings (contains the .env read-deny rule)
+.claude/settings.local.json
 
 # local archives / backups
 *.zip

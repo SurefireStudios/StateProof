@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { canonicalJson, toJsonValue } from '@stateproof/core';
 import {
-  datasetHash,
   hashAgentVisibleCase,
   loadAgentVisibleCase,
-  loadAllCases,
-  loadBenchmarkCase,
   parseTrajectoryJsonl,
 } from '@stateproof/benchmark';
+import { datasetHash, loadAllCases, loadBenchmarkCase } from '@stateproof/benchmark/gold';
 
 describe('deterministic loading', () => {
   it('produces an identical agent-visible hash on every load', () => {

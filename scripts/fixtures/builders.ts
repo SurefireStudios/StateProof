@@ -93,13 +93,23 @@ export function snapshot(
 export class TrajectoryBuilder {
   private readonly events: TraceEvent[] = [];
   private callCount = 0;
+  /** Explicit per-sequence timestamps, for reproducing a hand-authored case. */
+  private readonly timestamps: readonly string[] | undefined;
+
+  public constructor(timestamps?: readonly string[]) {
+    this.timestamps = timestamps;
+  }
 
   private next(): { seq: number; eventId: string; timestamp: string } {
     const seq = this.events.length + 1;
+    const explicit = this.timestamps?.[seq - 1];
+    if (this.timestamps !== undefined && explicit === undefined) {
+      throw new Error(`no explicit timestamp supplied for seq ${seq}`);
+    }
     return {
       seq,
       eventId: `EV-${String(seq).padStart(3, '0')}`,
-      timestamp: timestampForSeq(seq),
+      timestamp: explicit ?? timestampForSeq(seq),
     };
   }
 

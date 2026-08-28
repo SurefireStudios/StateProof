@@ -3,12 +3,14 @@ import { APPROVED_TOTALS, approvedCaseIds } from './approved-cases';
 import { hashAgentVisibleCase, loadAgentVisibleCase } from '../load-agent-input';
 import { datasetHash, loadAllCases, loadSplitManifest } from '../load-gold';
 import { CASES_DIR } from '../paths';
+import { validateContractConsistency } from './contract-consistency';
 import { validateSemantics } from './semantic';
 import { validateStructure } from './structural';
 import type { BenchmarkValidationReport, CaseValidationReport, ValidationIssue } from './types';
 
 export * from './types';
 export * from './approved-cases';
+export { validateContractConsistency } from './contract-consistency';
 export { validateStructure } from './structural';
 export { computeVerdict, evaluationContextFor, validateSemantics } from './semantic';
 
@@ -149,7 +151,7 @@ export function validateSplits(cases: readonly BenchmarkCase[]): ValidationIssue
 export function validateBenchmark(casesDir: string = CASES_DIR): BenchmarkValidationReport {
   const cases = loadAllCases(casesDir);
   const caseReports = cases.map((benchmarkCase) => validateCase(benchmarkCase, casesDir));
-  const issues = validateSplits(cases);
+  const issues = [...validateSplits(cases), ...validateContractConsistency(cases)];
   const ok =
     issues.every((item) => item.severity !== 'error') &&
     caseReports.every((report) => report.issues.every((item) => item.severity !== 'error'));

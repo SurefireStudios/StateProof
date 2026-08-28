@@ -12,7 +12,7 @@
     {
       "requirementId": "A-OUT-02",
       "expectedStatus": "verified",
-      "rationale": "MSG-5501 was addressed to dana@example.com, has status sent with a sentAt timestamp, and references refund REF-8801."
+      "rationale": "MSG-5501 was addressed to dana@example.com, has status sent, and references refund REF-8801."
     },
     {
       "requirementId": "A-PROC-01",

@@ -11,8 +11,14 @@
           "customerName": "Dana Whitfield",
           "customerEmail": "dana@example.com",
           "status": "delivered",
-          "total": { "amount": "125.00", "currency": "USD" },
-          "refundedTotal": { "amount": "0.00", "currency": "USD" },
+          "total": {
+            "amount": "125.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
           "placedAt": "2025-02-18T14:22:00.000Z",
           "updatedAt": "2025-02-21T10:05:00.000Z"
         }
@@ -23,8 +29,14 @@
           "customerName": "Marcus Bell",
           "customerEmail": "marcus@example.com",
           "status": "processing",
-          "total": { "amount": "89.50", "currency": "USD" },
-          "refundedTotal": { "amount": "0.00", "currency": "USD" },
+          "total": {
+            "amount": "89.50",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
           "placedAt": "2025-03-01T11:40:00.000Z",
           "updatedAt": "2025-03-01T11:40:00.000Z"
         }
@@ -35,8 +47,14 @@
           "customerName": "Priya Raman",
           "customerEmail": "priya@example.com",
           "status": "delivered",
-          "total": { "amount": "240.00", "currency": "USD" },
-          "refundedTotal": { "amount": "0.00", "currency": "USD" },
+          "total": {
+            "amount": "240.00",
+            "currency": "USD"
+          },
+          "refundedTotal": {
+            "amount": "0.00",
+            "currency": "USD"
+          },
           "placedAt": "2025-02-25T08:15:00.000Z",
           "updatedAt": "2025-02-28T16:02:00.000Z"
         }

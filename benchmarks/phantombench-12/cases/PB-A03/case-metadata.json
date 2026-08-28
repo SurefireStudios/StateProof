@@ -12,7 +12,7 @@
   "reviewedAt": "2025-03-04T12:00:00.000Z",
   "notes": [
     "Human-only file. Never loaded by the agent input reader.",
-    "Canonical source: 04_PHANTOMBENCH_12_CASE_MATRIX.md, Task Template A, case PB-A03 (development split, gold FAIL, isolated failure A-PROC-01).",
+    "Canonical source: 04_PHANTOMBENCH_12_CASE_MATRIX.md, case PB-A03.",
     "This is the signature PhantomBench failure: state-only checking passes, response-only checking passes, and only trace ordering exposes the violation.",
     "The refund call carries approvalReference: refund:ORD-1042 deliberately, so a verifier that trusts tool arguments instead of trace order will miss the fault."
   ]

@@ -37,7 +37,16 @@ export const EvaluationRunManifestSchema = z
     packageLockHash: Sha256Schema.nullable(),
 
     datasetName: NonEmptyStringSchema,
-    datasetHash: Sha256Schema,
+    /**
+     * Fingerprint of exactly what the model was shown. Written during the
+     * prediction phase, which never opens a gold file.
+     */
+    agentVisibleDatasetHash: Sha256Schema,
+    /**
+     * Gold-inclusive dataset fingerprint. Null until the scoring phase fills
+     * it in; the two are kept separate so they cannot be conflated.
+     */
+    datasetHash: Sha256Schema.nullable(),
     splits: z.array(SplitSchema).min(1),
     caseIds: z.array(CaseIdSchema).min(1),
 

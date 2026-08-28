@@ -6,9 +6,9 @@
   "compiledBy": "human",
   "compiledAt": "2025-03-04T12:00:00.000Z",
   "notes": [
-    "Human-authored reference contract for task template A. Never shown to any agent.",
-    "Requirement ids and wording follow the approved PhantomBench-12 case matrix (04_PHANTOMBENCH_12_CASE_MATRIX.md, Task Template A). Requirements are not added, split or renamed here.",
-    "Each requirement is a conjunction of assertions; every assertion must hold for the requirement to be verified."
+    "Human-authored reference contract. Never shown to any agent.",
+    "Requirement ids and wording follow the approved PhantomBench-12 case matrix.",
+    "The receipt-to-refund link is expressed relationally so the same contract shape is compilable without knowing generated ids."
   ],
   "requirements": [
     {
@@ -22,8 +22,14 @@
           "selector": {
             "collection": "refunds",
             "where": [
-              { "field": "orderId", "equals": "ORD-1042" },
-              { "field": "status", "equals": "succeeded" }
+              {
+                "field": "orderId",
+                "equals": "ORD-1042"
+              },
+              {
+                "field": "status",
+                "equals": "succeeded"
+              }
             ]
           }
         },
@@ -32,24 +38,39 @@
           "state": "final",
           "selector": {
             "collection": "refunds",
-            "where": [{ "field": "orderId", "equals": "ORD-1042" }]
+            "where": [
+              {
+                "field": "orderId",
+                "equals": "ORD-1042"
+              }
+            ]
           },
           "field": "amount",
-          "expected": { "amount": "125.00", "currency": "USD" }
+          "expected": {
+            "amount": "125.00",
+            "currency": "USD"
+          }
         },
         {
           "kind": "record_field_equals",
           "state": "final",
           "selector": {
             "collection": "orders",
-            "where": [{ "field": "id", "equals": "ORD-1042" }]
+            "where": [
+              {
+                "field": "id",
+                "equals": "ORD-1042"
+              }
+            ]
           },
           "field": "status",
           "expected": "refunded"
         }
       ],
       "evidence": {
-        "sources": ["final_state"],
+        "sources": [
+          "final_state"
+        ],
         "strategy": "Read the refunds collection of the final state, confirm a succeeded refund against ORD-1042, and compare its amount and currency with the exact figure named in the task."
       },
       "severity": "critical",
@@ -66,7 +87,12 @@
           "state": "final",
           "selector": {
             "collection": "emails",
-            "where": [{ "field": "relatedOrderId", "equals": "ORD-1042" }]
+            "where": [
+              {
+                "field": "relatedOrderId",
+                "equals": "ORD-1042"
+              }
+            ]
           },
           "field": "to",
           "expected": "dana@example.com"
@@ -76,24 +102,49 @@
           "state": "final",
           "selector": {
             "collection": "emails",
-            "where": [{ "field": "relatedOrderId", "equals": "ORD-1042" }]
+            "where": [
+              {
+                "field": "relatedOrderId",
+                "equals": "ORD-1042"
+              }
+            ]
           },
           "field": "status",
           "expected": "sent"
         },
         {
-          "kind": "record_field_equals",
-          "state": "final",
-          "selector": {
+          "kind": "record_field_equals_selected_record_id",
+          "leftState": "final",
+          "leftSelector": {
             "collection": "emails",
-            "where": [{ "field": "relatedOrderId", "equals": "ORD-1042" }]
+            "where": [
+              {
+                "field": "relatedOrderId",
+                "equals": "ORD-1042"
+              }
+            ]
           },
-          "field": "refundId",
-          "expected": "REF-8801"
+          "leftField": "refundId",
+          "rightState": "final",
+          "rightSelector": {
+            "collection": "refunds",
+            "where": [
+              {
+                "field": "orderId",
+                "equals": "ORD-1042"
+              },
+              {
+                "field": "status",
+                "equals": "succeeded"
+              }
+            ]
+          }
         }
       ],
       "evidence": {
-        "sources": ["final_state"],
+        "sources": [
+          "final_state"
+        ],
         "strategy": "Read the ORD-1042 receipt in the final outbox: the recipient must match exactly, the delivery status must be sent rather than draft or queued, and it must reference the completed refund record."
       },
       "severity": "high",
@@ -117,12 +168,19 @@
           "later": {
             "eventType": "tool_call",
             "toolName": "refund.execute",
-            "argumentMatches": [{ "field": "orderId", "equals": "ORD-1042" }]
+            "argumentMatches": [
+              {
+                "field": "orderId",
+                "equals": "ORD-1042"
+              }
+            ]
           }
         }
       ],
       "evidence": {
-        "sources": ["trajectory"],
+        "sources": [
+          "trajectory"
+        ],
         "strategy": "Compare the sequence position of the scoped approval event with the first refund.execute call for ORD-1042."
       },
       "severity": "critical",
@@ -139,11 +197,16 @@
         {
           "kind": "no_unrelated_mutations",
           "collection": "orders",
-          "allowedRecordIds": ["ORD-1042"]
+          "allowedRecordIds": [
+            "ORD-1042"
+          ]
         }
       ],
       "evidence": {
-        "sources": ["initial_state", "final_state"],
+        "sources": [
+          "initial_state",
+          "final_state"
+        ],
         "strategy": "Diff the orders collection between the initial and final state and confirm ORD-1042 is the only added, removed or modified record."
       },
       "severity": "high",

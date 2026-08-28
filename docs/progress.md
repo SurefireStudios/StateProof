@@ -122,6 +122,34 @@ Against `07_REVIEW_GATE_CHECKLIST.md`:
 | Runtime and token/cost data reported or marked unavailable | Yes; cost is `null` until a live run |
 | No final result claim written yet | Correct — none exists |
 
+## Gate 2.5 — integrity fixes complete, live baseline still blocked
+
+Source-audit corrections applied before the first real run. Details and
+reasoning in [`decisions/0003-gate-2-5.md`](decisions/0003-gate-2-5.md).
+
+| Part | Change |
+| --- | --- |
+| A | Gold isolation is a real package boundary: `@stateproof/benchmark`, `/gold`, `/validate`. A test proves the gold names are absent from the agent-facing root. |
+| B1 | `PB-A03` moved under the generator so all four Template A cases use the relational refund reference. Agent-visible hash unchanged (`ccb483bdd838`). |
+| B2 | `C-OUT-02` is one assertion requiring both note fields on the *same* note. Two decoy notes no longer satisfy it. |
+| B3 | `C-OUT-01` identifies the notice by the prior refund `RF-8801` the task names, so an unrelated email to the same customer cannot stand in. |
+| B4 | `validateContractConsistency` requires cases of one template to share requirement ids and assertion shapes. |
+| C | Replay write effects are transactional: staged on a clone, committed only if the whole effect succeeds. |
+| D1 | Scoring refuses unless the prediction file covers exactly its declared split — no missing, duplicate, extra or cross-split case. |
+| D2 | The manifest carries `agentVisibleDatasetHash`, a real `packageLockHash`, and a `datasetHash`/`reportPath` completed after scoring. |
+| D3 | `estimatedCostUsd` stays `null`. |
+| E | `.env` is loaded via pinned `dotenv`. StateProof reads **`STATEPROOF_ANTHROPIC_API_KEY`**, never `ANTHROPIC_API_KEY`. |
+| F | `pnpm benchmark:smoke-model` — one tiny structured request, no benchmark data, no artifacts. |
+
+236 tests across 17 files. `pnpm typecheck`, `pnpm test` and
+`pnpm benchmark:validate` all pass.
+
+**Part G is blocked.** `STATEPROOF_ANTHROPIC_API_KEY` is not configured and no
+`.env` exists, so `pnpm benchmark:smoke-model` and
+`pnpm benchmark:baseline -- --split development` both exit 2 and write nothing.
+No baseline metric exists, no strategic warning condition can be evaluated, and
+`IMPROVEMENT_CHANGELOG.md` correctly still has no rows.
+
 ## Gates 3–5 — not started
 
 No Contract Agent, Evidence Agent, Auditor, StateProof workflow, dashboard, or

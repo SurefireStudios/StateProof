@@ -508,12 +508,29 @@ export function templateCContract(caseId: string, taskId: string): TaskContract 
         description:
           'A sent duplicate-refund notice exists with recipient exactly lee@example.com.',
         assertions: [
+          // The notice is identified by the prior refund the task names, so an
+          // unrelated message to the same customer about the same order cannot
+          // stand in for it.
+          {
+            kind: 'record_exists',
+            state: 'final',
+            selector: {
+              collection: 'emails',
+              where: [
+                { field: 'relatedOrderId', equals: 'ORD-3091' },
+                { field: 'refundId', equals: 'RF-8801' },
+              ],
+            },
+          },
           {
             kind: 'record_field_equals',
             state: 'final',
             selector: {
               collection: 'emails',
-              where: [{ field: 'relatedOrderId', equals: 'ORD-3091' }],
+              where: [
+                { field: 'relatedOrderId', equals: 'ORD-3091' },
+                { field: 'refundId', equals: 'RF-8801' },
+              ],
             },
             field: 'to',
             expected: 'lee@example.com',
@@ -523,7 +540,10 @@ export function templateCContract(caseId: string, taskId: string): TaskContract 
             state: 'final',
             selector: {
               collection: 'emails',
-              where: [{ field: 'relatedOrderId', equals: 'ORD-3091' }],
+              where: [
+                { field: 'relatedOrderId', equals: 'ORD-3091' },
+                { field: 'refundId', equals: 'RF-8801' },
+              ],
             },
             field: 'status',
             expected: 'sent',
@@ -532,7 +552,7 @@ export function templateCContract(caseId: string, taskId: string): TaskContract 
         evidence: {
           sources: ['final_state'],
           strategy:
-            'Read the ORD-3091 notice in the final outbox and check the recipient and delivery status.',
+            'Find the ORD-3091 message that references the prior refund RF-8801 named in the task, then check its recipient and delivery status.',
         },
         severity: 'high',
         mustPass: true,
@@ -544,25 +564,24 @@ export function templateCContract(caseId: string, taskId: string): TaskContract 
         description:
           'The target support case contains the exact required note and prior refund ID RF-8801.',
         assertions: [
+          // One note must carry both facts. Two assertions could each be
+          // satisfied by a different note, which is not what the task asked
+          // for.
           {
             kind: 'record_array_contains_exact',
             state: 'final',
             selector: { collection: 'support_cases', where: [{ field: 'id', equals: 'SUP-3091' }] },
             field: 'notes',
-            element: [{ field: 'text', equals: TEMPLATE_C_NOTE_TEXT }],
-          },
-          {
-            kind: 'record_array_contains_exact',
-            state: 'final',
-            selector: { collection: 'support_cases', where: [{ field: 'id', equals: 'SUP-3091' }] },
-            field: 'notes',
-            element: [{ field: 'relatedRefundId', equals: 'RF-8801' }],
+            element: [
+              { field: 'text', equals: TEMPLATE_C_NOTE_TEXT },
+              { field: 'relatedRefundId', equals: 'RF-8801' },
+            ],
           },
         ],
         evidence: {
           sources: ['final_state'],
           strategy:
-            'Read the notes of support case SUP-3091 and confirm both the exact required text and the reference to the prior refund RF-8801.',
+            'Read the notes of support case SUP-3091 and confirm a single note carries both the exact required text and the reference to the prior refund RF-8801.',
         },
         severity: 'high',
         mustPass: true,

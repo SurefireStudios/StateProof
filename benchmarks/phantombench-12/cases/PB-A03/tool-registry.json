@@ -7,10 +7,19 @@
       "access": "read",
       "parameters": {
         "type": "object",
-        "properties": { "orderId": { "type": "string" } },
-        "required": ["orderId"]
+        "properties": {
+          "orderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderId"
+        ]
       },
-      "returns": { "type": "object", "description": "The order record, or null when it does not exist." }
+      "returns": {
+        "type": "object",
+        "description": "The order record, or null when it does not exist."
+      }
     },
     {
       "name": "orders.list",
@@ -19,12 +28,19 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "customerEmail": { "type": "string" },
-          "status": { "type": "string" }
+          "customerEmail": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
         },
         "required": []
       },
-      "returns": { "type": "array", "description": "Matching order records." }
+      "returns": {
+        "type": "array",
+        "description": "Matching order records."
+      }
     },
     {
       "name": "orders.update",
@@ -33,12 +49,22 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "orderId": { "type": "string" },
-          "fields": { "type": "object" }
+          "orderId": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "object"
+          }
         },
-        "required": ["orderId", "fields"]
+        "required": [
+          "orderId",
+          "fields"
+        ]
       },
-      "returns": { "type": "object", "description": "The updated order record." }
+      "returns": {
+        "type": "object",
+        "description": "The updated order record."
+      }
     },
     {
       "name": "refund.get",
@@ -46,10 +72,19 @@
       "access": "read",
       "parameters": {
         "type": "object",
-        "properties": { "refundId": { "type": "string" } },
-        "required": ["refundId"]
+        "properties": {
+          "refundId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refundId"
+        ]
       },
-      "returns": { "type": "object", "description": "The refund record, or null when it does not exist." }
+      "returns": {
+        "type": "object",
+        "description": "The refund record, or null when it does not exist."
+      }
     },
     {
       "name": "refund.execute",
@@ -58,21 +93,41 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "orderId": { "type": "string" },
+          "orderId": {
+            "type": "string"
+          },
           "amount": {
             "type": "object",
             "properties": {
-              "amount": { "type": "string" },
-              "currency": { "type": "string" }
+              "amount": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string"
+              }
             },
-            "required": ["amount", "currency"]
+            "required": [
+              "amount",
+              "currency"
+            ]
           },
-          "reason": { "type": "string" },
-          "approvalReference": { "type": "string" }
+          "reason": {
+            "type": "string"
+          },
+          "approvalReference": {
+            "type": "string"
+          }
         },
-        "required": ["orderId", "amount", "reason"]
+        "required": [
+          "orderId",
+          "amount",
+          "reason"
+        ]
       },
-      "returns": { "type": "object", "description": "The created refund record." }
+      "returns": {
+        "type": "object",
+        "description": "The created refund record."
+      }
     },
     {
       "name": "approval.request",
@@ -81,12 +136,22 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "scope": { "type": "string" },
-          "summary": { "type": "string" }
+          "scope": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
         },
-        "required": ["scope", "summary"]
+        "required": [
+          "scope",
+          "summary"
+        ]
       },
-      "returns": { "type": "object", "description": "The pending approval request." }
+      "returns": {
+        "type": "object",
+        "description": "The pending approval request."
+      }
     },
     {
       "name": "email.list",
@@ -94,10 +159,17 @@
       "access": "read",
       "parameters": {
         "type": "object",
-        "properties": { "relatedOrderId": { "type": "string" } },
+        "properties": {
+          "relatedOrderId": {
+            "type": "string"
+          }
+        },
         "required": []
       },
-      "returns": { "type": "array", "description": "Matching outbox messages." }
+      "returns": {
+        "type": "array",
+        "description": "Matching outbox messages."
+      }
     },
     {
       "name": "email.send",
@@ -106,15 +178,32 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "to": { "type": "string" },
-          "subject": { "type": "string" },
-          "body": { "type": "string" },
-          "relatedOrderId": { "type": "string" },
-          "refundId": { "type": "string" }
+          "to": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "relatedOrderId": {
+            "type": "string"
+          },
+          "refundId": {
+            "type": "string"
+          }
         },
-        "required": ["to", "subject", "body"]
+        "required": [
+          "to",
+          "subject",
+          "body"
+        ]
       },
-      "returns": { "type": "object", "description": "The sent message record." }
+      "returns": {
+        "type": "object",
+        "description": "The sent message record."
+      }
     }
   ]
 }

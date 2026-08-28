@@ -11,8 +11,8 @@ import { type CaseSpec, buildCaseSpecs } from './fixtures/cases';
 import { snapshot } from './fixtures/builders';
 
 /**
- * Regenerates the PhantomBench fixture files for every case except PB-A03,
- * which is frozen and authored by hand.
+ * Regenerates every PhantomBench fixture file from `scripts/fixtures/`.
+ * PB-A03 keeps its original hand-authored timestamps and agent-visible content.
  *
  * `final-state.json` is produced by replaying the trajectory against
  * `initial-state.json`, so every fixture is derivable from its own write
@@ -27,8 +27,11 @@ const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const CASES_DIR = path.join(REPO_ROOT, 'benchmarks', 'phantombench-12', 'cases');
 const SPLITS_DIR = path.join(REPO_ROOT, 'benchmarks', 'phantombench-12', 'splits');
 
-/** PB-A03 is the approved Gate 1 fixture; it is never rewritten. */
-const FROZEN_CASE_ID = 'PB-A03';
+/**
+ * PB-A03's tool registry is the canonical Template A registry; it is read from
+ * disk rather than re-declared so every Template A case shares one definition.
+ */
+const REGISTRY_SOURCE_CASE_ID = 'PB-A03';
 
 function writeJson(filePath: string, value: unknown): void {
   writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
@@ -40,7 +43,7 @@ function writeJsonl(filePath: string, rows: readonly unknown[]): void {
 
 function frozenRegistry() {
   const raw = readFileSync(
-    path.join(CASES_DIR, FROZEN_CASE_ID, 'tool-registry.json'),
+    path.join(CASES_DIR, REGISTRY_SOURCE_CASE_ID, 'tool-registry.json'),
     'utf8',
   );
   return ToolRegistrySchema.parse(JSON.parse(raw) as JsonValue);
@@ -55,7 +58,9 @@ function finalStateFor(spec: CaseSpec, initialState: StateSnapshot): StateSnapsh
     throw new Error(`[${spec.caseId}] replay reported issues:\n${detail}`);
   }
   const lastEvent = spec.trajectory[spec.trajectory.length - 1];
-  const capturedAt = lastEvent === undefined ? initialState.capturedAt : lastEvent.timestamp;
+  const capturedAt =
+    spec.finalCapturedAt ??
+    (lastEvent === undefined ? initialState.capturedAt : lastEvent.timestamp);
   return snapshot(spec.caseId, 'final', replay.collections, capturedAt);
 }
 
@@ -87,7 +92,10 @@ function writeCase(spec: CaseSpec): void {
 }
 
 function writeSplits(specs: readonly CaseSpec[]): void {
-  const development = [FROZEN_CASE_ID, ...specs.filter((s) => s.metadata.split === 'development').map((s) => s.caseId)].sort();
+  const development = specs
+    .filter((s) => s.metadata.split === 'development')
+    .map((s) => s.caseId)
+    .sort();
   const locked = specs.filter((s) => s.metadata.split === 'locked').map((s) => s.caseId).sort();
 
   writeJson(path.join(SPLITS_DIR, 'development.json'), {
@@ -111,14 +119,9 @@ function writeSplits(specs: readonly CaseSpec[]): void {
 
 function main(): void {
   const specs = buildCaseSpecs(frozenRegistry());
-  for (const spec of specs) {
-    if (spec.caseId === FROZEN_CASE_ID) {
-      throw new Error(`${FROZEN_CASE_ID} is frozen and must not be regenerated`);
-    }
-    writeCase(spec);
-  }
+  for (const spec of specs) writeCase(spec);
   writeSplits(specs);
-  process.stdout.write(`\n${specs.length} case(s) generated; ${FROZEN_CASE_ID} left untouched.\n`);
+  process.stdout.write(`\n${specs.length} case(s) generated.\n`);
 }
 
 main();

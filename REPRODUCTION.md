@@ -61,6 +61,24 @@ re-derives every final state independently.
 
 ## Requires model credentials
 
+Credentials go in a git-ignored `.env` at the repository root:
+
+```text
+STATEPROOF_ANTHROPIC_API_KEY=...
+```
+
+**Deliberately not `ANTHROPIC_API_KEY`.** That variable belongs to a Claude
+Code session's own authentication; StateProof never reads it, and never writes
+to it.
+
+```bash
+pnpm benchmark:smoke-model
+```
+
+One tiny structured request against the configured provider and model. It
+reads no benchmark case and writes nothing, so an invalid API configuration
+surfaces in seconds instead of eight cases into a real run.
+
 ```bash
 pnpm benchmark:baseline -- --split development
 ```
@@ -68,23 +86,29 @@ pnpm benchmark:baseline -- --split development
 Runs the fair baseline over the eight development cases, writes prediction
 artifacts, then scores them against gold in a separate phase.
 
-**This command has not been run.** No credentials are configured in this
-environment, so it exits with status 2 and this message, having written
+**Neither command has been run.** No credentials are configured in this
+environment, so both exit with status 2 and this message, having written
 nothing:
 
 ```text
 No model credentials are configured, so no live run can be made.
 
-Set ANTHROPIC_API_KEY in your shell or in a local .env (see .env.example),
-or sign in with `ant auth login`, then re-run the command.
+Set STATEPROOF_ANTHROPIC_API_KEY in a local .env at the repository root (see
+.env.example). .env is git-ignored and is loaded automatically.
+
+StateProof deliberately does not read ANTHROPIC_API_KEY: that variable
+belongs to your Claude Code session's own authentication.
 
 Nothing has been written. A baseline run is never simulated: a report with
 no real model behind it would be worse than no report.
 ```
 
-To run it: set `ANTHROPIC_API_KEY` and re-run. Provider `anthropic`, model
-`claude-opus-5`, effort `high`, max tokens 16000, 120s timeout, one schema
-repair retry. Expect eight model calls plus at most one repair each; runtime is
+To run them: put `STATEPROOF_ANTHROPIC_API_KEY` in `.env` and re-run. Provider
+`anthropic`, model `claude-opus-5`, effort `high`, max tokens 16000, 120s
+timeout, one schema repair retry. `STATEPROOF_MODEL_ID`,
+`STATEPROOF_MODEL_EFFORT`, `STATEPROOF_MODEL_MAX_TOKENS` and
+`STATEPROOF_MODEL_TIMEOUT_MS` override those defaults and are recorded at their
+actual values in the run manifest. Expect eight model calls plus at most one repair each; runtime is
 dominated by the provider and the payloads are large (full trajectory plus both
 state snapshots per case). Cost is recorded from real usage in the run
 manifest; nothing is estimated in advance.

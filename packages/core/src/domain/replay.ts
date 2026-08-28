@@ -392,11 +392,24 @@ export function replayTrajectory(
     const declaredEffects = REFUND_OPS_WRITE_EFFECTS[event.toolName];
     if (declaredEffects !== undefined && declaredEffects.length === 0) continue;
 
+    // Effects are transactional: they run against a clone and are committed
+    // only if the whole effect succeeds. A validation that fails halfway
+    // through must not leave a half-created record behind.
     const before = recordFingerprints(collections);
-    const applied = applyEffect({ collections, call: event, result: outcome.payload, issues });
-    if (!applied) continue;
+    const staged = JSON.parse(JSON.stringify(collections)) as MutableCollections;
+    const effectIssues: ReplayIssue[] = [];
+    const applied = applyEffect({
+      collections: staged,
+      call: event,
+      result: outcome.payload,
+      issues: effectIssues,
+    });
+    if (!applied) {
+      issues.push(...effectIssues);
+      continue;
+    }
 
-    const touched = changedRefs(before, recordFingerprints(collections));
+    const touched = changedRefs(before, recordFingerprints(staged));
     if (touched.length === 0) {
       issues.push({
         kind: 'no_effect',
@@ -410,7 +423,7 @@ export function replayTrajectory(
     const expected = new Set(expectedTouchedRefs(event, outcome.payload));
     const unexpected = touched.filter((ref) => !expected.has(ref));
     if (unexpected.length > 0) {
-      issues.push({
+      effectIssues.push({
         kind: 'unexpected_effect',
         message: `seq ${event.seq}: "${event.toolName}" also changed ${unexpected.join(', ')}`,
         seq: event.seq,
@@ -418,12 +431,22 @@ export function replayTrajectory(
     }
     const missing = [...expected].filter((ref) => !touched.includes(ref));
     if (missing.length > 0) {
-      issues.push({
+      effectIssues.push({
         kind: 'no_effect',
         message: `seq ${event.seq}: "${event.toolName}" did not change ${missing.join(', ')}`,
         seq: event.seq,
       });
     }
+
+    if (effectIssues.length > 0) {
+      // Roll back: the staged clone is discarded and `collections` is untouched.
+      issues.push(...effectIssues);
+      continue;
+    }
+
+    // Commit the staged clone.
+    for (const key of Object.keys(collections)) delete collections[key];
+    for (const [key, records] of Object.entries(staged)) collections[key] = records;
     appliedWrites.push(event.seq);
   }
 

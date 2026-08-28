@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "benchmark:validate": "tsx packages/benchmark/src/cli/validate.ts",
+    "benchmark:smoke-model": "tsx packages/agents/src/cli/smoke-model.ts",
     "benchmark:baseline": "tsx packages/agents/src/cli/baseline.ts",
     "fixtures:generate": "tsx scripts/generate-fixtures.ts"
   },

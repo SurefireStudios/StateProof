@@ -49,14 +49,16 @@ pnpm install
 pnpm typecheck            # strict TypeScript across every package
 pnpm test                 # 188 tests, no network
 pnpm benchmark:validate   # deterministic validation of all 12 PhantomBench fixtures
-pnpm fixtures:generate    # rebuild the generated fixtures from their specs
+pnpm fixtures:generate    # rebuild every fixture from its spec
 ```
 
 All four run entirely offline. No API key is needed or read.
 
-`pnpm benchmark:baseline -- --split development` runs the fair baseline, and
-needs `ANTHROPIC_API_KEY`. Without it the command exits non-zero with an
-actionable message and writes nothing.
+`pnpm benchmark:smoke-model` and `pnpm benchmark:baseline -- --split development`
+need `STATEPROOF_ANTHROPIC_API_KEY` in a git-ignored `.env`. Without it both
+exit non-zero with an actionable message and write nothing. StateProof
+deliberately does not read `ANTHROPIC_API_KEY` — that belongs to a Claude Code
+session's own authentication.
 
 Still **not implemented**: `benchmark:stateproof`, `benchmark:report`,
 `reproduce`, `run:live`, `dev`. They are deliberately absent rather than

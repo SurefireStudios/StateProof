@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { diffSnapshots } from '@stateproof/core';
-import {
-  loadBenchmarkCase,
-  validateBenchmark,
-  validateCase,
-  validateSemantics,
-} from '@stateproof/benchmark';
+import { loadBenchmarkCase } from '@stateproof/benchmark/gold';
+import { validateBenchmark, validateCase, validateSemantics } from '@stateproof/benchmark/validate';
 
 const benchmarkCase = loadBenchmarkCase('PB-A03');
 const report = validateCase(benchmarkCase);
