@@ -41,3 +41,4 @@ apps/dashboard/dist/
 
 # release packages are built artifacts, not source
 release/
+apps/product/dist/

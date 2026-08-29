@@ -1,0 +1,23 @@
+{
+  "name": "product",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server/index.ts",
+    "build": "tsx src/build.ts",
+    "start": "tsx src/server/index.ts"
+  },
+  "dependencies": {
+    "@stateproof/agents": "workspace:*",
+    "@stateproof/benchmark": "workspace:*",
+    "@stateproof/core": "workspace:*",
+    "@stateproof/submission": "workspace:*",
+    "zod": "3.25.76",
+    "@stateproof/model-provider": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "0.23.1",
+    "tsx": "4.19.2"
+  }
+}

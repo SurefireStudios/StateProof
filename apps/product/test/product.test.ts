@@ -1,0 +1,549 @@
+import { execFileSync } from 'node:child_process';
+import { deflateRawSync } from 'node:zlib';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { HARD_CASES_DIR, loadAgentVisibleCase } from '@stateproof/benchmark';
+import { buildProduct } from '../src/build';
+import { benchmarkView } from '../src/server/benchmark';
+import { compileStatus } from '../src/server/compile';
+import { DEMO_CASE_ID, demoSummary, verifyDemo } from '../src/server/demo';
+import { buildEvidencePack, renderEvidenceMarkdown } from '../src/server/evidence';
+import { ImportError, clearImports, importRun } from '../src/server/importer';
+import { clearRuns, getRun } from '../src/server/runs';
+import { ZipError, assertSafeEntryName, readZip } from '../src/server/zip';
+import { RunViewSchema, ImportResultSchema, BenchmarkViewSchema } from '../src/shared/types';
+
+/**
+ * The product is a surface over a frozen engine. These tests hold it to that:
+ * it must run the real verifier, never invent a number, never reach gold data,
+ * never write into the submitted artifacts, and treat every upload as hostile.
+ */
+
+const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
+const PRODUCT_SRC = path.join(REPO_ROOT, 'apps', 'product', 'src');
+const tempRoots: string[] = [];
+
+afterAll(() => {
+  for (const root of tempRoots) rmSync(root, { recursive: true, force: true });
+});
+
+afterEach(() => {
+  clearRuns();
+  clearImports();
+});
+
+function tempDir(prefix: string): string {
+  const root = mkdtempSync(path.join(tmpdir(), prefix));
+  tempRoots.push(root);
+  return root;
+}
+
+function sourceFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    return entry.isDirectory() ? sourceFiles(full) : [full];
+  });
+}
+
+// --- a minimal ZIP writer, so archive tests build real archives -------------
+function makeZip(entries: Array<{ name: string; contents: string; store?: boolean }>): Buffer {
+  const locals: Buffer[] = [];
+  const centrals: Buffer[] = [];
+  let offset = 0;
+
+  for (const entry of entries) {
+    const nameBuffer = Buffer.from(entry.name, 'utf8');
+    const raw = Buffer.from(entry.contents, 'utf8');
+    const stored = entry.store === true;
+    const data = stored ? raw : deflateRawSync(raw);
+
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(stored ? 0 : 8, 8);
+    local.writeUInt32LE(0, 14);
+    local.writeUInt32LE(data.length, 18);
+    local.writeUInt32LE(raw.length, 22);
+    local.writeUInt16LE(nameBuffer.length, 26);
+    locals.push(local, nameBuffer, data);
+
+    const central = Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt16LE(stored ? 0 : 8, 10);
+    central.writeUInt32LE(0, 16);
+    central.writeUInt32LE(data.length, 20);
+    central.writeUInt32LE(raw.length, 24);
+    central.writeUInt16LE(nameBuffer.length, 28);
+    central.writeUInt32LE(offset, 42);
+    centrals.push(central, nameBuffer);
+
+    offset += local.length + nameBuffer.length + data.length;
+  }
+
+  const centralBuffer = Buffer.concat(centrals);
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(entries.length, 8);
+  eocd.writeUInt16LE(entries.length, 10);
+  eocd.writeUInt32LE(centralBuffer.length, 12);
+  eocd.writeUInt32LE(offset, 16);
+  return Buffer.concat([Buffer.concat(locals), centralBuffer, eocd]);
+}
+
+/** A valid run package built from a committed development case. */
+function runPackageFiles(caseId = 'PBH-B01'): Record<string, string> {
+  const dir = path.join(HARD_CASES_DIR, caseId);
+  return {
+    'task.json': readFileSync(path.join(dir, 'task.json'), 'utf8'),
+    'tool-registry.json': readFileSync(path.join(dir, 'tool-registry.json'), 'utf8'),
+    'initial-state.json': readFileSync(path.join(dir, 'initial-state.json'), 'utf8'),
+    'final-state.json': readFileSync(path.join(dir, 'final-state.json'), 'utf8'),
+    'trajectory.jsonl': readFileSync(path.join(dir, 'trajectory.jsonl'), 'utf8'),
+    'final-response.txt': readFileSync(path.join(dir, 'final-response.txt'), 'utf8'),
+  };
+}
+
+// --- the demo ----------------------------------------------------------------
+
+describe('the built-in demo', () => {
+  it('uses a development case, never a locked one', () => {
+    const summary = demoSummary(REPO_ROOT);
+    expect(summary.caseId).toBe(DEMO_CASE_ID);
+    const registry = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'submission', 'reproduction-manifest.json'), 'utf8'),
+    ) as { replayCaseIds: string[]; lockedCaseIds: string[] };
+    expect(registry.replayCaseIds).toContain(summary.caseId);
+    expect(registry.lockedCaseIds).not.toContain(summary.caseId);
+  });
+
+  it('runs the real verifier and makes zero model calls', () => {
+    const run = verifyDemo(REPO_ROOT);
+    expect(RunViewSchema.parse(run)).toBeTruthy();
+    expect(run.modelCalls).toBe(0);
+    expect(run.modelTokens).toBe(0);
+    expect(run.mode).toBe('deterministic');
+    expect(run.contract.source).toBe('frozen-bundle');
+  });
+
+  it('reproduces the submitted StateProof verdict for that case', () => {
+    const run = verifyDemo(REPO_ROOT);
+    const registry = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'submission', 'reproduction-manifest.json'), 'utf8'),
+    ) as { replayTargetRunId: string; runs: Array<{ id: string; predictionPath: string }> };
+    const target = registry.runs.find((entry) => entry.id === registry.replayTargetRunId);
+    const submitted = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, target?.predictionPath ?? ''), 'utf8'),
+    ) as {
+      predictions: Array<{
+        caseId: string;
+        contractHash: string;
+        prediction: { verdict: string; requirementAssessments: Array<{ requirementKey: string; status: string }> };
+      }>;
+    };
+    const pinned = submitted.predictions.find((entry) => entry.caseId === DEMO_CASE_ID);
+    expect(pinned).toBeDefined();
+    expect(run.verdict).toBe(pinned?.prediction.verdict);
+    expect(run.contract.contractHash).toBe(pinned?.contractHash);
+    expect(run.requirements.map((requirement) => `${requirement.requirementKey}:${requirement.status}`)).toEqual(
+      pinned?.prediction.requirementAssessments.map(
+        (assessment) => `${assessment.requirementKey}:${assessment.status}`,
+      ),
+    );
+  });
+
+  it('resolves every evidence reference to something the inspector renders', () => {
+    const run = verifyDemo(REPO_ROOT);
+    const eventIds = new Set(run.timeline.map((event) => `ev-${event.eventId}`));
+    const diffIds = new Set(run.diff.map((collection) => `diff-${collection.collection}`));
+    const recordIds = new Set(
+      run.diff.flatMap((collection) =>
+        collection.changes.map((change) => `rec-${collection.collection}-${change.recordId}`),
+      ),
+    );
+    const rendered = new Set([...eventIds, ...diffIds, ...recordIds, 'timeline']);
+
+    const references = run.requirements.flatMap((requirement) => requirement.evidence);
+    expect(references.length).toBeGreaterThan(0);
+    for (const reference of references) {
+      expect(reference.targets.length, reference.ref).toBeGreaterThan(0);
+      expect(reference.targets.some((target) => rendered.has(target)), reference.ref).toBe(true);
+    }
+  });
+
+  it('keeps runs in memory only, and expires them', () => {
+    const run = verifyDemo(REPO_ROOT);
+    expect(getRun(run.runId)).not.toBeNull();
+    expect(getRun(run.runId, Date.now() + 3 * 60 * 60 * 1000)).toBeNull();
+  });
+});
+
+// --- evidence pack ------------------------------------------------------------
+
+describe('the evidence pack', () => {
+  it('exports JSON carrying the verdict and its support', () => {
+    const pack = buildEvidencePack(verifyDemo(REPO_ROOT));
+    expect(pack.schemaVersion).toBe('1.0.0');
+    expect(pack.verdict).toBe('FAIL');
+    expect(pack.requirements.length).toBeGreaterThan(0);
+    expect(pack.usage.verificationModelCalls).toBe(0);
+    expect(pack.limitations.join(' ')).toContain('12 synthetic cases');
+    expect(JSON.parse(JSON.stringify(pack))).toBeTruthy();
+  });
+
+  it('exports Markdown that names the failed requirements', () => {
+    const run = verifyDemo(REPO_ROOT);
+    const markdown = renderEvidenceMarkdown(buildEvidencePack(run));
+    expect(markdown).toContain('# Evidence pack');
+    expect(markdown).toContain('**Verdict: FAIL**');
+    for (const requirement of run.requirements.filter((entry) => entry.status === 'FAIL')) {
+      expect(markdown).toContain(requirement.requirementKey);
+    }
+    expect(markdown).toContain('## Event timeline');
+    expect(markdown).toContain('## State diff');
+  });
+
+  it('carries no credential, environment or local path', () => {
+    const serialized = JSON.stringify(buildEvidencePack(verifyDemo(REPO_ROOT)));
+    expect(serialized).not.toMatch(/sk-ant-/);
+    expect(serialized).not.toContain('STATEPROOF_ANTHROPIC_API_KEY');
+    expect(serialized).not.toMatch(/[A-Za-z]:\\Users\\/);
+    expect(serialized).not.toContain('goldVerdict');
+  });
+});
+
+// --- archive safety -----------------------------------------------------------
+
+describe('archive handling', () => {
+  it('rejects traversal, absolute and null-byte entry names', () => {
+    for (const name of ['../escape.json', 'a/../../escape.json', '/etc/passwd', 'C:\\windows\\x', 'a\0b']) {
+      expect(() => assertSafeEntryName(name), name).toThrow(ZipError);
+    }
+    expect(assertSafeEntryName('run/task.json')).toBe('run/task.json');
+  });
+
+  it('rejects a zip whose central directory names a traversal path', () => {
+    const zip = makeZip([{ name: '../../evil.json', contents: '{}' }]);
+    expect(() => readZip(zip)).toThrow(/path traversal/);
+  });
+
+  it('rejects too many entries', () => {
+    const zip = makeZip(
+      Array.from({ length: 8 }, (_, index) => ({ name: `f${index}.json`, contents: '{}' })),
+    );
+    expect(() => readZip(zip, { maxEntries: 4, maxEntryBytes: 1024, maxTotalBytes: 4096 })).toThrow(
+      /entries/,
+    );
+  });
+
+  it('rejects an oversized entry before decompressing it', () => {
+    const zip = makeZip([{ name: 'big.json', contents: 'x'.repeat(4096) }]);
+    expect(() => readZip(zip, { maxEntries: 8, maxEntryBytes: 128, maxTotalBytes: 8192 })).toThrow(
+      /more than 128 bytes/,
+    );
+  });
+
+  it('rejects something that is not an archive at all', () => {
+    expect(() => readZip(Buffer.from('not a zip'))).toThrow(/not a ZIP archive/);
+  });
+
+  it('reads a well-formed archive, stored or deflated', () => {
+    const zip = makeZip([
+      { name: 'a.json', contents: '{"a":1}' },
+      { name: 'b.json', contents: '{"b":2}', store: true },
+    ]);
+    const entries = readZip(zip);
+    expect(entries.map((entry) => entry.name)).toEqual(['a.json', 'b.json']);
+    expect(entries[1]?.contents.toString('utf8')).toBe('{"b":2}');
+  });
+});
+
+// --- import validation --------------------------------------------------------
+
+describe('importing a run', () => {
+  it('accepts a well-formed package from individual files', () => {
+    const { result } = importRun({ files: runPackageFiles() }, REPO_ROOT);
+    expect(ImportResultSchema.parse(result)).toBeTruthy();
+    expect(result.eventCount).toBeGreaterThan(0);
+    expect(result.collections).toContain('refunds');
+  });
+
+  it('accepts the same package as a zip, including a wrapping folder', () => {
+    const files = runPackageFiles();
+    const zip = makeZip(
+      Object.entries(files).map(([name, contents]) => ({ name: `run/${name}`, contents })),
+    );
+    const { result } = importRun({ zipBase64: zip.toString('base64') }, REPO_ROOT);
+    expect(result.eventCount).toBeGreaterThan(0);
+  });
+
+  it('names every missing file rather than failing generically', () => {
+    try {
+      importRun({ files: { 'task.json': runPackageFiles()['task.json'] } }, REPO_ROOT);
+      throw new Error('expected the import to fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ImportError);
+      const fields = (error as ImportError).problems.map((problem) => problem.field);
+      expect(fields).toContain('trajectory.jsonl');
+      expect(fields).toContain('final-state.json');
+    }
+  });
+
+  it('reports the line number for malformed JSONL', () => {
+    const files = runPackageFiles();
+    const lines = (files['trajectory.jsonl'] ?? '').split('\n');
+    lines[2] = '{ this is not json';
+    try {
+      importRun({ files: { ...files, 'trajectory.jsonl': lines.join('\n') } }, REPO_ROOT);
+      throw new Error('expected the import to fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ImportError);
+      const problems = (error as ImportError).problems;
+      expect(problems.some((problem) => problem.field.includes('trajectory.jsonl:3'))).toBe(true);
+    }
+  });
+
+  it('rejects a collection outside the supported domain', () => {
+    const files = runPackageFiles();
+    const finalState = JSON.parse(files['final-state.json'] ?? '{}') as {
+      collections: Record<string, unknown>;
+    };
+    finalState.collections['invoices'] = [];
+    try {
+      importRun({ files: { ...files, 'final-state.json': JSON.stringify(finalState) } }, REPO_ROOT);
+      throw new Error('expected the import to fail');
+    } catch (error) {
+      expect((error as ImportError).problems.map((problem) => problem.message).join(' ')).toContain(
+        'refund-operations domain',
+      );
+    }
+  });
+
+  it('rejects a tool call for a tool the registry never declared', () => {
+    const files = runPackageFiles();
+    const lines = (files['trajectory.jsonl'] ?? '').split('\n').filter((line) => line.trim() !== '');
+    const template = lines
+      .map((line) => JSON.parse(line) as Record<string, unknown>)
+      .find((event) => event['type'] === 'tool_call');
+    expect(template).toBeDefined();
+    const last = JSON.parse(lines[lines.length - 1] ?? '{}') as Record<string, unknown>;
+    const injected = JSON.stringify({
+      ...template,
+      eventId: 'EV-999',
+      seq: lines.length + 1,
+      timestamp: last['timestamp'],
+      callId: 'call-999',
+      toolName: 'shell.exec',
+      arguments: { command: 'rm -rf /' },
+    });
+    try {
+      importRun({ files: { ...files, 'trajectory.jsonl': [...lines, injected].join('\n') } }, REPO_ROOT);
+      throw new Error('expected the import to fail');
+    } catch (error) {
+      expect((error as ImportError).problems.map((problem) => problem.message).join(' ')).toContain(
+        'not declared in tool-registry.json',
+      );
+    }
+  });
+
+  it('reports out-of-order events as a field error, not a crash', () => {
+    const files = runPackageFiles();
+    const lines = (files['trajectory.jsonl'] ?? '').split('\n').filter((line) => line.trim() !== '');
+    const template = lines
+      .map((line) => JSON.parse(line) as Record<string, unknown>)
+      .find((event) => event['type'] === 'tool_call');
+    const first = JSON.parse(lines[0] ?? '{}') as Record<string, unknown>;
+    const injected = JSON.stringify({
+      ...template,
+      eventId: 'EV-998',
+      seq: lines.length + 1,
+      // Earlier than the event before it: a real ordering violation.
+      timestamp: first['timestamp'],
+    });
+    try {
+      importRun({ files: { ...files, 'trajectory.jsonl': [...lines, injected].join('\n') } }, REPO_ROOT);
+      throw new Error('expected the import to fail');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ImportError);
+      expect((error as ImportError).problems[0]?.field).toContain('trajectory.jsonl');
+    }
+  });
+
+  it('tells the user what to do next when no contract is available', () => {
+    const { result } = importRun({ files: runPackageFiles() }, REPO_ROOT);
+    if (result.contractStatus === 'no-contract') {
+      expect(result.nextAction).toContain('compiled contract');
+      expect(result.nextAction).toContain('demo');
+    } else {
+      expect(['compile-available', 'matched-frozen-contract']).toContain(result.contractStatus);
+      expect(result.nextAction.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+// --- the optional compile route ----------------------------------------------
+
+describe('custom contract compilation', () => {
+  it('reports availability without ever revealing a key', () => {
+    const status = compileStatus();
+    expect(status.credentialVariable).toBe('STATEPROOF_ANTHROPIC_API_KEY');
+    expect(JSON.stringify(status)).not.toMatch(/sk-ant-/);
+    if (!status.available) expect(status.reason).toContain('STATEPROOF_ANTHROPIC_API_KEY');
+  });
+
+  it('is disabled cleanly when no server key is configured', () => {
+    const saved = process.env['STATEPROOF_ANTHROPIC_API_KEY'];
+    delete process.env['STATEPROOF_ANTHROPIC_API_KEY'];
+    try {
+      const status = compileStatus();
+      // The demo path must remain fully usable either way.
+      expect(verifyDemo(REPO_ROOT).modelCalls).toBe(0);
+      expect(typeof status.available).toBe('boolean');
+    } finally {
+      if (saved !== undefined) process.env['STATEPROOF_ANTHROPIC_API_KEY'] = saved;
+    }
+  });
+});
+
+// --- frozen-evaluation integrity ---------------------------------------------
+
+describe('the product cannot touch the evaluation', () => {
+  const files = sourceFiles(PRODUCT_SRC);
+
+  it('never imports a gold loader', () => {
+    for (const file of files) {
+      const text = readFileSync(file, 'utf8');
+      expect(text, file).not.toContain('@stateproof/benchmark/gold');
+      expect(text, file).not.toContain('loadGoldBundle');
+      expect(text, file).not.toContain('goldVerdict');
+      expect(text, file).not.toContain('gold-contract');
+    }
+  });
+
+  it('never reads the other credential variable', () => {
+    for (const file of files) {
+      const text = readFileSync(file, 'utf8');
+      // The server may *name* the other variable in a comment; what it must
+      // never do is read it.
+      expect(text, file).not.toMatch(/process\.env\[?['"`]ANTHROPIC_API_KEY/);
+      expect(text, file).not.toMatch(/process\.env\.ANTHROPIC_API_KEY/);
+    }
+  });
+
+  it('writes only to temporary directories', () => {
+    for (const file of files) {
+      const text = readFileSync(file, 'utf8');
+      if (!text.includes('writeFileSync')) continue;
+      // The only writer is the client build, into apps/product/dist.
+      expect(file.endsWith(`build.ts`), file).toBe(true);
+    }
+  });
+
+  it('leaves submitted artifacts untouched when the demo runs', () => {
+    const before = execFileSync('git', ['status', '--porcelain', '--', 'artifacts', 'submission', 'prompts', 'benchmarks'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    });
+    verifyDemo(REPO_ROOT);
+    importRun({ files: runPackageFiles() }, REPO_ROOT);
+    const after = execFileSync('git', ['status', '--porcelain', '--', 'artifacts', 'submission', 'prompts', 'benchmarks'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    });
+    expect(after).toBe(before);
+  });
+
+  it('loads benchmark numbers through the validated final evaluation', () => {
+    const view = benchmarkView(REPO_ROOT);
+    expect(BenchmarkViewSchema.parse(view)).toBeTruthy();
+    expect(view.generatedFrom).toBe('submission/final-evaluation.json');
+
+    const final = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'submission', 'final-evaluation.json'), 'utf8'),
+    ) as { usage: { baselineCombined: { modelCalls: number; totalTokens: number } } };
+    const baselineRow = view.usage[0];
+    expect(baselineRow?.modelCalls).toBe(final.usage.baselineCombined.modelCalls.toLocaleString('en-US'));
+    expect(baselineRow?.totalTokens).toBe(
+      final.usage.baselineCombined.totalTokens.toLocaleString('en-US'),
+    );
+    expect(view.scopeNote).toContain('12-case synthetic evaluation');
+  });
+
+  it('never presents a replay as a new evaluation', () => {
+    const run = verifyDemo(REPO_ROOT);
+    expect(run.label).toContain('Demo');
+    expect(run.contract.source).toBe('frozen-bundle');
+  });
+});
+
+// --- the build ----------------------------------------------------------------
+
+describe('the production build', () => {
+  let outDir = '';
+
+  beforeAll(async () => {
+    outDir = tempDir('stateproof-product-build-');
+    await buildProduct();
+  });
+
+  it('emits a shell, a bundle and a stylesheet', () => {
+    const dist = path.join(REPO_ROOT, 'apps', 'product', 'dist');
+    for (const file of ['index.html', 'client.js', 'styles.css']) {
+      expect(existsSync(path.join(dist, file)), file).toBe(true);
+    }
+    void outDir;
+  });
+
+  it('inlines no script or style, so the CSP needs no exception', () => {
+    const shell = readFileSync(
+      path.join(REPO_ROOT, 'apps', 'product', 'dist', 'index.html'),
+      'utf8',
+    );
+    expect(shell).not.toMatch(/<script(?![^>]*src=)/);
+    expect(shell).not.toMatch(/<style/);
+    expect(shell).toContain('The agent said it was done. Prove it.');
+  });
+
+  it('ships no credential in the bundle', () => {
+    const bundle = readFileSync(path.join(REPO_ROOT, 'apps', 'product', 'dist', 'client.js'), 'utf8');
+    expect(bundle).not.toMatch(/sk-ant-/);
+    expect(bundle).not.toContain('STATEPROOF_ANTHROPIC_API_KEY');
+  });
+
+  it('renders imported text structurally rather than as markup', () => {
+    // The client builds DOM nodes; a template-literal renderer would be the
+    // vector an imported agent response could exploit.
+    const views = readFileSync(path.join(PRODUCT_SRC, 'client', 'views.ts'), 'utf8');
+    const main = readFileSync(path.join(PRODUCT_SRC, 'client', 'main.ts'), 'utf8');
+    for (const [name, text] of [['views.ts', views], ['main.ts', main]] as const) {
+      expect(text, name).not.toContain('innerHTML');
+      expect(text, name).not.toContain('outerHTML');
+      expect(text, name).not.toContain('insertAdjacentHTML');
+    }
+    const dom = readFileSync(path.join(PRODUCT_SRC, 'client', 'dom.ts'), 'utf8');
+    expect(dom).toContain('createTextNode');
+  });
+});
+
+// --- a real case the demo depends on -----------------------------------------
+
+describe('the demo case is the one that makes the point', () => {
+  it('has an approval recorded after the protected action', () => {
+    const agentVisible = loadAgentVisibleCase(DEMO_CASE_ID, { casesDir: HARD_CASES_DIR });
+    const approval = agentVisible.trajectory.find((event) => event.type === 'human_approval');
+    const execute = agentVisible.trajectory.find(
+      (event) => event.type === 'tool_call' && event.toolName === 'refund.execute',
+    );
+    expect(approval).toBeDefined();
+    expect(execute).toBeDefined();
+    expect((approval?.seq ?? 0) > (execute?.seq ?? 0)).toBe(true);
+  });
+
+  it('fails at least three requirements', () => {
+    const run = verifyDemo(REPO_ROOT);
+    expect(run.requirements.filter((requirement) => requirement.status === 'FAIL').length).toBeGreaterThanOrEqual(3);
+  });
+});

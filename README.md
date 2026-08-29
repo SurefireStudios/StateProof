@@ -157,7 +157,21 @@ met every guardrail, and earned the efficiency claim. Then the locked split was
 run once, and held. Full detail, including both failures, in
 [`IMPROVEMENT_CHANGELOG.md`](IMPROVEMENT_CHANGELOG.md).
 
-## 11. Reproduction
+## 11. Try it, then reproduce it
+
+**The interactive product** — a local app where you verify a run and export the
+evidence. No API key, no model call:
+
+```bash
+pnpm install
+pnpm product:build
+pnpm product:dev        # http://localhost:4180/
+```
+
+Click *Run the verification demo*, then *Verify this run*. See
+[`docs/product-application.md`](docs/product-application.md).
+
+**Reproduce the evaluation** — the credential-free replay of all twelve cases:
 
 ```bash
 pnpm install
@@ -219,6 +233,9 @@ pnpm benchmark:validate        # Core-12 fixtures
 pnpm benchmark:validate-hard   # Hard-12 fixtures
 pnpm reproduce                 # credential-free replay of all 12 cases
 pnpm reproduce:check           # artifacts and provenance only
+pnpm product:dev               # the interactive product on :4180
+pnpm product:build             # bundle the product client
+pnpm product:test              # the product test suite
 pnpm dashboard:build           # static dashboard
 pnpm dev                       # dashboard on localhost
 pnpm test:clean-reproduction   # clone HEAD to a temp dir and run it all offline

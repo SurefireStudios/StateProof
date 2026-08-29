@@ -1,0 +1,166 @@
+# The product application
+
+`apps/product` is the interactive StateProof application: a local TypeScript
+server plus a TypeScript browser client, wrapped around the same frozen
+verification engine the evaluation used.
+
+```bash
+pnpm install
+pnpm product:build
+pnpm product:dev      # http://localhost:4180/
+```
+
+The demo needs **no API key** and makes **no model call**.
+
+## Intended user
+
+An AI product or evaluation engineer who has an agent that changes business
+systems and needs to answer "did it actually do that?" — not "does the summary
+sound right?". The app is built for someone who will click into the evidence,
+not someone who wants a score.
+
+## The supported workflow
+
+1. **Open the app.** The home page states the problem and shows the verified
+   benchmark result, read from the committed final evaluation.
+2. **Run the verification demo.** A committed refund-operations run whose agent
+   claims success. Click *Verify this run* and the server executes the real
+   deterministic verifier against the frozen contract.
+3. **Read the result.** Overall verdict, one card per requirement with its
+   deterministic reason, the event timeline, the state diff, and the contract's
+   full provenance. Every evidence reference is a link that scrolls to the exact
+   event or record it names.
+4. **Export the evidence pack** as JSON or Markdown.
+5. **Import your own run** and validate it against the supported domain.
+6. **Read the benchmark**, including the locked and combined results.
+
+## Domain limitation, stated plainly
+
+The only domain this product has been validated on is **refund operations**:
+the collections `orders`, `refunds`, `emails` and `support_cases`, and the three
+task templates in PhantomBench-Hard-12. An import naming any other collection is
+rejected with a field-specific error rather than verified against rules that do
+not apply to it.
+
+Everything the app shows about benchmark performance comes from a **12-case
+synthetic evaluation**. That does not establish generalization.
+
+## Demo mode
+
+The default demo is `PBH-B03`, a development case chosen because it fails in
+three independent ways a person can hold in their head at once:
+
+- the refund executed for 55.00 USD when the task required exactly 40.00;
+- the required support note was never written;
+- the human approval is at `seq 12` and `refund.execute` at `seq 8` — the
+  approval arrived *after* the money moved.
+
+The third is the interesting one: it is invisible in the agent's summary and
+invisible in the tool log, because the call carried an `approvalReference`
+argument. Only the order of events settles it.
+
+Locked cases appear in the benchmark view as recorded results. They are never
+re-run by the product, and the demo never uses one.
+
+## Import format
+
+**Option A — a run-package ZIP** containing:
+
+```text
+task.json
+tool-registry.json
+initial-state.json
+trajectory.jsonl
+final-state.json
+final-response.txt
+compiled-contract.json   (optional)
+```
+
+**Option B — the same files, selected individually.**
+
+Validation covers filenames, size limits, JSON and JSONL schemas (with the line
+number for a malformed event), whole-trajectory rules such as gap-free sequence
+and non-decreasing timestamps, archive entry names, compression method, entry
+count and expansion size. A tool called but never declared in the registry is
+rejected, as is a collection outside the supported domain.
+
+**Validation is not verification.** A validated import waits for you to ask for
+verification, because "your file parsed" and "your agent did the job" are
+different claims and should not arrive in one click.
+
+After validation the app offers whichever path applies:
+
+| Situation | What you get |
+| --- | --- |
+| The package included a compiled contract | Verify against it |
+| The task fingerprint matches one of the three frozen sample contracts | Verify against the frozen contract |
+| No contract, and the server has a key configured | *Compile contract* — the one model-assisted action |
+| No contract, no key | An explanation, and a pointer to the demo |
+
+## Optional live contract compilation
+
+Disabled unless `STATEPROOF_ANTHROPIC_API_KEY` is set **on the server**. When
+enabled:
+
+- it is server-side only — the browser never sees or sends a key;
+- it runs only on an explicit click, and is rate-limited to three per minute;
+- it uses Contract Agent v3, unchanged and unmodified;
+- the compiled contract is written to a temporary directory that is deleted
+  before the response is sent — the frozen bundle and the submitted artifacts
+  are never written to;
+- the run is labelled `model-assisted-compilation`, and its token usage is
+  reported in the inspector and the evidence pack.
+
+`ANTHROPIC_API_KEY` is never read. A test asserts no product source file reads
+it.
+
+## Security boundary
+
+| Control | Where |
+| --- | --- |
+| Zod validation at every input boundary | `src/shared/types.ts`, `src/server/importer.ts` |
+| Zip-slip, absolute path and null-byte rejection | `src/server/zip.ts` |
+| Entry count, entry size and total expansion limits | same |
+| Upload size limit (8 MB) and body limit (12 MB) | `src/server/importer.ts`, `src/server/index.ts` |
+| Content-Security-Policy, `nosniff`, `no-referrer` | `src/server/index.ts` |
+| No inline script or style | the build emits external files only |
+| Structural DOM rendering — never `innerHTML` | `src/client/dom.ts` |
+| No persistence: runs and imports live in memory with a TTL | `src/server/runs.ts`, `src/server/importer.ts` |
+| No filesystem access from the browser | the client only calls the JSON API |
+| Read-only verification; no consequential action exists | by construction |
+
+## How this differs from the static dashboard
+
+They are deliberately different things, and both ship.
+
+| | `apps/dashboard` | `apps/product` |
+| --- | --- | --- |
+| Purpose | The **evidence trail** for the submitted evaluation | The **interactive product** |
+| Output | Static HTML generated from pinned artifacts | A local server plus a client bundle |
+| Data | Every run, prompt, raw response and report | The demo, your imports, and the final benchmark |
+| Interaction | Reading and following links | Verifying, importing, exporting |
+| Credentials | None, ever | None for the demo; optional for custom compilation |
+| Build | `pnpm dashboard:build` | `pnpm product:build` |
+
+If you want to audit the submitted result, use the dashboard. If you want to
+see what StateProof does to a run, use the product.
+
+## Commands
+
+```bash
+pnpm product:build    # bundle the client and emit the shell
+pnpm product:dev      # serve on http://localhost:4180/
+pnpm product:start    # same as dev; the app has no separate runtime
+pnpm product:test     # the product test suite
+```
+
+`PORT` overrides the port.
+
+## Known limitations
+
+- One domain (refund operations) and one task shape family.
+- Runs and imports are in-memory: restarting the server loses them, by design.
+- No accounts, no database, no multi-user state, no sharing beyond the exported
+  evidence pack.
+- The client is a small hash-routed application, not a framework app; deep links
+  to a run work within a session only.

@@ -40,6 +40,34 @@ importers:
         specifier: 4.19.2
         version: 4.19.2
 
+  apps/product:
+    dependencies:
+      '@stateproof/agents':
+        specifier: workspace:*
+        version: link:../../packages/agents
+      '@stateproof/benchmark':
+        specifier: workspace:*
+        version: link:../../packages/benchmark
+      '@stateproof/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@stateproof/model-provider':
+        specifier: workspace:*
+        version: link:../../packages/model-provider
+      '@stateproof/submission':
+        specifier: workspace:*
+        version: link:../../packages/submission
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
+    devDependencies:
+      esbuild:
+        specifier: 0.23.1
+        version: 0.23.1
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+
   packages/agents:
     dependencies:
       '@stateproof/benchmark':

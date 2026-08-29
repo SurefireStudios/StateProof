@@ -10,7 +10,7 @@
     "pnpm": ">=8.12.0"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p apps/product/tsconfig.client.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "benchmark:validate": "tsx packages/benchmark/src/cli/validate.ts",
@@ -19,6 +19,10 @@
     "benchmark:baseline": "tsx packages/agents/src/cli/baseline.ts",
     "benchmark:baseline-hard": "tsx packages/agents/src/cli/baseline-hard.ts",
     "benchmark:stateproof-hard": "tsx packages/agents/src/cli/stateproof-hard.ts",
+    "product:dev": "pnpm --filter product dev",
+    "product:build": "pnpm --filter product build",
+    "product:start": "pnpm --filter product start",
+    "product:test": "vitest run apps/product/test",
     "dashboard:build": "pnpm --filter dashboard build",
     "dev": "pnpm --filter dashboard dev",
     "reproduce": "tsx scripts/reproduce.ts",
