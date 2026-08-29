@@ -1,5 +1,7 @@
 # Live deployment
 
+**Live:** <https://stateproof-production.up.railway.app>
+
 StateProof deploys as **one service on one origin**: the interactive product,
 the static evidence dashboard it hosts, and the committed artifacts both read.
 
@@ -94,7 +96,7 @@ for the certificate. Nothing in source control encodes a domain.
 ### Health check
 
 ```bash
-curl https://<your-domain>/healthz
+curl https://stateproof-production.up.railway.app/healthz
 {"status":"ok","service":"stateproof","mode":"deterministic","liveCompilation":false}
 ```
 

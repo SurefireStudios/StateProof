@@ -66,7 +66,7 @@ thing in the submission. Run it (§5); these are the screens you will see.
 ## 5. Interactive quick start
 
 ```text
-Live demo:                       <placeholder until the owner supplies the URL>
+Live demo:                       https://stateproof-production.up.railway.app
 Local demo:                      pnpm product:dev
 Credential-free reproduction:    pnpm reproduce
 ```

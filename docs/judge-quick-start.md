@@ -12,7 +12,7 @@ call, and both credential variables are removed from the environment by
 ## The fastest path — the interactive product
 
 ```text
-Live demo:                       <placeholder until the owner supplies the URL>
+Live demo:                       https://stateproof-production.up.railway.app
 Local demo:                      pnpm product:dev
 Credential-free reproduction:    pnpm reproduce
 ```
