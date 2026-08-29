@@ -458,6 +458,82 @@ justified it. Entries are added only after the supporting run artifact exists.
     tokens fell fastest (10,325 → 5,644), because one existential assertion
     replaces three selector-first ones.
 
+### 2026-08-29 — Untouched locked evaluation, run exactly once
+
+- **Hypothesis:** the v3 result was earned on eight cases the system had been
+  iterated against. If the contract-compile-then-verify design generalises at
+  all, it should hold on four cases nobody had ever looked at — and if it does
+  not, the failure is the result.
+- **Protocol, built and tested before any locked case was loaded:** both locked
+  CLIs require `--split locked`, `--final-locked`, `--expected-freeze <full
+  sha>` and `STATEPROOF_FINAL_LOCKED_CONFIRM=I_UNDERSTAND_THIS_IS_THE_FINAL_LOCKED_RUN`.
+  They refuse a dirty tracked tree, a HEAD that is not the named freeze, a
+  freeze commit that does not contain the prompts, evaluator, verifier,
+  benchmark and lockfile in use, and any workflow that has already completed.
+  Every attempt is appended to
+  [`submission/final-evaluation-ledger.jsonl`](submission/final-evaluation-ledger.jsonl),
+  which is never rewritten. The locked StateProof run may only verify from a
+  persisted bundle; cold mode on the locked split is refused outright.
+- **Freeze:** commit `c976e3838477afbf951d0faf57011be1b4ef6864`, annotated tag
+  `stateproof-evaluation-freeze-v1`, tracked tree clean, pushed before either
+  locked run.
+- **Run id (locked baseline):** `RUN-baseline-hard-locked-live-20260829T035909Z`
+  — prompt `prompts/baseline-evaluator/v2.md`, same provider, model and
+  configuration as development. 4 model calls, 0 repairs, 40,538 tokens
+  (36,643 in / 3,895 out), 41.9 s.
+- **Run id (locked StateProof):** `RUN-stateproof-hard-locked-warm-20260829T040036Z`
+  — verified from the frozen bundle
+  `RUN-stateproof-hard-development-cold-20260829T022133Z-contracts` with
+  `STATEPROOF_ANTHROPIC_API_KEY` and `ANTHROPIC_API_KEY` removed from the child
+  environment and no `.env` in its working directory. **0 model calls, 0 tokens,
+  0 raw response files, 4/4 cache hits**, 133 ms of deterministic verification.
+- **Locked predictions (both systems agree on every verdict):**
+  PBH-A04 FAIL, PBH-B02 PASS, PBH-C02 PASS, PBH-C04 FAIL.
+- **Observed locked result:**
+
+  | Metric | Frontier baseline | StateProof v3 |
+  | --- | --- | --- |
+  | SVR | 100% (6/6) | 100% (6/6) |
+  | FVR | 0% (0/11) | 0% (0/11) |
+  | CDR | 100% (2/2) | 100% (2/2) |
+  | BVA | 100% | 100% |
+  | Evidence-reference validity | 98.5% (64/65) | **100% (36/36)** |
+
+- **Recomputed combined result (all 12, from counts):** SVR 100% (18/18),
+  FVR 0% (0/34), CDR 100% (6/6), BVA 100%, assessment completeness 100% (52/52)
+  for both systems; evidence-reference validity 99.5% (205/206) baseline versus
+  **100% (116/116)** StateProof.
+- **Model usage over the full suite:** baseline 12 calls / 125,154 tokens /
+  157.0 s. StateProof first deployment 3 calls / 29,889 tokens / 53.6 s —
+  the four locked tasks resolved to the same three frozen task fingerprints, so
+  nothing was recompiled. Repeated verification **0 calls / 0 tokens / 0.587 s**,
+  measured through the reproduction workflow rather than inferred.
+- **Reductions, claimed because the guardrails held on both locked and
+  combined:** first deployment **75.0% fewer model calls, 76.1% fewer tokens,
+  65.9% less model wall clock**; repeated verification **100% fewer calls and
+  tokens, 99.6% less wall clock**. Break-even: **1 run** of the full suite.
+  USD cost stays `null`; no pricing rule exists and none was added after the
+  freeze.
+- **Final prediction hashes:** locked baseline `1fa2558582a5f85e…`,
+  locked StateProof `57d9c4fc3157e665…`, development warm `3d8ef516fa5d6d6b…`.
+  `pnpm reproduce` re-derives all three offline and compares them.
+- **Decision:** **this is the final result.** Neither locked run was repeated,
+  neither prompt was touched, no contract was recompiled, and the Core-12 locked
+  split was never run.
+- **Learning:** **the held-out split did not move the quality answer, and that is
+  the useful finding.** Both systems are perfect on all twelve cases, which says
+  the benchmark cannot separate them on accuracy — exactly what the development
+  saturation predicted, now confirmed where it could not have been tuned. What
+  separates them is everything else: 12 model calls versus 3, then versus 0; and
+  one baseline evidence citation on the locked split that resolves to nothing,
+  against 116/116 for StateProof. A verifier that generates its citations from
+  matched records cannot invent one; a verifier that writes prose can.
+  - Worth stating plainly: **a 12-case suite where both systems score 100% does
+    not establish that StateProof generalises.** It establishes that it did not
+    degrade off the split it was built on, and that its cost and evidence
+    properties hold there too. The honest claim is about cost and determinism at
+    equal measured quality — not about superior accuracy.
+
 ## Entry template
 
 Fields follow the evidence rules in `05_EVALUATION_AND_SCORING_SPEC.md`.

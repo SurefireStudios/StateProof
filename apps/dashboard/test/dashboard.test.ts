@@ -56,11 +56,17 @@ describe('the dashboard builds from artifacts alone', () => {
     }
   });
 
-  it('builds one inspector page per hard development case', () => {
+  it('builds one inspector page per evaluated case', () => {
     const model = buildModel(REPO_ROOT);
     const pages = built.files.filter((file) => file.startsWith('inspector'));
-    expect(pages).toHaveLength(model.cases.length);
-    expect(model.cases).toHaveLength(8);
+    // Registry-driven: eight development cases, plus the four locked cases
+    // once their one-time evaluation is on the record.
+    const expected =
+      model.view.manifest.replayCaseIds.length +
+      (model.view.manifest.lockedReplayCaseIds ?? []).length;
+    expect(pages).toHaveLength(expected);
+    expect(model.cases).toHaveLength(expected);
+    expect(model.view.manifest.replayCaseIds).toHaveLength(8);
   });
 
   it('needs no credential in the environment', () => {

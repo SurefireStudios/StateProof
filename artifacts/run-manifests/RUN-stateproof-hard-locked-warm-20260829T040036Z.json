@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "RUN-stateproof-hard-locked-warm-20260829T040036Z",
+  "createdAt": "2026-08-29T04:00:36.159Z",
+  "system": "stateproof",
+  "stage": "gate-3c-stateproof-locked-warm",
+  "mode": "live",
+  "gitCommitSha": "c976e3838477afbf951d0faf57011be1b4ef6864",
+  "sourceTreeClean": true,
+  "assertionSchemaVersion": "2.1.0",
+  "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+  "sourceContractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+  "runtimeVersion": "node-20.10.0",
+  "packageLockHash": "69b2227af2b76a76a97d33ccc18b44d8cb197c87169d894d93713a111444ba6a",
+  "datasetName": "phantombench-hard-12",
+  "agentVisibleDatasetHash": "20c60c11907be4be774f2dae00e3878ccaa4ba235ee714107315d8a3615387e0",
+  "datasetHash": "6e603b631734552f188b589ec2b2df65bba858ee0a8758b411f16c6db5b9e4b2",
+  "splits": [
+    "locked"
+  ],
+  "caseIds": [
+    "PBH-A04",
+    "PBH-B02",
+    "PBH-C02",
+    "PBH-C04"
+  ],
+  "modelProvider": null,
+  "modelId": null,
+  "modelConfiguration": {},
+  "maxRetries": 1,
+  "timeoutPolicy": "no model call is made in warm mode",
+  "promptFilePaths": [
+    "prompts/contract-agent/v3.md"
+  ],
+  "promptHashes": {
+    "prompts/contract-agent/v3.md": "b3b93c18b63f2794056c7e419c6f78974fa7e95eaf62d0fa2a4b9e7620db6534"
+  },
+  "startedAt": "2026-08-29T04:00:36.159Z",
+  "finishedAt": "2026-08-29T04:00:36.361Z",
+  "wallClockMs": 201,
+  "modelUsage": null,
+  "rawResponsePaths": [],
+  "trajectoryPaths": [
+    "benchmarks/phantombench-hard-12/cases/PBH-A04/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B02/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-C02/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-C04/trajectory.jsonl"
+  ],
+  "predictionPath": "predictions/RUN-stateproof-hard-locked-warm-20260829T040036Z.json",
+  "reportPath": "reports/RUN-stateproof-hard-locked-warm-20260829T040036Z.md",
+  "notes": [
+    "Predictions were written before any gold file was read.",
+    "Verification is deterministic: zero model calls during the run phase.",
+    "Warm run: every contract was loaded and integrity-checked from RUN-stateproof-hard-development-cold-20260829T022133Z-contracts; no model call and no credential were used.",
+    "Deterministic verification time: 40 ms across 4 case(s)."
+  ]
+}

@@ -161,6 +161,32 @@
       "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-warm-20260829T022355Z.json",
       "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022355Z.json",
       "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022355Z.md"
+    },
+    {
+      "id": "RUN-baseline-hard-locked-live-20260829T035909Z",
+      "label": "Frontier baseline (locked)",
+      "role": "baseline-hard-locked",
+      "system": "baseline",
+      "split": "locked",
+      "sourceCommit": "c976e3838477afbf951d0faf57011be1b4ef6864",
+      "canonicalPredictionSha256": "1fa2558582a5f85ef740678a57595190d97bc22fdf5f10add163fb06dee9652c",
+      "manifestPath": "artifacts/run-manifests/RUN-baseline-hard-locked-live-20260829T035909Z.json",
+      "predictionPath": "artifacts/predictions/RUN-baseline-hard-locked-live-20260829T035909Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-baseline-hard-locked-live-20260829T035909Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-baseline-hard-locked-live-20260829T035909Z.md"
+    },
+    {
+      "id": "RUN-stateproof-hard-locked-warm-20260829T040036Z",
+      "label": "StateProof v3 (locked)",
+      "role": "stateproof-v3-locked",
+      "system": "stateproof",
+      "split": "locked",
+      "sourceCommit": "c976e3838477afbf951d0faf57011be1b4ef6864",
+      "canonicalPredictionSha256": "57d9c4fc3157e6655b8b641f82d5f14086ff2865e6493e2050cec22375d717a9",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-locked-warm-20260829T040036Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-locked-warm-20260829T040036Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-locked-warm-20260829T040036Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-locked-warm-20260829T040036Z.md"
     }
   ]
 }

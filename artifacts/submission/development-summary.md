@@ -29,6 +29,8 @@ A plausible final response or tool log can hide a no-op, a partial completion, a
 | StateProof v2 cold | 91.7% | 0.0% | 75.0% | 75.0% | 3 | 29069 | 76568 |
 | StateProof v3 cold | 100.0% | 0.0% | 100.0% | 100.0% | 3 | 29889 | 53562 |
 | StateProof v3 warm (measured) | 100.0% | 0.0% | 100.0% | 100.0% | 0 | 0 | 386 |
+| Frontier baseline (locked) | 100.0% | 0.0% | 100.0% | 100.0% | 4 | 40538 | 41920 |
+| StateProof v3 (locked) | 100.0% | 0.0% | 100.0% | 100.0% | 0 | 0 | 201 |
 
 ## Measured reductions versus the frozen baseline
 

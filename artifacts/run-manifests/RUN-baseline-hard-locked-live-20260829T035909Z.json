@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "RUN-baseline-hard-locked-live-20260829T035909Z",
+  "createdAt": "2026-08-29T03:59:09.760Z",
+  "system": "baseline",
+  "stage": "gate-2.6-hard-development-baseline",
+  "mode": "live",
+  "gitCommitSha": "c976e3838477afbf951d0faf57011be1b4ef6864",
+  "runtimeVersion": "node-20.10.0",
+  "packageLockHash": "69b2227af2b76a76a97d33ccc18b44d8cb197c87169d894d93713a111444ba6a",
+  "datasetName": "phantombench-hard-12",
+  "agentVisibleDatasetHash": "20c60c11907be4be774f2dae00e3878ccaa4ba235ee714107315d8a3615387e0",
+  "datasetHash": "6e603b631734552f188b589ec2b2df65bba858ee0a8758b411f16c6db5b9e4b2",
+  "splits": [
+    "locked"
+  ],
+  "caseIds": [
+    "PBH-A04",
+    "PBH-B02",
+    "PBH-C02",
+    "PBH-C04"
+  ],
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "maxRetries": 1,
+  "timeoutPolicy": "120000",
+  "promptFilePaths": [
+    "prompts/baseline-evaluator/v2.md"
+  ],
+  "promptHashes": {
+    "prompts/baseline-evaluator/v2.md": "d5a03c05b36d9b6886298b4d2228a79e04d2726152bee3df9844d2923a0695e4"
+  },
+  "startedAt": "2026-08-29T03:59:09.760Z",
+  "finishedAt": "2026-08-29T03:59:51.680Z",
+  "wallClockMs": 41920,
+  "modelUsage": {
+    "inputTokens": 36643,
+    "outputTokens": 3895,
+    "calls": 4,
+    "retries": 0,
+    "estimatedCostUsd": null
+  },
+  "rawResponsePaths": [
+    "model-responses/RUN-baseline-hard-locked-live-20260829T035909Z/PBH-A04-attempt-1.json",
+    "model-responses/RUN-baseline-hard-locked-live-20260829T035909Z/PBH-B02-attempt-1.json",
+    "model-responses/RUN-baseline-hard-locked-live-20260829T035909Z/PBH-C02-attempt-1.json",
+    "model-responses/RUN-baseline-hard-locked-live-20260829T035909Z/PBH-C04-attempt-1.json"
+  ],
+  "trajectoryPaths": [
+    "benchmarks/phantombench-hard-12/cases/PBH-A04/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B02/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-C02/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-C04/trajectory.jsonl"
+  ],
+  "predictionPath": "predictions/RUN-baseline-hard-locked-live-20260829T035909Z.json",
+  "reportPath": "reports/RUN-baseline-hard-locked-live-20260829T035909Z.md",
+  "notes": [
+    "Predictions were written before any gold file was read.",
+    "No prediction was hand-corrected.",
+    "Requirement-level baseline v2. The v1 prompt and the Core-12 run are untouched."
+  ]
+}

@@ -13,7 +13,7 @@ counts, never averaged from percentages.
 - **Recomputed combined result** — all twelve, rebuilt from case and requirement counts.
 - **Measured repeated verification** — the same twelve verified again from persisted contracts.
 
-Locked evaluation complete: **no**.
+Locked evaluation complete: **yes**.
 
 ## Observed development result
 
@@ -36,25 +36,47 @@ Locked evaluation complete: **no**.
 
 ### Locked split (4 cases)
 
-Not available: the locked evaluation has not been run.
+| Metric | Frontier baseline | StateProof v3 |
+| --- | --- | --- |
+| Safety Violation Recall | 100.0% (6/6) | 100.0% (6/6) |
+| False Violation Rate | 0.0% (0/11) | 0.0% (0/11) |
+| Complete Diagnosis Rate | 100.0% (2/2) | 100.0% (2/2) |
+| Balanced Verdict Accuracy | 100.0% | 100.0% |
+| Valid Run Acceptance | 100.0% (2/2) | 100.0% (2/2) |
+| Invalid Run Rejection | 100.0% (2/2) | 100.0% (2/2) |
+| Unsafe false completion | 0.0% (0/2) | 0.0% (0/2) |
+| NEEDS_REVIEW frequency | 0.0% (0/4) | 0.0% (0/4) |
+| Assessment completeness | 100.0% (17/17) | 100.0% (17/17) |
+| Evidence-reference validity | 98.5% (64/65) | 100.0% (36/36) |
 
 ## Recomputed combined result
 
 ### Combined Hard-12 (12 cases)
 
-Not available: the locked evaluation has not been run.
+| Metric | Frontier baseline | StateProof v3 |
+| --- | --- | --- |
+| Safety Violation Recall | 100.0% (18/18) | 100.0% (18/18) |
+| False Violation Rate | 0.0% (0/34) | 0.0% (0/34) |
+| Complete Diagnosis Rate | 100.0% (6/6) | 100.0% (6/6) |
+| Balanced Verdict Accuracy | 100.0% | 100.0% |
+| Valid Run Acceptance | 100.0% (6/6) | 100.0% (6/6) |
+| Invalid Run Rejection | 100.0% (6/6) | 100.0% (6/6) |
+| Unsafe false completion | 0.0% (0/6) | 0.0% (0/6) |
+| NEEDS_REVIEW frequency | 0.0% (0/12) | 0.0% (0/12) |
+| Assessment completeness | 100.0% (52/52) | 100.0% (52/52) |
+| Evidence-reference validity | 99.5% (205/206) | 100.0% (116/116) |
 
 ## Model usage
 
 | Metric | Baseline combined | StateProof first deployment | StateProof repeated |
 | --- | --- | --- | --- |
-| Model calls | — | 3 | 0 |
-| Repair calls | — | 0 | 0 |
-| Input tokens | — | 24245 | 0 |
-| Output tokens | — | 5644 | 0 |
-| Total tokens | — | 29889 | 0 |
-| Model wall clock (ms) | — | 53562 | 386 |
-| Deterministic verification (ms) | — | 103 | 93 |
+| Model calls | 12 | 3 | 0 |
+| Repair calls | 0 | 0 | 0 |
+| Input tokens | 110934 | 24245 | 0 |
+| Output tokens | 14220 | 5644 | 0 |
+| Total tokens | 125154 | 29889 | 0 |
+| Model wall clock (ms) | 157039 | 53562 | 587 |
+| Deterministic verification (ms) | — | 143 | 133 |
 
 First deployment compiles the three frozen contracts once and verifies all twelve
 cases; the locked tasks resolve to the same three task fingerprints, so no second
@@ -62,10 +84,11 @@ compilation happens. Repeated verification loads those contracts and calls no mo
 
 ## Efficiency
 
-**No efficiency improvement is claimed.** The quality guardrails (SVR 100%, CDR 100%,
-FVR 0%, evidence-reference validity 100%) did not hold on both the locked and the
-combined result, or the locked evaluation has not been run.
+Quality guardrails hold on both the locked and the combined result, so the
+comparison below is a claim this evaluation earned.
 
-- Locked: locked evaluation not run
-- Combined: combined result unavailable
+- First deployment: 75.0% fewer model calls, 76.1% fewer tokens, 65.9% less model wall clock.
+- Repeated verification: 100.0% fewer model calls, 100.0% fewer tokens, 99.6% less model wall clock.
+- Break-even: 1 run(s) of the full suite.
+- Cost in USD: `null`. No pricing rule is implemented, and none was added after the freeze.
 

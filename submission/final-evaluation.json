@@ -1,22 +1,18 @@
 {
   "schemaVersion": "1.0.0",
   "generatedFrom": "submission/reproduction-manifest.json",
-  "lockedEvaluationComplete": false,
-  "qualityGuardrailsMet": false,
+  "lockedEvaluationComplete": true,
+  "qualityGuardrailsMet": true,
   "guardrailFailures": {
-    "locked": [
-      "locked evaluation not run"
-    ],
-    "combined": [
-      "combined result unavailable"
-    ]
+    "locked": [],
+    "combined": []
   },
   "runs": {
     "baselineDevelopment": "RUN-baseline-hard-development-live-20260828T233139Z",
-    "baselineLocked": null,
+    "baselineLocked": "RUN-baseline-hard-locked-live-20260829T035909Z",
     "stateproofDevelopmentCold": "RUN-stateproof-hard-development-cold-20260829T022133Z",
     "stateproofDevelopmentWarm": "RUN-stateproof-hard-development-warm-20260829T022344Z",
-    "stateproofLocked": null,
+    "stateproofLocked": "RUN-stateproof-hard-locked-warm-20260829T040036Z",
     "contractBundle": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts"
   },
   "observedDevelopment": {
@@ -124,12 +120,212 @@
     }
   },
   "observedLocked": {
-    "baseline": null,
-    "stateproof": null
+    "baseline": {
+      "caseCount": 4,
+      "goldPassCount": 2,
+      "goldFailCount": 2,
+      "safetyViolationRecall": 1,
+      "safetyViolationCounts": [
+        6,
+        6
+      ],
+      "falseViolationRate": 0,
+      "falseViolationCounts": [
+        0,
+        11
+      ],
+      "completeDiagnosisRate": 1,
+      "completeDiagnosisCounts": [
+        2,
+        2
+      ],
+      "assessmentCompleteness": 1,
+      "assessmentCompletenessCounts": [
+        17,
+        17
+      ],
+      "balancedVerdictAccuracy": 1,
+      "validRunAcceptanceRate": 1,
+      "validRunAcceptanceCounts": [
+        2,
+        2
+      ],
+      "invalidRunRejectionRate": 1,
+      "invalidRunRejectionCounts": [
+        2,
+        2
+      ],
+      "unsafeFalseCompletionRate": 0,
+      "unsafeFalseCompletionCounts": [
+        0,
+        2
+      ],
+      "needsReviewRate": 0,
+      "needsReviewCounts": [
+        0,
+        4
+      ],
+      "evidenceRefValidity": 0.9846153846153847,
+      "evidenceRefCounts": [
+        64,
+        65
+      ]
+    },
+    "stateproof": {
+      "caseCount": 4,
+      "goldPassCount": 2,
+      "goldFailCount": 2,
+      "safetyViolationRecall": 1,
+      "safetyViolationCounts": [
+        6,
+        6
+      ],
+      "falseViolationRate": 0,
+      "falseViolationCounts": [
+        0,
+        11
+      ],
+      "completeDiagnosisRate": 1,
+      "completeDiagnosisCounts": [
+        2,
+        2
+      ],
+      "assessmentCompleteness": 1,
+      "assessmentCompletenessCounts": [
+        17,
+        17
+      ],
+      "balancedVerdictAccuracy": 1,
+      "validRunAcceptanceRate": 1,
+      "validRunAcceptanceCounts": [
+        2,
+        2
+      ],
+      "invalidRunRejectionRate": 1,
+      "invalidRunRejectionCounts": [
+        2,
+        2
+      ],
+      "unsafeFalseCompletionRate": 0,
+      "unsafeFalseCompletionCounts": [
+        0,
+        2
+      ],
+      "needsReviewRate": 0,
+      "needsReviewCounts": [
+        0,
+        4
+      ],
+      "evidenceRefValidity": 1,
+      "evidenceRefCounts": [
+        36,
+        36
+      ]
+    }
   },
   "recomputedCombined": {
-    "baseline": null,
-    "stateproof": null
+    "baseline": {
+      "caseCount": 12,
+      "goldPassCount": 6,
+      "goldFailCount": 6,
+      "safetyViolationRecall": 1,
+      "safetyViolationCounts": [
+        18,
+        18
+      ],
+      "falseViolationRate": 0,
+      "falseViolationCounts": [
+        0,
+        34
+      ],
+      "completeDiagnosisRate": 1,
+      "completeDiagnosisCounts": [
+        6,
+        6
+      ],
+      "assessmentCompleteness": 1,
+      "assessmentCompletenessCounts": [
+        52,
+        52
+      ],
+      "balancedVerdictAccuracy": 1,
+      "validRunAcceptanceRate": 1,
+      "validRunAcceptanceCounts": [
+        6,
+        6
+      ],
+      "invalidRunRejectionRate": 1,
+      "invalidRunRejectionCounts": [
+        6,
+        6
+      ],
+      "unsafeFalseCompletionRate": 0,
+      "unsafeFalseCompletionCounts": [
+        0,
+        6
+      ],
+      "needsReviewRate": 0,
+      "needsReviewCounts": [
+        0,
+        12
+      ],
+      "evidenceRefValidity": 0.9951456310679612,
+      "evidenceRefCounts": [
+        205,
+        206
+      ]
+    },
+    "stateproof": {
+      "caseCount": 12,
+      "goldPassCount": 6,
+      "goldFailCount": 6,
+      "safetyViolationRecall": 1,
+      "safetyViolationCounts": [
+        18,
+        18
+      ],
+      "falseViolationRate": 0,
+      "falseViolationCounts": [
+        0,
+        34
+      ],
+      "completeDiagnosisRate": 1,
+      "completeDiagnosisCounts": [
+        6,
+        6
+      ],
+      "assessmentCompleteness": 1,
+      "assessmentCompletenessCounts": [
+        52,
+        52
+      ],
+      "balancedVerdictAccuracy": 1,
+      "validRunAcceptanceRate": 1,
+      "validRunAcceptanceCounts": [
+        6,
+        6
+      ],
+      "invalidRunRejectionRate": 1,
+      "invalidRunRejectionCounts": [
+        6,
+        6
+      ],
+      "unsafeFalseCompletionRate": 0,
+      "unsafeFalseCompletionCounts": [
+        0,
+        6
+      ],
+      "needsReviewRate": 0,
+      "needsReviewCounts": [
+        0,
+        12
+      ],
+      "evidenceRefValidity": 1,
+      "evidenceRefCounts": [
+        116,
+        116
+      ]
+    }
   },
   "usage": {
     "baselineDevelopment": {
@@ -141,8 +337,24 @@
       "modelWallClockMs": 115119,
       "deterministicVerificationMs": null
     },
-    "baselineLocked": null,
-    "baselineCombined": null,
+    "baselineLocked": {
+      "modelCalls": 4,
+      "repairCalls": 0,
+      "inputTokens": 36643,
+      "outputTokens": 3895,
+      "totalTokens": 40538,
+      "modelWallClockMs": 41920,
+      "deterministicVerificationMs": null
+    },
+    "baselineCombined": {
+      "modelCalls": 12,
+      "repairCalls": 0,
+      "inputTokens": 110934,
+      "outputTokens": 14220,
+      "totalTokens": 125154,
+      "modelWallClockMs": 157039,
+      "deterministicVerificationMs": null
+    },
     "stateproofFirstDeployment": {
       "modelCalls": 3,
       "repairCalls": 0,
@@ -150,7 +362,7 @@
       "outputTokens": 5644,
       "totalTokens": 29889,
       "modelWallClockMs": 53562,
-      "deterministicVerificationMs": 103
+      "deterministicVerificationMs": 143
     },
     "stateproofRepeatedVerification": {
       "modelCalls": 0,
@@ -158,9 +370,45 @@
       "inputTokens": 0,
       "outputTokens": 0,
       "totalTokens": 0,
-      "modelWallClockMs": 386,
-      "deterministicVerificationMs": 93
+      "modelWallClockMs": 587,
+      "deterministicVerificationMs": 133
     }
   },
-  "efficiency": null
+  "efficiency": {
+    "baselineCombined": {
+      "modelCalls": 12,
+      "repairCalls": 0,
+      "inputTokens": 110934,
+      "outputTokens": 14220,
+      "totalTokens": 125154,
+      "modelWallClockMs": 157039,
+      "deterministicVerificationMs": null
+    },
+    "firstDeployment": {
+      "modelCalls": 3,
+      "repairCalls": 0,
+      "inputTokens": 24245,
+      "outputTokens": 5644,
+      "totalTokens": 29889,
+      "modelWallClockMs": 53562,
+      "deterministicVerificationMs": 143
+    },
+    "repeatedVerification": {
+      "modelCalls": 0,
+      "repairCalls": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0,
+      "modelWallClockMs": 587,
+      "deterministicVerificationMs": 133
+    },
+    "firstDeploymentCallReduction": 0.75,
+    "firstDeploymentTokenReduction": 0.7611822235006472,
+    "firstDeploymentWallClockReduction": 0.6589254898464713,
+    "repeatedCallReduction": 1,
+    "repeatedTokenReduction": 1,
+    "repeatedWallClockReduction": 0.996262075025949,
+    "breakEvenSuiteRuns": 1,
+    "estimatedCostUsd": null
+  }
 }

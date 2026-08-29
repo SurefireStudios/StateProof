@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "generatedFor": "gate-4a",
-  "generatedAt": "2026-08-29T03:51:22.821Z",
+  "generatedAt": "2026-08-29T04:01:03.698Z",
   "sourceCommits": {
     "gate3cSource": "42135267c23841b7c8bb960c01749f58bb53481a",
     "gate3cResult": "57b8c59"
@@ -180,6 +180,38 @@
       "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
       "promptId": "contract-agent-v3",
       "provenance": "verified"
+    },
+    {
+      "id": "RUN-baseline-hard-locked-live-20260829T035909Z",
+      "label": "Frontier baseline (locked)",
+      "role": "baseline-hard-locked",
+      "system": "baseline",
+      "dataset": "phantombench-hard-12",
+      "split": "locked",
+      "manifestPath": "artifacts/run-manifests/RUN-baseline-hard-locked-live-20260829T035909Z.json",
+      "predictionPath": "artifacts/predictions/RUN-baseline-hard-locked-live-20260829T035909Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-baseline-hard-locked-live-20260829T035909Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-baseline-hard-locked-live-20260829T035909Z.md",
+      "canonicalPredictionSha256": "1fa2558582a5f85ef740678a57595190d97bc22fdf5f10add163fb06dee9652c",
+      "contractRunId": null,
+      "promptId": "baseline-evaluator-v2",
+      "provenance": "verified"
+    },
+    {
+      "id": "RUN-stateproof-hard-locked-warm-20260829T040036Z",
+      "label": "StateProof v3 (locked)",
+      "role": "stateproof-v3-locked",
+      "system": "stateproof",
+      "dataset": "phantombench-hard-12",
+      "split": "locked",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-locked-warm-20260829T040036Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-locked-warm-20260829T040036Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-locked-warm-20260829T040036Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-locked-warm-20260829T040036Z.md",
+      "canonicalPredictionSha256": "57d9c4fc3157e6655b8b641f82d5f14086ff2865e6493e2050cec22375d717a9",
+      "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+      "promptId": "contract-agent-v3",
+      "provenance": "verified"
     }
   ],
   "contractBundles": [
@@ -236,5 +268,12 @@
     "PB-B02",
     "PB-C02",
     "PB-C04"
-  ]
+  ],
+  "lockedReplayCaseIds": [
+    "PBH-A04",
+    "PBH-B02",
+    "PBH-C02",
+    "PBH-C04"
+  ],
+  "lockedReplayTargetRunId": "RUN-stateproof-hard-locked-warm-20260829T040036Z"
 }

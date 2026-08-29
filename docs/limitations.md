@@ -9,13 +9,16 @@ number elsewhere in the repository as a general claim.
   refund-operations sandbox with four collections (`orders`, `refunds`,
   `emails`, `support_cases`) and three task templates. Nothing here establishes
   behaviour on a real payment system, CRM or ticketing platform.
-- **Development split only.** All reported results are the eight
-  hard-development cases. The four locked challenge cases have deliberately
-  never been run, so nothing is tuned against them — and equally, nothing has
-  been demonstrated on them.
+- **The locked split has now been run, once.** Four held-out cases, after the
+  source freeze, under a one-time protocol that makes a second attempt
+  impossible. Both systems scored 100% on every quality metric, which means the
+  suite **cannot separate them on accuracy** — it confirms StateProof did not
+  degrade off the split it was built on, and nothing stronger. The honest claim
+  is about cost and determinism at equal measured quality.
 - **Twelve cases per suite.** A suite this size cannot separate small
-  differences. It was built to expose specific failure shapes, not to estimate
-  a population rate.
+  differences, and the locked result demonstrates that directly: both systems
+  are perfect on all twelve. It was built to expose specific failure shapes,
+  not to estimate a population rate or to rank two saturating systems.
 - **One model family.** Every live run used the same provider and model. Nothing
   here says how a different model would compile these contracts.
 
@@ -59,6 +62,23 @@ to look tidier is the habit this project exists to catch.
   fixed forward (`gate-3c-stateproof-*`) with a regression test, and the
   historical artifact is untouched.
 
+## Post-freeze changes
+
+Exactly one tracked file changed after the evaluation freeze
+(`c976e3838477afbf951d0faf57011be1b4ef6864`, tag
+`stateproof-evaluation-freeze-v1`): an assertion in
+`apps/dashboard/test/dashboard.test.ts` that hardcoded "8 inspector pages" was
+made registry-driven, because the locked cases legitimately add four more. It
+touches no prompt, no benchmark, no evaluator, no verifier and no scoring code,
+and it cannot affect any measurement. Diff it against the freeze tag to confirm.
+
+One cosmetic imprecision is preserved rather than patched: the locked StateProof
+run printed `no efficiency claim: quality guardrails not met` to stdout because
+no `--baseline-run` was supplied for that invocation, so no baseline was loaded
+to compare against. The guardrails were in fact met; the run's own report says
+"No baseline run was loaded", and `submission/final-evaluation.md` computes the
+comparison correctly.
+
 ## Things deliberately not built
 
 - **Evidence Agent.** The read-only evidence tool registry exists in the case
@@ -67,7 +87,7 @@ to look tidier is the habit this project exists to catch.
   measured value on this benchmark.
 - **Auditor Agent and mutation generation.** Scoped out after the DSL work
   produced the same insight more cheaply.
-- **Locked evaluation.** Intentionally unrun.
+- **A second locked evaluation.** The protocol refuses one, permanently.
 - **Production concerns.** No authentication, no multi-tenancy, no billing, no
   real integrations, no autonomous writes.
 
@@ -75,7 +95,8 @@ to look tidier is the habit this project exists to catch.
 
 1. Typed task adapters replacing regex task-fact extraction, per domain.
 2. Contract compilation validated across more than three task templates.
-3. A locked-split result, then a held-out suite nobody iterated against.
+3. A larger held-out suite: the current locked split is four cases and both
+   systems saturate it.
 4. Cost modelling, including a pricing rule and a per-run budget.
 5. Evidence collection against real systems, with read-only guarantees enforced
    at the integration boundary rather than by convention.

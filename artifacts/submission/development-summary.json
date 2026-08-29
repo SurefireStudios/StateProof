@@ -410,6 +410,92 @@
         "reportJson": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022355Z.json",
         "reportMarkdown": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022355Z.md"
       }
+    },
+    {
+      "id": "RUN-baseline-hard-locked-live-20260829T035909Z",
+      "label": "Frontier baseline (locked)",
+      "role": "baseline-hard-locked",
+      "system": "baseline",
+      "dataset": "phantombench-hard-12",
+      "split": "locked",
+      "sourceCommit": "c976e3838477afbf951d0faf57011be1b4ef6864",
+      "promptFiles": [
+        "prompts/baseline-evaluator/v2.md"
+      ],
+      "assertionSchemaVersion": null,
+      "contractRunId": null,
+      "metrics": {
+        "safetyViolationRecall": 1,
+        "falseViolationRate": 0,
+        "completeDiagnosisRate": 1,
+        "balancedVerdictAccuracy": 1,
+        "evidenceRefValidity": 0.9846153846153847,
+        "evidenceRefCounts": [
+          64,
+          65
+        ]
+      },
+      "usage": {
+        "modelCalls": 4,
+        "repairCalls": 0,
+        "inputTokens": 36643,
+        "outputTokens": 3895,
+        "totalTokens": 40538,
+        "wallClockMs": 41920,
+        "deterministicVerificationMs": null,
+        "contractCacheHits": null,
+        "estimatedCostUsd": null
+      },
+      "qualityGuardrailsMet": true,
+      "artifacts": {
+        "manifest": "artifacts/run-manifests/RUN-baseline-hard-locked-live-20260829T035909Z.json",
+        "predictions": "artifacts/predictions/RUN-baseline-hard-locked-live-20260829T035909Z.json",
+        "reportJson": "artifacts/reports/RUN-baseline-hard-locked-live-20260829T035909Z.json",
+        "reportMarkdown": "artifacts/reports/RUN-baseline-hard-locked-live-20260829T035909Z.md"
+      }
+    },
+    {
+      "id": "RUN-stateproof-hard-locked-warm-20260829T040036Z",
+      "label": "StateProof v3 (locked)",
+      "role": "stateproof-v3-locked",
+      "system": "stateproof",
+      "dataset": "phantombench-hard-12",
+      "split": "locked",
+      "sourceCommit": "c976e3838477afbf951d0faf57011be1b4ef6864",
+      "promptFiles": [
+        "prompts/contract-agent/v3.md"
+      ],
+      "assertionSchemaVersion": "2.1.0",
+      "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+      "metrics": {
+        "safetyViolationRecall": 1,
+        "falseViolationRate": 0,
+        "completeDiagnosisRate": 1,
+        "balancedVerdictAccuracy": 1,
+        "evidenceRefValidity": 1,
+        "evidenceRefCounts": [
+          36,
+          36
+        ]
+      },
+      "usage": {
+        "modelCalls": 0,
+        "repairCalls": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0,
+        "wallClockMs": 201,
+        "deterministicVerificationMs": 40,
+        "contractCacheHits": 4,
+        "estimatedCostUsd": null
+      },
+      "qualityGuardrailsMet": true,
+      "artifacts": {
+        "manifest": "artifacts/run-manifests/RUN-stateproof-hard-locked-warm-20260829T040036Z.json",
+        "predictions": "artifacts/predictions/RUN-stateproof-hard-locked-warm-20260829T040036Z.json",
+        "reportJson": "artifacts/reports/RUN-stateproof-hard-locked-warm-20260829T040036Z.json",
+        "reportMarkdown": "artifacts/reports/RUN-stateproof-hard-locked-warm-20260829T040036Z.md"
+      }
     }
   ],
   "headline": {
@@ -532,6 +618,25 @@
     },
     {
       "runId": "RUN-stateproof-hard-development-warm-20260829T022355Z",
+      "rawResponsePaths": [],
+      "promptFiles": [
+        "prompts/contract-agent/v3.md"
+      ]
+    },
+    {
+      "runId": "RUN-baseline-hard-locked-live-20260829T035909Z",
+      "rawResponsePaths": [
+        "model-responses/RUN-baseline-hard-locked-live-20260829T035909Z/PBH-A04-attempt-1.json",
+        "model-responses/RUN-baseline-hard-locked-live-20260829T035909Z/PBH-B02-attempt-1.json",
+        "model-responses/RUN-baseline-hard-locked-live-20260829T035909Z/PBH-C02-attempt-1.json",
+        "model-responses/RUN-baseline-hard-locked-live-20260829T035909Z/PBH-C04-attempt-1.json"
+      ],
+      "promptFiles": [
+        "prompts/baseline-evaluator/v2.md"
+      ]
+    },
+    {
+      "runId": "RUN-stateproof-hard-locked-warm-20260829T040036Z",
       "rawResponsePaths": [],
       "promptFiles": [
         "prompts/contract-agent/v3.md"

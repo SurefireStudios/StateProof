@@ -3,6 +3,11 @@
 Every substantive claim StateProof makes, with the artifact that supports it.
 Paths are repository-relative.
 
+**The final, post-locked version of this map is
+[`submission/final-claims-evidence-map.md`](../submission/final-claims-evidence-map.md)**,
+generated from the pinned registry by `pnpm submission:finalize`. This file
+covers the development-phase claims and the guarantees behind them.
+
 ## How to check any row yourself
 
 ```bash
@@ -71,13 +76,14 @@ pnpm reproduce:check    # artifacts, hashes and provenance only
 | Pinned hash | `3d8ef516fa5d6d6b…` for all three, in `submission/reproduction-manifest.json` |
 | Re-checked by | `pnpm reproduce` (compares a fresh replay against the pinned hash) and `apps/dashboard/test/dashboard.test.ts` |
 
-## 7. No locked case has been run
+## 7. The locked split was run exactly once, and Core-12 locked never
 
 | | |
 | --- | --- |
-| Claim | The four hard locked cases (PBH-A04, PBH-B02, PBH-C02, PBH-C04) and the four core locked cases have never been evaluated. |
-| Evidence | No prediction, report or manifest in `artifacts/` covers a locked case id. `submission/reproduction-manifest.json` lists them under `lockedCaseIds`, and the registry schema rejects their appearance in `replayCaseIds`. |
-| Guards | The CLI refuses `--split locked` without `STATEPROOF_ALLOW_LOCKED_RUN=1`; `pnpm reproduce` asserts no locked case reaches the prediction phase; tests in `packages/agents/test/` and `apps/dashboard/test/` assert it independently. |
+| Claim | The four hard locked cases were evaluated once, after the freeze, for both systems. The four Core-12 locked cases have never been run. |
+| Evidence | `submission/final-evaluation-ledger.jsonl` holds one `started` and one `completed` entry per workflow and nothing else. Exactly one locked run per system exists in `artifacts/run-manifests/`, and none on `phantombench-12`. |
+| Guards | Both hard locked CLIs require `--final-locked`, `--expected-freeze <full sha>` and the exact confirmation phrase, and refuse a workflow that has already completed; the Core-12 CLI still refuses `--split locked` without `STATEPROOF_ALLOW_LOCKED_RUN=1`; `pnpm reproduce` asserts no locked case reaches the development prediction phase. |
+| Tests | `packages/agents/test/gate4b.test.ts` asserts each refusal independently, against a throwaway repository rather than this one. |
 
 ## 8. Gold data cannot reach the prediction phase
 
