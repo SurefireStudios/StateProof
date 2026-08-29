@@ -62,6 +62,17 @@ export function verdictClass(verdict: string): string {
   return 'v-review';
 }
 
+/**
+ * The status edge on a requirement card, matching the product's. Redundant with
+ * the pill beside it on purpose: a long list of requirements should be scannable
+ * without reading each one, and colour is never the only signal.
+ */
+export function statusEdge(verdict: string): string {
+  if (verdict === 'PASS') return 'r-pass';
+  if (verdict === 'FAIL') return 'r-fail';
+  return 'r-review';
+}
+
 export interface PageOptions {
   readonly title: string;
   readonly active: string;
@@ -74,7 +85,7 @@ export interface PageOptions {
 export function page(options: PageOptions): string {
   const nav = NAV.map(
     (item) =>
-      `<a class="nav-link${item.href === options.active ? ' is-active' : ''}" href="${item.href}">${esc(item.label)}</a>`,
+      `<a href="${item.href}"${item.href === options.active ? ' aria-current="page"' : ''}>${esc(item.label)}</a>`,
   ).join('');
 
   return `<!doctype html>
@@ -83,16 +94,19 @@ export function page(options: PageOptions): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(options.title)} · StateProof</title>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" href="index.html">
-    <span class="brand-mark" aria-hidden="true"></span>
-    <span class="brand-name">StateProof</span>
-    <span class="brand-tag">${esc(PITCH)}</span>
-  </a>
-  <nav class="nav">${nav}</nav>
+  <div class="topbar-inner">
+    <a class="brand" href="index.html">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">StateProof</span>
+      <span class="brand-tag">${esc(PITCH)}</span>
+    </a>
+    <nav class="main" aria-label="Primary">${nav}</nav>
+  </div>
 </header>
 <main class="page">
   <div class="page-head">

@@ -11,7 +11,7 @@ import { esc, integer, page, seconds } from '../shell';
 function diagram(): string {
   return `
 <svg viewBox="0 0 900 430" role="img" aria-label="StateProof architecture: cold path compiles a contract once, warm path verifies from the persisted bundle, gold data is only reachable by the scorer."
-     style="width:100%; height:auto; background:var(--bg-sink); border:1px solid var(--line); border-radius:10px">
+     class="diagram">
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#4da3ff"/>

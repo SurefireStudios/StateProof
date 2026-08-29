@@ -173,6 +173,14 @@ policy, and a test asserts they do.
 
 They are deliberately different things, and both ship.
 
+Both surfaces share **one stylesheet**: `apps/product/src/client/styles.css` is
+the base — tokens, typography, elevation, motion, responsive rules and every
+component both sites use — and the dashboard build concatenates its own thin
+layer on top for the handful of components only it has. Tests assert the shipped
+dashboard stylesheet starts with the base verbatim and that the layer defines no
+token of its own, because a parallel stylesheet is exactly how the two drifted
+apart the first time.
+
 | | `apps/dashboard` | `apps/product` |
 | --- | --- | --- |
 | Purpose | The **evidence trail** for the submitted evaluation | The **interactive product** |

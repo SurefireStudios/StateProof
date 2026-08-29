@@ -1,7 +1,7 @@
 import type { JsonValue, TraceEvent } from '@stateproof/core';
 import type { CaseView, DashboardModel } from '../model';
 import { evidenceTargets } from '../model';
-import { esc, integer, page, verdictClass } from '../shell';
+import { esc, integer, page, verdictClass, statusEdge } from '../shell';
 
 /**
  * One page per case, rather than one page plus a fetch.
@@ -117,7 +117,7 @@ function renderRequirements(caseView: CaseView): string {
         })
         .join('');
       return `
-      <article class="req">
+      <article class="req ${statusEdge(requirement.status)}">
         <div class="req-head">
           <span class="pill ${verdictClass(requirement.status)}">${esc(requirement.status)}</span>
           <span class="req-key">${esc(requirement.requirementKey)}</span>

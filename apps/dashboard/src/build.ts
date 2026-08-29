@@ -34,7 +34,15 @@ export function buildDashboard(repoRoot: string = REPO_ROOT, outDir: string = OU
     written.push(fileName);
   };
 
-  write('styles.css', STYLES);
+  // One design system, two surfaces: the product's stylesheet is the base and
+  // the dashboard adds only its own components on top.
+  const base = readFileSync(
+    path.join(repoRoot, 'apps', 'product', 'src', 'client', 'styles.css'),
+    'utf8',
+  );
+  write('styles.css', `${base}
+/* ---- dashboard layer ---- */
+${STYLES}`);
   // Self-hosted so the page needs no external origin, here or when the product
   // serves this site under /dashboard/ behind its own strict policy.
   write('logo.svg', readFileSync(path.join(SRC_DIR, 'logo.svg'), 'utf8'));

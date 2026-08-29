@@ -280,3 +280,51 @@ describe('the registry never reaches a locked case', () => {
     }
   });
 });
+
+describe('both surfaces share one design system', () => {
+  // The dashboard used to carry a parallel stylesheet with its own tokens. It
+  // drifted, and the two sites stopped looking like one product. The product's
+  // stylesheet is now the base and this file adds only a dashboard layer; these
+  // tests exist so that cannot quietly come apart again.
+  const BASE_PATH = path.join(REPO_ROOT, 'apps', 'product', 'src', 'client', 'styles.css');
+
+  it('ships the product stylesheet verbatim as its base', () => {
+    const base = readFileSync(BASE_PATH, 'utf8');
+    const shipped = readFileSync(path.join(built.outDir, 'styles.css'), 'utf8');
+    expect(shipped.startsWith(base)).toBe(true);
+    expect(shipped).toContain('/* ---- dashboard layer ---- */');
+  });
+
+  it('defines no token or base component of its own', () => {
+    const shipped = readFileSync(path.join(built.outDir, 'styles.css'), 'utf8');
+    const layer = shipped.slice(shipped.indexOf('/* ---- dashboard layer ---- */'));
+
+    // A second :root is how the palettes diverged the first time.
+    expect(layer).not.toContain(':root');
+    for (const token of ['--bg:', '--ink:', '--accent:', '--line:', '--pass:', '--fail:']) {
+      expect(layer, token).not.toContain(token);
+    }
+    // Components both sites use belong to the base, not to this layer.
+    for (const selector of ['.card {', '.btn {', '.callout {', '.steps {', '.kv {', '.table-wrap {']) {
+      expect(layer, selector).not.toContain(selector);
+    }
+  });
+
+  it('gives every page the same chrome as the product', () => {
+    for (const file of built.files.filter((name) => name.endsWith('.html'))) {
+      const page = html(file);
+      expect(page, file).toContain('class="topbar-inner"');
+      expect(page, file).toContain('<nav class="main"');
+      expect(page, file).toContain('class="colophon"');
+      expect(page, file).toContain('logo.svg');
+      expect(page, file).toContain('<link rel="stylesheet" href="styles.css">');
+    }
+  });
+
+  it('marks a requirement card with the same status edge the product uses', () => {
+    const inspector = html('inspector.html');
+    expect(inspector).toMatch(/class="req r-(?:pass|fail|review)"/);
+    // The edge repeats the pill; it never replaces it.
+    expect(inspector).toMatch(/class="pill v-(?:pass|fail|review)"/);
+  });
+});
