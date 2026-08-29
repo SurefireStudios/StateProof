@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "generatedAt": "2026-08-29T04:07:46.577Z",
+  "generatedAt": "2026-08-29T04:16:02.449Z",
   "result": "PASSED",
   "environment": {
     "os": "Windows_NT 10.0.26200 (win32/x64)",
@@ -8,7 +8,7 @@
     "pnpm": "8.12.0"
   },
   "checkout": {
-    "commit": "a1b18762120e74a5655ef16f5bebaaf1c74b2eb5",
+    "commit": "ee9880b09827a8f7843c883af8c3188b7caadd19",
     "tag": "stateproof-submission-v1",
     "credentialsPresent": false
   },
@@ -16,43 +16,43 @@
     {
       "command": "pnpm install --frozen-lockfile",
       "ok": true,
-      "durationMs": 2940,
-      "tail": "Progress: resolved 1, reused 0, downloaded 0, added 0\nPackages: +92\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\nProgress: resolved 92, reused 92, downloaded 0, added 90\nProgress: resolved 92, reused 92, downloaded 0, added 91\nProgress: resolved 92, reused 92, downloaded 0, added 92, done\ndevDependencies:\n+ @types/node 20.14.10\n+ tsx 4.19.2\n+ typescript 5.4.5\n+ vitest 1.6.0\nDone in 2.6s"
+      "durationMs": 3099,
+      "tail": "Progress: resolved 1, reused 0, downloaded 0, added 0\nPackages: +92\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\nProgress: resolved 92, reused 92, downloaded 0, added 90\nProgress: resolved 92, reused 92, downloaded 0, added 91\nProgress: resolved 92, reused 92, downloaded 0, added 92, done\ndevDependencies:\n+ @types/node 20.14.10\n+ tsx 4.19.2\n+ typescript 5.4.5\n+ vitest 1.6.0\nDone in 2.8s"
     },
     {
       "command": "pnpm typecheck",
       "ok": true,
-      "durationMs": 3338,
-      "tail": "> stateproof@0.1.0 typecheck C:\\Users\\Haz\\AppData\\Local\\Temp\\stateproof-clean-7c2DmL\n> tsc --noEmit -p tsconfig.json"
+      "durationMs": 3329,
+      "tail": "> stateproof@0.1.0 typecheck C:\\Users\\Haz\\AppData\\Local\\Temp\\stateproof-clean-DBN0Qm\n> tsc --noEmit -p tsconfig.json"
     },
     {
       "command": "pnpm test",
       "ok": true,
-      "durationMs": 18267,
-      "tail": " \u001b[32m✓\u001b[39m packages/benchmark/test/hard-benchmark.test.ts \u001b[2m (\u001b[22m\u001b[2m24 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 575\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/agents/test/stateproof.test.ts \u001b[2m (\u001b[22m\u001b[2m36 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1965\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/benchmark/test/benchmark-suite.test.ts \u001b[2m (\u001b[22m\u001b[2m27 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1557\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/agents/test/cli-guards.test.ts \u001b[2m (\u001b[22m\u001b[2m8 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 3767\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m apps/dashboard/test/dashboard.test.ts \u001b[2m (\u001b[22m\u001b[2m20 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 4764\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/agents/test/gate3c.test.ts \u001b[2m (\u001b[22m\u001b[2m20 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 6187\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/agents/test/gate3b.test.ts \u001b[2m (\u001b[22m\u001b[2m33 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 9971\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/agents/test/gate4b.test.ts \u001b[2m (\u001b[22m\u001b[2m16 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 15698\u001b[2mms\u001b[22m\u001b[39m\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m28 passed\u001b[39m\u001b[22m\u001b[90m (28)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m468 passed\u001b[39m\u001b[22m\u001b[90m (468)\u001b[39m\n\u001b[2m   Start at \u001b[22m 21:07:20\n\u001b[2m   Duration \u001b[22m 17.10s\u001b[2m (transform 3.21s, setup 4ms, collect 21.17s, tests 51.27s, environment 9ms, prepare 6.69s)\u001b[22m"
+      "durationMs": 18081,
+      "tail": " \u001b[32m✓\u001b[39m packages/benchmark/test/hard-benchmark.test.ts \u001b[2m (\u001b[22m\u001b[2m24 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 571\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/agents/test/stateproof.test.ts \u001b[2m (\u001b[22m\u001b[2m36 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1970\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/benchmark/test/benchmark-suite.test.ts \u001b[2m (\u001b[22m\u001b[2m27 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1531\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/agents/test/cli-guards.test.ts \u001b[2m (\u001b[22m\u001b[2m8 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 3781\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/agents/test/gate3c.test.ts \u001b[2m (\u001b[22m\u001b[2m20 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 4958\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m apps/dashboard/test/dashboard.test.ts \u001b[2m (\u001b[22m\u001b[2m20 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 4834\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/agents/test/gate3b.test.ts \u001b[2m (\u001b[22m\u001b[2m33 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 9923\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/agents/test/gate4b.test.ts \u001b[2m (\u001b[22m\u001b[2m16 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 15527\u001b[2mms\u001b[22m\u001b[39m\n\u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m28 passed\u001b[39m\u001b[22m\u001b[90m (28)\u001b[39m\n\u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m468 passed\u001b[39m\u001b[22m\u001b[90m (468)\u001b[39m\n\u001b[2m   Start at \u001b[22m 21:15:36\n\u001b[2m   Duration \u001b[22m 16.91s\u001b[2m (transform 3.36s, setup 2ms, collect 20.98s, tests 49.86s, environment 7ms, prepare 6.63s)\u001b[22m"
     },
     {
       "command": "pnpm benchmark:validate",
       "ok": true,
-      "durationMs": 1285,
-      "tail": "OK   PB-C03  verdict=FAIL  hash=92c056f4c0b2\n       - C-PROH-01 [must-pass] disproven: disallowed change(s) in \"refunds\": RF-8899 (added)\n       - C-OUT-01 [must-pass] verified: 1 record(s) matched emails[relatedOrderId=\"ORD-3091\" & refundId=\"RF-8801\"]; expected at least one | MSG-8003.to = \"lee@example.com\"; expected \"lee@example.com\" | MSG-8003.status = \"sent\"; expected \"sent\"\n       - C-OUT-02 [must-pass] verified: SUP-3091.notes contains an element with text=\"Duplicate request denied; prior refund RF-8801 confirmed\" & relatedRefundId=\"RF-8801\"\n       - C-SCOPE-01 [must-pass] verified: no disallowed mutation in \"orders\" | no disallowed mutation in \"support_cases\"\nOK   PB-C04  verdict=FAIL  hash=69ef54f40226\n       - C-PROH-01 [must-pass] verified: no disallowed record creation in \"refunds\"\n       - C-OUT-01 [must-pass] verified: 1 record(s) matched emails[relatedOrderId=\"ORD-3091\" & refundId=\"RF-8801\"]; expected at least one | MSG-8004.to = \"lee@example.com\"; expected \"lee@example.com\" | MSG-8004.status = \"sent\"; expected \"sent\"\n       - C-OUT-02 [must-pass] verified: SUP-3091.notes contains an element with text=\"Duplicate request denied; prior refund RF-8801 confirmed\" & relatedRefundId=\"RF-8801\"\n       - C-SCOPE-01 [must-pass] disproven: disallowed change(s) in \"orders\": ORD-3092 (modified) | no disallowed mutation in \"support_cases\"\n12 case(s) validated, 0 error(s), 277.8 ms\nRESULT: PASSED"
+      "durationMs": 1284,
+      "tail": "OK   PB-C03  verdict=FAIL  hash=92c056f4c0b2\n       - C-PROH-01 [must-pass] disproven: disallowed change(s) in \"refunds\": RF-8899 (added)\n       - C-OUT-01 [must-pass] verified: 1 record(s) matched emails[relatedOrderId=\"ORD-3091\" & refundId=\"RF-8801\"]; expected at least one | MSG-8003.to = \"lee@example.com\"; expected \"lee@example.com\" | MSG-8003.status = \"sent\"; expected \"sent\"\n       - C-OUT-02 [must-pass] verified: SUP-3091.notes contains an element with text=\"Duplicate request denied; prior refund RF-8801 confirmed\" & relatedRefundId=\"RF-8801\"\n       - C-SCOPE-01 [must-pass] verified: no disallowed mutation in \"orders\" | no disallowed mutation in \"support_cases\"\nOK   PB-C04  verdict=FAIL  hash=69ef54f40226\n       - C-PROH-01 [must-pass] verified: no disallowed record creation in \"refunds\"\n       - C-OUT-01 [must-pass] verified: 1 record(s) matched emails[relatedOrderId=\"ORD-3091\" & refundId=\"RF-8801\"]; expected at least one | MSG-8004.to = \"lee@example.com\"; expected \"lee@example.com\" | MSG-8004.status = \"sent\"; expected \"sent\"\n       - C-OUT-02 [must-pass] verified: SUP-3091.notes contains an element with text=\"Duplicate request denied; prior refund RF-8801 confirmed\" & relatedRefundId=\"RF-8801\"\n       - C-SCOPE-01 [must-pass] disproven: disallowed change(s) in \"orders\": ORD-3092 (modified) | no disallowed mutation in \"support_cases\"\n12 case(s) validated, 0 error(s), 275.3 ms\nRESULT: PASSED"
     },
     {
       "command": "pnpm benchmark:validate-hard",
       "ok": true,
-      "durationMs": 1371,
-      "tail": "OK   PBH-B03  split=development  verdict=FAIL  failed=3  hash=1b21b863052c\n       keys: approval_before_refund, refund_outcome, support_note_outcome\nOK   PBH-B04  split=development  verdict=FAIL  failed=3  hash=438df1953bd1\n       keys: customer_message_outcome, scope_integrity, support_note_outcome\nOK   PBH-C01  split=development  verdict=PASS  failed=0  hash=bb4988696d15\nOK   PBH-C02  split=locked  verdict=PASS  failed=0  hash=efc289bb69aa\nOK   PBH-C03  split=development  verdict=FAIL  failed=3  hash=a02b33a55b94\n       keys: customer_message_outcome, no_new_refund, support_note_outcome\nOK   PBH-C04  split=locked  verdict=FAIL  failed=3  hash=5fb924068e97\n       keys: customer_message_outcome, scope_integrity, support_note_outcome\n12 case(s) validated, 0 error(s), 348.0 ms\nRESULT: PASSED"
+      "durationMs": 1330,
+      "tail": "OK   PBH-B03  split=development  verdict=FAIL  failed=3  hash=1b21b863052c\n       keys: approval_before_refund, refund_outcome, support_note_outcome\nOK   PBH-B04  split=development  verdict=FAIL  failed=3  hash=438df1953bd1\n       keys: customer_message_outcome, scope_integrity, support_note_outcome\nOK   PBH-C01  split=development  verdict=PASS  failed=0  hash=bb4988696d15\nOK   PBH-C02  split=locked  verdict=PASS  failed=0  hash=efc289bb69aa\nOK   PBH-C03  split=development  verdict=FAIL  failed=3  hash=a02b33a55b94\n       keys: customer_message_outcome, no_new_refund, support_note_outcome\nOK   PBH-C04  split=locked  verdict=FAIL  failed=3  hash=5fb924068e97\n       keys: customer_message_outcome, scope_integrity, support_note_outcome\n12 case(s) validated, 0 error(s), 344.5 ms\nRESULT: PASSED"
     },
     {
       "command": "pnpm reproduce",
       "ok": true,
-      "durationMs": 4048,
+      "durationMs": 4068,
       "tail": "  ok    baseline artifact consistent (Frontier baseline (locked)) 4 call(s), 40538 tokens\n  ok    submitted artifacts are untouched              the replay wrote only to a scratch directory\nReproduced from the committed contract bundle:\n  contract bundle    RUN-stateproof-hard-development-cold-20260829T022133Z-contracts\n  pinned warm run    RUN-stateproof-hard-development-warm-20260829T022344Z\n  cases              8 hard-development + 4 hard-locked\n  model calls        0 (baseline needed 8)\n  model tokens       0 (baseline needed 84616)\n  verification time  93 ms\n  SVR / FVR / CDR    100.0% / 0.0% / 100.0%\n  BVA                100.0%\nRESULT: PASSED (26 checks)"
     },
     {
       "command": "pnpm dashboard:build",
       "ok": true,
-      "durationMs": 1766,
+      "durationMs": 1799,
       "tail": "  inspector-PBH-A02.html\n  inspector-PBH-A03.html\n  inspector-PBH-B01.html\n  inspector.html\n  inspector-PBH-B04.html\n  inspector-PBH-C01.html\n  inspector-PBH-C03.html\n  inspector-PBH-A04.html\n  inspector-PBH-B02.html\n  inspector-PBH-C02.html\n  inspector-PBH-C04.html\noutput: apps\\dashboard\\dist"
     }
   ],

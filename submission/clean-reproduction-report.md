@@ -2,7 +2,7 @@
 
 **Result: PASSED**
 
-- Commit: `a1b18762120e74a5655ef16f5bebaaf1c74b2eb5` (tag `stateproof-submission-v1`)
+- Commit: `ee9880b09827a8f7843c883af8c3188b7caadd19` (tag `stateproof-submission-v1`)
 - OS: Windows_NT 10.0.26200 (win32/x64)
 - Node: v20.10.0
 - pnpm: 8.12.0
@@ -13,12 +13,12 @@
 
 | Command | Result | Duration |
 | --- | --- | --- |
-| `pnpm install --frozen-lockfile` | ok | 2.9 s |
+| `pnpm install --frozen-lockfile` | ok | 3.1 s |
 | `pnpm typecheck` | ok | 3.3 s |
-| `pnpm test` | ok | 18.3 s |
+| `pnpm test` | ok | 18.1 s |
 | `pnpm benchmark:validate` | ok | 1.3 s |
-| `pnpm benchmark:validate-hard` | ok | 1.4 s |
-| `pnpm reproduce` | ok | 4.0 s |
+| `pnpm benchmark:validate-hard` | ok | 1.3 s |
+| `pnpm reproduce` | ok | 4.1 s |
 | `pnpm dashboard:build` | ok | 1.8 s |
 
 ## Absolute development paths in the built output
@@ -40,4 +40,4 @@ None. The generated site contains no path pointing back at the development machi
 | `RUN-baseline-hard-locked-live-20260829T035909Z` | `1fa2558582a5f85ef740678a57595190` |
 | `RUN-stateproof-hard-locked-warm-20260829T040036Z` | `57d9c4fc3157e6655b8b641f82d5f140` |
 
-Report fingerprint: `62320cfeaeac9db5`
+Report fingerprint: `885d444497fe13d8`
