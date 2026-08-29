@@ -77,7 +77,7 @@ const CURSOR_SCRIPT = `
 `;
 
 async function showCursor(page: Page, x: number, y: number): Promise<void> {
-  await page.evaluate(([px, py]) => (window as never as { __moveCursor: (a: number, b: number) => void }).__moveCursor(px, py), [x, y]);
+  await page.evaluate(`window.__moveCursor(${String(x)}, ${String(y)})`);
 }
 
 /** A deliberate click: move, settle, press, then let the result land. */
@@ -91,40 +91,44 @@ async function humanClick(page: Page, selector: string): Promise<void> {
   const y = Math.round(box.y + box.height / 2);
   await showCursor(page, x, y);
   await sleep(650);
-  await page.evaluate(() => (window as never as { __pressCursor: () => void }).__pressCursor());
+  await page.evaluate('window.__pressCursor()');
   await page.mouse.move(x, y);
   await target.click();
   await sleep(400);
 }
 
-/** Scrolling at a readable pace, rather than jumping. */
+/*
+ * Browser-side code is passed as source strings, not as functions.
+ *
+ * tsx compiles with esbuild's `keepNames`, which rewrites named inner functions
+ * to reference a `__name` helper. Playwright serialises the function and
+ * evaluates it in the page, where that helper does not exist — every clip died
+ * on `ReferenceError: __name is not defined`. A string has no such baggage.
+ */
 async function glide(page: Page, toY: number, ms: number): Promise<void> {
-  await page.evaluate(
-    ([target, duration]) =>
-      new Promise<void>((resolve) => {
-        const start = window.scrollY;
-        const delta = target - start;
-        const began = performance.now();
-        const step = (now: number): void => {
-          const t = Math.min(1, (now - began) / duration);
-          // easeInOutCubic: no snap at either end
-          const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-          window.scrollTo(0, start + delta * eased);
-          if (t < 1) requestAnimationFrame(step);
-          else resolve();
-        };
-        requestAnimationFrame(step);
-      }),
-    [toY, ms] as const,
-  );
+  await page.evaluate(`new Promise((resolve) => {
+    var start = window.scrollY;
+    var delta = ${String(Math.round(toY))} - start;
+    var began = performance.now();
+    var tick = function (now) {
+      var t = Math.min(1, (now - began) / ${String(ms)});
+      // easeInOutCubic: no snap at either end
+      var eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      window.scrollTo(0, start + delta * eased);
+      if (t < 1) requestAnimationFrame(tick); else resolve(null);
+    };
+    requestAnimationFrame(tick);
+  })`);
 }
 
 async function scrollToSelector(page: Page, selector: string, ms = 1400): Promise<void> {
-  const y = await page.evaluate((sel) => {
-    const node = document.querySelector(sel);
-    if (node === null) return null;
-    return Math.max(0, window.scrollY + node.getBoundingClientRect().top - 140);
-  }, selector);
+  const y = (await page.evaluate(
+    `(function () {
+      var node = document.querySelector(${JSON.stringify(selector)});
+      if (node === null) return null;
+      return Math.max(0, window.scrollY + node.getBoundingClientRect().top - 140);
+    })()`,
+  )) as number | null;
   if (y === null) throw new Error(`missing ${selector}`);
   await glide(page, y, ms);
 }

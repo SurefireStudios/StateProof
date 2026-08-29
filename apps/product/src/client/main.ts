@@ -562,7 +562,11 @@ const PATH_ROUTES: Record<string, string> = {
 function currentRoute(): string {
   if (window.location.hash !== '') return window.location.hash;
   const byPath = PATH_ROUTES[window.location.pathname];
-  if (byPath !== undefined) return byPath;
+  // `/import?sample` must reach the client as `#/import?sample`; dropping the
+  // query would silently turn a preloaded sample into an empty upload form.
+  if (byPath !== undefined) {
+    return window.location.search === '' ? byPath : `${byPath}${window.location.search}`;
+  }
   const run = /^\/runs\/([A-Za-z0-9_-]+)$/.exec(window.location.pathname);
   return run === null ? '#/' : `#/runs/${run[1] ?? ''}`;
 }
