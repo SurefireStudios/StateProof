@@ -41,9 +41,9 @@ Thumbs.db
 CLAUDE_*.md
 apps/dashboard/dist/
 
-# release packages are built artifacts, not source — but the hash and the
-# contents note are small, and they describe the exact archive that was proved
-release/*
-!release/CONTENTS.md
-!release/stateproof-submission-final.sha256
+# release packages are build output, not source. Tracking the contents note or
+# the hash would be circular: both describe an archive whose bytes include them.
+# `submission/final-package-manifest.json` is the tracked record, and it names
+# the commit its archive was built from.
+release/
 apps/product/dist/

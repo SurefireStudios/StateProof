@@ -1,19 +1,19 @@
 {
   "schemaVersion": "1.1.0",
-  "generatedAt": "2026-08-29T08:46:46.326Z",
+  "generatedAt": "2026-08-29T08:55:25.837Z",
   "package": {
     "path": "release/stateproof-submission-final.zip",
-    "sha256": "d5835f202e103da70755677a1a2b59b10961e4d4628ccad8573bc7d0f5b0b5c9",
-    "sizeBytes": 1205219,
+    "sha256": "560ef7dcccf478665f82105cc16557615e3804e6e5cccb31e3972ed9e5fb0eeb",
+    "sizeBytes": 1205773,
     "sizeMb": 1.15,
-    "sourceCommit": "4e0cfb27784a0c2481a7f1d67523f3cfaa07f272",
+    "sourceCommit": "9646631af03ea059a5b9099ada9e6077201131b7",
     "trackedTreeClean": true
   },
   "environment": {
     "os": "win32 10.0.26200 (x64)",
     "node": "v20.10.0",
     "pnpm": "8.12.0",
-    "installDurationMs": 3196
+    "installDurationMs": 3302
   },
   "contents": {
     "fileCount": 562,
@@ -97,32 +97,52 @@
       {
         "command": "pnpm install --frozen-lockfile",
         "ok": true,
-        "durationMs": 3196
+        "durationMs": 3302
       },
       {
         "command": "pnpm typecheck",
         "ok": true,
-        "durationMs": 4728
+        "durationMs": 4791
       },
       {
         "command": "pnpm test",
         "ok": true,
-        "durationMs": 14354
+        "durationMs": 14424
       },
       {
         "command": "pnpm benchmark:validate",
         "ok": true,
-        "durationMs": 1318
+        "durationMs": 1316
       },
       {
         "command": "pnpm benchmark:validate-hard",
         "ok": true,
-        "durationMs": 1380
+        "durationMs": 1395
       },
       {
         "command": "pnpm reproduce",
-        "ok": false,
-        "durationMs": 3450
+        "ok": true,
+        "durationMs": 3786
+      },
+      {
+        "command": "pnpm dashboard:build",
+        "ok": true,
+        "durationMs": 1810
+      },
+      {
+        "command": "pnpm sample:build",
+        "ok": true,
+        "durationMs": 1037
+      },
+      {
+        "command": "pnpm product:build",
+        "ok": true,
+        "durationMs": 1528
+      },
+      {
+        "command": "pnpm product:test",
+        "ok": true,
+        "durationMs": 2882
       }
     ],
     "dashboardStructureOk": true,
@@ -130,6 +150,6 @@
     "productStructureOk": true,
     "sampleRunPackagePresent": true,
     "secretScanOk": true,
-    "result": "FAILED"
+    "result": "PASSED"
   }
 }

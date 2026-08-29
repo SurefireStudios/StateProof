@@ -312,6 +312,12 @@ ${scan.tail}
   const manifest = {
     schemaVersion: '1.1.0',
     generatedAt: new Date().toISOString(),
+    note:
+      'The sha256 below is of the archive built from `package.sourceCommit`. ' +
+      'Rebuilding from that commit reproduces it: the writer stores no timestamps ' +
+      'and both bundled surfaces build deterministically. `release/` itself is not ' +
+      'tracked, because a contents note describing an archive that contains it ' +
+      'would be circular.',
     package: {
       path: `release/${ZIP_NAME}`,
       sha256: digest,
