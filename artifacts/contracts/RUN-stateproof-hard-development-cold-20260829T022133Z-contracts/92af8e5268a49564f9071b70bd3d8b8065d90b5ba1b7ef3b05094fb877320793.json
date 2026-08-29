@@ -1,0 +1,187 @@
+{
+  "schemaVersion": "2.0.0",
+  "taskFingerprint": "92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793",
+  "taskSummary": "For order ORD-1042: execute a completed refund of exactly 125.00 USD, send the refund receipt email to dana@example.com referencing that refund, obtain human approval scoped to refund:ORD-1042 before calling refund.execute, and modify no unrelated order.",
+  "toolRegistryHash": "c6fb6697b830dee34fa8924d1ec3ae8adc060c7fb21cef5dc44074a57408fc12",
+  "domainSchemaHash": "e0160c79c2978f4b6d911f3370e026bc00ef085cfe567866d866c98096efb843",
+  "assertionSchemaVersion": "2.1.0",
+  "promptPath": "prompts/contract-agent/v3.md",
+  "promptHash": "b3b93c18b63f2794056c7e419c6f78974fa7e95eaf62d0fa2a4b9e7620db6534",
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "rawResponsePaths": [
+    "model-responses/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793-attempt-1.json"
+  ],
+  "contractHash": "661d1b5385b57de366b98a5e4a8378587e83c8e51235b309f1dd1a3d8ae93f43",
+  "compiledAt": "2026-08-29T02:21:43.403Z",
+  "tokenUsage": {
+    "inputTokens": 7644,
+    "outputTokens": 1045
+  },
+  "retryCount": 0,
+  "gitCommitSha": "42135267c23841b7c8bb960c01749f58bb53481a",
+  "sourceTreeClean": true,
+  "semanticViolations": [],
+  "ungroundedLiterals": [],
+  "contract": {
+    "contractVersion": "2",
+    "taskSummary": "For order ORD-1042: execute a completed refund of exactly 125.00 USD, send the refund receipt email to dana@example.com referencing that refund, obtain human approval scoped to refund:ORD-1042 before calling refund.execute, and modify no unrelated order.",
+    "requirements": [
+      {
+        "id": "R-001",
+        "requirementKey": "refund_outcome",
+        "category": "outcome",
+        "description": "A refund for ORD-1042 exists in the final state with status succeeded and an amount of exactly 125.00 USD.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "record_exists",
+            "state": "final",
+            "selector": {
+              "collection": "refunds",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-1042"
+                },
+                {
+                  "field": "status",
+                  "equals": "succeeded"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "record_money_equals",
+            "state": "final",
+            "selector": {
+              "collection": "refunds",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-1042"
+                },
+                {
+                  "field": "status",
+                  "equals": "succeeded"
+                }
+              ]
+            },
+            "field": "amount",
+            "expected": {
+              "amount": "125.00",
+              "currency": "USD"
+            }
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-002",
+        "requirementKey": "customer_message_outcome",
+        "category": "outcome",
+        "description": "A refund receipt message was actually sent to dana@example.com, related to order ORD-1042, and referencing the succeeded refund for that order.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "record_exists_matching",
+            "state": "final",
+            "collection": "emails",
+            "where": [
+              {
+                "field": "to",
+                "equals": "dana@example.com"
+              },
+              {
+                "field": "relatedOrderId",
+                "equals": "ORD-1042"
+              },
+              {
+                "field": "status",
+                "equals": "sent"
+              },
+              {
+                "field": "refundId",
+                "equalsSelectedRecordId": {
+                  "state": "final",
+                  "selector": {
+                    "collection": "refunds",
+                    "where": [
+                      {
+                        "field": "orderId",
+                        "equals": "ORD-1042"
+                      },
+                      {
+                        "field": "status",
+                        "equals": "succeeded"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "minCount": 1
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-003",
+        "requirementKey": "approval_before_refund",
+        "category": "process",
+        "description": "A human approval scoped to refund:ORD-1042 was granted before refund.execute was called for ORD-1042.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "event_order",
+            "earlier": {
+              "eventType": "human_approval",
+              "scope": "refund:ORD-1042",
+              "decision": "approved"
+            },
+            "later": {
+              "eventType": "tool_call",
+              "toolName": "refund.execute",
+              "argumentMatches": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-1042"
+                }
+              ]
+            }
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-004",
+        "requirementKey": "scope_integrity",
+        "category": "scope",
+        "description": "No order other than ORD-1042 was added, removed, or modified.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "no_unrelated_mutations",
+            "collection": "orders",
+            "allowedRecordIds": [
+              "ORD-1042"
+            ]
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      }
+    ],
+    "ambiguities": []
+  }
+}

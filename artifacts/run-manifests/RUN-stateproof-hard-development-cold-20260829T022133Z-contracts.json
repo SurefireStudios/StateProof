@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "2.0.0",
+  "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+  "createdAt": "2026-08-29T02:21:33.355Z",
+  "stage": "gate-3b-contract-compilation",
+  "promptPath": "prompts/contract-agent/v3.md",
+  "promptHash": "b3b93c18b63f2794056c7e419c6f78974fa7e95eaf62d0fa2a4b9e7620db6534",
+  "assertionSchemaVersion": "2.1.0",
+  "contractVersion": "2",
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "gitCommitSha": "42135267c23841b7c8bb960c01749f58bb53481a",
+  "sourceTreeClean": true,
+  "uniqueTaskFingerprints": [
+    "518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7",
+    "92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793",
+    "9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858"
+  ],
+  "contractHashes": {
+    "92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793": "661d1b5385b57de366b98a5e4a8378587e83c8e51235b309f1dd1a3d8ae93f43",
+    "9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858": "3ba65540a8dcad356ded2af6ebde5c42564fc42c141ef886bfec7577e9960629",
+    "518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7": "45f5df4dca8ba843de9e601747f3b130ad50ccc516a3742ce3decd10f0e9ad54"
+  },
+  "compilationCalls": 3,
+  "repairCalls": 0,
+  "cacheHits": 5,
+  "tokenUsage": {
+    "inputTokens": 24245,
+    "outputTokens": 5644
+  },
+  "wallClockMs": 53287,
+  "contractPaths": [
+    "contracts/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7.json",
+    "contracts/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793.json",
+    "contracts/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858.json"
+  ],
+  "rawResponsePaths": [
+    "model-responses/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793-attempt-1.json",
+    "model-responses/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858-attempt-1.json",
+    "model-responses/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7-attempt-1.json"
+  ]
+}

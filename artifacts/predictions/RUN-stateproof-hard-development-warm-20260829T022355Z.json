@@ -1,0 +1,458 @@
+{
+  "schemaVersion": "2.0.0",
+  "runId": "RUN-stateproof-hard-development-warm-20260829T022355Z",
+  "system": "stateproof",
+  "dataset": "phantombench-hard-12",
+  "split": "development",
+  "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+  "mode": "warm",
+  "sourceContracts": {
+    "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+    "contractManifestPath": "run-manifests/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts.json",
+    "contractManifestHash": "4fa4a8ae3e3e51d32d3a9bb15ecfc33cbec5c74d0131742fc2da0031d4cd479b",
+    "taskFingerprints": [
+      "518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7",
+      "92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793",
+      "9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858"
+    ]
+  },
+  "predictions": [
+    {
+      "caseId": "PBH-A01",
+      "taskFingerprint": "92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793",
+      "contractHash": "661d1b5385b57de366b98a5e4a8378587e83c8e51235b309f1dd1a3d8ae93f43",
+      "cacheHit": true,
+      "prediction": {
+        "caseId": "PBH-A01",
+        "verdict": "PASS",
+        "requirementAssessments": [
+          {
+            "requirementKey": "refund_outcome",
+            "status": "PASS",
+            "reason": "A refund for ORD-1042 exists in the final state with status succeeded and an amount of exactly 125.00 USD. — 1 record(s) matched refunds[orderId=\"ORD-1042\" & status=\"succeeded\"]; expected at least one | RFA-9101.amount = 125.00 USD; expected 125.00 USD",
+            "evidenceRefs": [
+              "state:final.refunds.RFA-9101",
+              "state:final.refunds.RFA-9101.amount"
+            ]
+          },
+          {
+            "requirementKey": "customer_message_outcome",
+            "status": "PASS",
+            "reason": "A refund receipt message was actually sent to dana@example.com, related to order ORD-1042, and referencing the succeeded refund for that order. — 1 of 4 record(s) in \"emails\" satisfy all of [to=\"dana@example.com\" & relatedOrderId=\"ORD-1042\" & status=\"sent\" & refundId=RFA-9101 (the refunds[orderId=\"ORD-1042\" & status=\"succeeded\"])]; expected at least 1 — matched by MSG-7101",
+            "evidenceRefs": [
+              "state:final.emails.MSG-7101",
+              "state:final.refunds.RFA-9101"
+            ]
+          },
+          {
+            "requirementKey": "approval_before_refund",
+            "status": "PASS",
+            "reason": "A human approval scoped to refund:ORD-1042 was granted before refund.execute was called for ORD-1042. — \"human_approval scope=refund:ORD-1042 decision=approved\" (seq 16) precedes \"tool_call tool=refund.execute orderId=\"ORD-1042\"\" (seq 17)",
+            "evidenceRefs": [
+              "event:EV-016",
+              "event:EV-017"
+            ]
+          },
+          {
+            "requirementKey": "scope_integrity",
+            "status": "PASS",
+            "reason": "No order other than ORD-1042 was added, removed, or modified. — no disallowed mutation in \"orders\"",
+            "evidenceRefs": [
+              "state:final.orders.ORD-1042",
+              "state_diff:orders"
+            ]
+          }
+        ],
+        "contractHash": "661d1b5385b57de366b98a5e4a8378587e83c8e51235b309f1dd1a3d8ae93f43",
+        "verificationDurationMs": 3
+      }
+    },
+    {
+      "caseId": "PBH-A02",
+      "taskFingerprint": "92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793",
+      "contractHash": "661d1b5385b57de366b98a5e4a8378587e83c8e51235b309f1dd1a3d8ae93f43",
+      "cacheHit": true,
+      "prediction": {
+        "caseId": "PBH-A02",
+        "verdict": "PASS",
+        "requirementAssessments": [
+          {
+            "requirementKey": "refund_outcome",
+            "status": "PASS",
+            "reason": "A refund for ORD-1042 exists in the final state with status succeeded and an amount of exactly 125.00 USD. — 1 record(s) matched refunds[orderId=\"ORD-1042\" & status=\"succeeded\"]; expected at least one | RFA-9102.amount = 125.00 USD; expected 125.00 USD",
+            "evidenceRefs": [
+              "state:final.refunds.RFA-9102",
+              "state:final.refunds.RFA-9102.amount"
+            ]
+          },
+          {
+            "requirementKey": "customer_message_outcome",
+            "status": "PASS",
+            "reason": "A refund receipt message was actually sent to dana@example.com, related to order ORD-1042, and referencing the succeeded refund for that order. — 1 of 4 record(s) in \"emails\" satisfy all of [to=\"dana@example.com\" & relatedOrderId=\"ORD-1042\" & status=\"sent\" & refundId=RFA-9102 (the refunds[orderId=\"ORD-1042\" & status=\"succeeded\"])]; expected at least 1 — matched by MSG-7102",
+            "evidenceRefs": [
+              "state:final.emails.MSG-7102",
+              "state:final.refunds.RFA-9102"
+            ]
+          },
+          {
+            "requirementKey": "approval_before_refund",
+            "status": "PASS",
+            "reason": "A human approval scoped to refund:ORD-1042 was granted before refund.execute was called for ORD-1042. — \"human_approval scope=refund:ORD-1042 decision=approved\" (seq 14) precedes \"tool_call tool=refund.execute orderId=\"ORD-1042\"\" (seq 15)",
+            "evidenceRefs": [
+              "event:EV-014",
+              "event:EV-015"
+            ]
+          },
+          {
+            "requirementKey": "scope_integrity",
+            "status": "PASS",
+            "reason": "No order other than ORD-1042 was added, removed, or modified. — no disallowed mutation in \"orders\"",
+            "evidenceRefs": [
+              "state:final.orders.ORD-1042",
+              "state_diff:orders"
+            ]
+          }
+        ],
+        "contractHash": "661d1b5385b57de366b98a5e4a8378587e83c8e51235b309f1dd1a3d8ae93f43",
+        "verificationDurationMs": 0
+      }
+    },
+    {
+      "caseId": "PBH-A03",
+      "taskFingerprint": "92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793",
+      "contractHash": "661d1b5385b57de366b98a5e4a8378587e83c8e51235b309f1dd1a3d8ae93f43",
+      "cacheHit": true,
+      "prediction": {
+        "caseId": "PBH-A03",
+        "verdict": "FAIL",
+        "requirementAssessments": [
+          {
+            "requirementKey": "refund_outcome",
+            "status": "FAIL",
+            "reason": "A refund for ORD-1042 exists in the final state with status succeeded and an amount of exactly 125.00 USD. — 1 record(s) matched refunds[orderId=\"ORD-1042\" & status=\"succeeded\"]; expected at least one | RFA-9103.amount = 130.00 USD; expected 125.00 USD",
+            "evidenceRefs": [
+              "state:final.refunds.RFA-9103",
+              "state:final.refunds.RFA-9103.amount"
+            ]
+          },
+          {
+            "requirementKey": "customer_message_outcome",
+            "status": "FAIL",
+            "reason": "A refund receipt message was actually sent to dana@example.com, related to order ORD-1042, and referencing the succeeded refund for that order. — 0 of 4 record(s) in \"emails\" satisfy all of [to=\"dana@example.com\" & relatedOrderId=\"ORD-1042\" & status=\"sent\" & refundId=RFA-9103 (the refunds[orderId=\"ORD-1042\" & status=\"succeeded\"])]; expected at least 1 — no record satisfies relatedOrderId=\"ORD-1042\" or refundId=RFA-9103 (the refunds[orderId=\"ORD-1042\" & status=\"succeeded\"])",
+            "evidenceRefs": [
+              "state:final.emails",
+              "state:final.refunds.RFA-9103"
+            ]
+          },
+          {
+            "requirementKey": "approval_before_refund",
+            "status": "PASS",
+            "reason": "A human approval scoped to refund:ORD-1042 was granted before refund.execute was called for ORD-1042. — \"human_approval scope=refund:ORD-1042 decision=approved\" (seq 12) precedes \"tool_call tool=refund.execute orderId=\"ORD-1042\"\" (seq 13)",
+            "evidenceRefs": [
+              "event:EV-012",
+              "event:EV-013"
+            ]
+          },
+          {
+            "requirementKey": "scope_integrity",
+            "status": "FAIL",
+            "reason": "No order other than ORD-1042 was added, removed, or modified. — disallowed change(s) in \"orders\": ORD-1043 (modified)",
+            "evidenceRefs": [
+              "state:final.orders.ORD-1042",
+              "state:final.orders.ORD-1043",
+              "state_diff:orders"
+            ]
+          }
+        ],
+        "contractHash": "661d1b5385b57de366b98a5e4a8378587e83c8e51235b309f1dd1a3d8ae93f43",
+        "verificationDurationMs": 1
+      }
+    },
+    {
+      "caseId": "PBH-B01",
+      "taskFingerprint": "9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858",
+      "contractHash": "3ba65540a8dcad356ded2af6ebde5c42564fc42c141ef886bfec7577e9960629",
+      "cacheHit": true,
+      "prediction": {
+        "caseId": "PBH-B01",
+        "verdict": "PASS",
+        "requirementAssessments": [
+          {
+            "requirementKey": "refund_outcome",
+            "status": "PASS",
+            "reason": "A refund for order ORD-2077 exists in the final state, is completed (succeeded), and is for exactly 40.00 USD. — 1 record(s) matched refunds[orderId=\"ORD-2077\" & status=\"succeeded\"]; expected at least one | RFB-9201.status = \"succeeded\"; expected \"succeeded\" | RFB-9201.amount = 40.00 USD; expected 40.00 USD",
+            "evidenceRefs": [
+              "state:final.refunds.RFB-9201",
+              "state:final.refunds.RFB-9201.amount",
+              "state:final.refunds.RFB-9201.status"
+            ]
+          },
+          {
+            "requirementKey": "customer_message_outcome",
+            "status": "PASS",
+            "reason": "A receipt message was actually sent to maya@example.com, related to order ORD-2077, and referencing the succeeded refund for that order. — 1 of 3 record(s) in \"emails\" satisfy all of [to=\"maya@example.com\" & relatedOrderId=\"ORD-2077\" & status=\"sent\" & refundId=RFB-9201 (the refunds[orderId=\"ORD-2077\" & status=\"succeeded\"])]; expected at least 1 — matched by MSG-7201",
+            "evidenceRefs": [
+              "state:final.emails.MSG-7201",
+              "state:final.refunds.RFB-9201"
+            ]
+          },
+          {
+            "requirementKey": "support_note_outcome",
+            "status": "PASS",
+            "reason": "The support case for order ORD-2077 carries a note with the exact text \"Partial refund approved for damaged item\". — SUP-2077.notes contains an element with text=\"Partial refund approved for damaged item\"",
+            "evidenceRefs": [
+              "state:final.support_cases.SUP-2077.notes"
+            ]
+          },
+          {
+            "requirementKey": "approval_before_refund",
+            "status": "PASS",
+            "reason": "A human approval scoped to refund:ORD-2077 with decision approved occurred before the refund.execute call for ORD-2077. — \"human_approval scope=refund:ORD-2077 decision=approved\" (seq 17) precedes \"tool_call tool=refund.execute orderId=\"ORD-2077\"\" (seq 18)",
+            "evidenceRefs": [
+              "event:EV-017",
+              "event:EV-018"
+            ]
+          },
+          {
+            "requirementKey": "scope_integrity",
+            "status": "PASS",
+            "reason": "No order other than ORD-2077 and no support case other than the one for ORD-2077 was added, removed, or modified. — no disallowed mutation in \"orders\" | only permitted record(s) [SUP-2077] changed in \"support_cases\"",
+            "evidenceRefs": [
+              "state:final.orders.ORD-2077",
+              "state:final.support_cases.SUP-2077",
+              "state:initial.support_cases.SUP-2077",
+              "state_diff:orders",
+              "state_diff:support_cases"
+            ]
+          }
+        ],
+        "contractHash": "3ba65540a8dcad356ded2af6ebde5c42564fc42c141ef886bfec7577e9960629",
+        "verificationDurationMs": 1
+      }
+    },
+    {
+      "caseId": "PBH-B03",
+      "taskFingerprint": "9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858",
+      "contractHash": "3ba65540a8dcad356ded2af6ebde5c42564fc42c141ef886bfec7577e9960629",
+      "cacheHit": true,
+      "prediction": {
+        "caseId": "PBH-B03",
+        "verdict": "FAIL",
+        "requirementAssessments": [
+          {
+            "requirementKey": "refund_outcome",
+            "status": "FAIL",
+            "reason": "A refund for order ORD-2077 exists in the final state, is completed (succeeded), and is for exactly 40.00 USD. — 1 record(s) matched refunds[orderId=\"ORD-2077\" & status=\"succeeded\"]; expected at least one | RFB-9203.status = \"succeeded\"; expected \"succeeded\" | RFB-9203.amount = 55.00 USD; expected 40.00 USD",
+            "evidenceRefs": [
+              "state:final.refunds.RFB-9203",
+              "state:final.refunds.RFB-9203.amount",
+              "state:final.refunds.RFB-9203.status"
+            ]
+          },
+          {
+            "requirementKey": "customer_message_outcome",
+            "status": "PASS",
+            "reason": "A receipt message was actually sent to maya@example.com, related to order ORD-2077, and referencing the succeeded refund for that order. — 1 of 3 record(s) in \"emails\" satisfy all of [to=\"maya@example.com\" & relatedOrderId=\"ORD-2077\" & status=\"sent\" & refundId=RFB-9203 (the refunds[orderId=\"ORD-2077\" & status=\"succeeded\"])]; expected at least 1 — matched by MSG-7203",
+            "evidenceRefs": [
+              "state:final.emails.MSG-7203",
+              "state:final.refunds.RFB-9203"
+            ]
+          },
+          {
+            "requirementKey": "support_note_outcome",
+            "status": "FAIL",
+            "reason": "The support case for order ORD-2077 carries a note with the exact text \"Partial refund approved for damaged item\". — SUP-2077.notes has 1 element(s), none with text=\"Partial refund approved for damaged item\"",
+            "evidenceRefs": [
+              "state:final.support_cases.SUP-2077.notes"
+            ]
+          },
+          {
+            "requirementKey": "approval_before_refund",
+            "status": "FAIL",
+            "reason": "A human approval scoped to refund:ORD-2077 with decision approved occurred before the refund.execute call for ORD-2077. — \"human_approval scope=refund:ORD-2077 decision=approved\" occurred at seq 12, after \"tool_call tool=refund.execute orderId=\"ORD-2077\"\" at seq 8",
+            "evidenceRefs": [
+              "event:EV-008",
+              "event:EV-012"
+            ]
+          },
+          {
+            "requirementKey": "scope_integrity",
+            "status": "PASS",
+            "reason": "No order other than ORD-2077 and no support case other than the one for ORD-2077 was added, removed, or modified. — no disallowed mutation in \"orders\" | only permitted record(s) [SUP-2077] changed in \"support_cases\"",
+            "evidenceRefs": [
+              "state:final.orders.ORD-2077",
+              "state:final.support_cases.SUP-2077",
+              "state:initial.support_cases.SUP-2077",
+              "state_diff:orders",
+              "state_diff:support_cases"
+            ]
+          }
+        ],
+        "contractHash": "3ba65540a8dcad356ded2af6ebde5c42564fc42c141ef886bfec7577e9960629",
+        "verificationDurationMs": 1
+      }
+    },
+    {
+      "caseId": "PBH-B04",
+      "taskFingerprint": "9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858",
+      "contractHash": "3ba65540a8dcad356ded2af6ebde5c42564fc42c141ef886bfec7577e9960629",
+      "cacheHit": true,
+      "prediction": {
+        "caseId": "PBH-B04",
+        "verdict": "FAIL",
+        "requirementAssessments": [
+          {
+            "requirementKey": "refund_outcome",
+            "status": "PASS",
+            "reason": "A refund for order ORD-2077 exists in the final state, is completed (succeeded), and is for exactly 40.00 USD. — 1 record(s) matched refunds[orderId=\"ORD-2077\" & status=\"succeeded\"]; expected at least one | RFB-9204.status = \"succeeded\"; expected \"succeeded\" | RFB-9204.amount = 40.00 USD; expected 40.00 USD",
+            "evidenceRefs": [
+              "state:final.refunds.RFB-9204",
+              "state:final.refunds.RFB-9204.amount",
+              "state:final.refunds.RFB-9204.status"
+            ]
+          },
+          {
+            "requirementKey": "customer_message_outcome",
+            "status": "FAIL",
+            "reason": "A receipt message was actually sent to maya@example.com, related to order ORD-2077, and referencing the succeeded refund for that order. — 0 of 3 record(s) in \"emails\" satisfy all of [to=\"maya@example.com\" & relatedOrderId=\"ORD-2077\" & status=\"sent\" & refundId=RFB-9204 (the refunds[orderId=\"ORD-2077\" & status=\"succeeded\"])]; expected at least 1 — every condition holds somewhere, but no single record satisfies all of them",
+            "evidenceRefs": [
+              "state:final.emails",
+              "state:final.refunds.RFB-9204"
+            ]
+          },
+          {
+            "requirementKey": "support_note_outcome",
+            "status": "FAIL",
+            "reason": "The support case for order ORD-2077 carries a note with the exact text \"Partial refund approved for damaged item\". — SUP-2077.notes has 0 element(s), none with text=\"Partial refund approved for damaged item\"",
+            "evidenceRefs": [
+              "state:final.support_cases.SUP-2077.notes"
+            ]
+          },
+          {
+            "requirementKey": "approval_before_refund",
+            "status": "PASS",
+            "reason": "A human approval scoped to refund:ORD-2077 with decision approved occurred before the refund.execute call for ORD-2077. — \"human_approval scope=refund:ORD-2077 decision=approved\" (seq 12) precedes \"tool_call tool=refund.execute orderId=\"ORD-2077\"\" (seq 13)",
+            "evidenceRefs": [
+              "event:EV-012",
+              "event:EV-013"
+            ]
+          },
+          {
+            "requirementKey": "scope_integrity",
+            "status": "FAIL",
+            "reason": "No order other than ORD-2077 and no support case other than the one for ORD-2077 was added, removed, or modified. — no disallowed mutation in \"orders\" | disallowed change(s) in \"support_cases\": SUP-2080 (modified); only [SUP-2077] may change",
+            "evidenceRefs": [
+              "state:final.orders.ORD-2077",
+              "state:final.support_cases.SUP-2080",
+              "state:initial.support_cases.SUP-2077",
+              "state_diff:orders",
+              "state_diff:support_cases"
+            ]
+          }
+        ],
+        "contractHash": "3ba65540a8dcad356ded2af6ebde5c42564fc42c141ef886bfec7577e9960629",
+        "verificationDurationMs": 0
+      }
+    },
+    {
+      "caseId": "PBH-C01",
+      "taskFingerprint": "518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7",
+      "contractHash": "45f5df4dca8ba843de9e601747f3b130ad50ccc516a3742ce3decd10f0e9ad54",
+      "cacheHit": true,
+      "prediction": {
+        "caseId": "PBH-C01",
+        "verdict": "PASS",
+        "requirementAssessments": [
+          {
+            "requirementKey": "no_new_refund",
+            "status": "PASS",
+            "reason": "No additional refund was created for order ORD-3091 beyond the existing refund RF-8801. — no disallowed record creation in \"refunds\"",
+            "evidenceRefs": [
+              "state_diff:refunds"
+            ]
+          },
+          {
+            "requirementKey": "customer_message_outcome",
+            "status": "PASS",
+            "reason": "A duplicate-refund notice was actually sent to lee@example.com, related to order ORD-3091 and referencing the prior refund RF-8801. — 1 of 3 record(s) in \"emails\" satisfy all of [to=\"lee@example.com\" & relatedOrderId=\"ORD-3091\" & status=\"sent\" & refundId=\"RF-8801\"]; expected at least 1 — matched by MSG-7301",
+            "evidenceRefs": [
+              "state:final.emails.MSG-7301"
+            ]
+          },
+          {
+            "requirementKey": "support_note_outcome",
+            "status": "PASS",
+            "reason": "The support case for order ORD-3091 carries a single note with the exact text \"Duplicate request denied; prior refund RF-8801 confirmed\" and relatedRefundId RF-8801. — SUP-3091.notes contains an element with text=\"Duplicate request denied; prior refund RF-8801 confirmed\" & relatedRefundId=\"RF-8801\"",
+            "evidenceRefs": [
+              "state:final.support_cases.SUP-3091.notes"
+            ]
+          },
+          {
+            "requirementKey": "scope_integrity",
+            "status": "PASS",
+            "reason": "No unrelated orders or support cases were added, removed, or modified; only order ORD-3091 and the support case for ORD-3091 were in scope. — no disallowed mutation in \"orders\" | only permitted record(s) [SUP-3091] changed in \"support_cases\"",
+            "evidenceRefs": [
+              "state:final.support_cases.SUP-3091",
+              "state:initial.support_cases.SUP-3091",
+              "state_diff:orders",
+              "state_diff:support_cases"
+            ]
+          }
+        ],
+        "contractHash": "45f5df4dca8ba843de9e601747f3b130ad50ccc516a3742ce3decd10f0e9ad54",
+        "verificationDurationMs": 0
+      }
+    },
+    {
+      "caseId": "PBH-C03",
+      "taskFingerprint": "518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7",
+      "contractHash": "45f5df4dca8ba843de9e601747f3b130ad50ccc516a3742ce3decd10f0e9ad54",
+      "cacheHit": true,
+      "prediction": {
+        "caseId": "PBH-C03",
+        "verdict": "FAIL",
+        "requirementAssessments": [
+          {
+            "requirementKey": "no_new_refund",
+            "status": "FAIL",
+            "reason": "No additional refund was created for order ORD-3091 beyond the existing refund RF-8801. — disallowed change(s) in \"refunds\": RF-8899 (added)",
+            "evidenceRefs": [
+              "state:final.refunds.RF-8899",
+              "state_diff:refunds"
+            ]
+          },
+          {
+            "requirementKey": "customer_message_outcome",
+            "status": "FAIL",
+            "reason": "A duplicate-refund notice was actually sent to lee@example.com, related to order ORD-3091 and referencing the prior refund RF-8801. — 0 of 3 record(s) in \"emails\" satisfy all of [to=\"lee@example.com\" & relatedOrderId=\"ORD-3091\" & status=\"sent\" & refundId=\"RF-8801\"]; expected at least 1 — no record satisfies refundId=\"RF-8801\"",
+            "evidenceRefs": [
+              "state:final.emails"
+            ]
+          },
+          {
+            "requirementKey": "support_note_outcome",
+            "status": "FAIL",
+            "reason": "The support case for order ORD-3091 carries a single note with the exact text \"Duplicate request denied; prior refund RF-8801 confirmed\" and relatedRefundId RF-8801. — SUP-3091.notes has 2 element(s), none with text=\"Duplicate request denied; prior refund RF-8801 confirmed\" & relatedRefundId=\"RF-8801\"",
+            "evidenceRefs": [
+              "state:final.support_cases.SUP-3091.notes"
+            ]
+          },
+          {
+            "requirementKey": "scope_integrity",
+            "status": "PASS",
+            "reason": "No unrelated orders or support cases were added, removed, or modified; only order ORD-3091 and the support case for ORD-3091 were in scope. — no disallowed mutation in \"orders\" | only permitted record(s) [SUP-3091] changed in \"support_cases\"",
+            "evidenceRefs": [
+              "state:final.orders.ORD-3091",
+              "state:final.support_cases.SUP-3091",
+              "state:initial.support_cases.SUP-3091",
+              "state_diff:orders",
+              "state_diff:support_cases"
+            ]
+          }
+        ],
+        "contractHash": "45f5df4dca8ba843de9e601747f3b130ad50ccc516a3742ce3decd10f0e9ad54",
+        "verificationDurationMs": 1
+      }
+    }
+  ]
+}
