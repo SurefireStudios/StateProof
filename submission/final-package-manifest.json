@@ -1,23 +1,23 @@
 {
   "schemaVersion": "1.1.0",
-  "generatedAt": "2026-08-29T17:19:12.415Z",
+  "generatedAt": "2026-08-29T17:20:13.673Z",
   "note": "The sha256 below is of the archive built from `package.sourceCommit`. Rebuilding from that commit reproduces it: the writer stores no timestamps and both bundled surfaces build deterministically. `release/` itself is not tracked, because a contents note describing an archive that contains it would be circular.",
   "package": {
     "path": "release/stateproof-submission-final.zip",
-    "sha256": "9bad6900c45a9a3b2a8dce11d2b0d83c1daa4f4cac623cac20c82a2d7462c58b",
-    "sizeBytes": 1223938,
-    "sizeMb": 1.17,
-    "sourceCommit": "5ef0d03b879e722adc3c2b5bae60a3b7d41a1885",
+    "sha256": "976367c77277634589023f7000a618252f1d5f8aac4f8464995c13942097ae40",
+    "sizeBytes": 1221434,
+    "sizeMb": 1.16,
+    "sourceCommit": "8cdb1f563e05cccb2b6b5d09d1ec8504faab396e",
     "trackedTreeClean": true
   },
   "environment": {
     "os": "win32 10.0.26200 (x64)",
     "node": "v20.10.0",
     "pnpm": "8.12.0",
-    "installDurationMs": 3636
+    "installDurationMs": 3739
   },
   "contents": {
-    "fileCount": 561,
+    "fileCount": 560,
     "topLevelPaths": [
       ".env.example",
       ".gitattributes",
@@ -30,7 +30,6 @@
       "README.md",
       "REPRODUCTION.md",
       "SUBMISSION.md",
-      "Surefire-Icon.svg",
       "apps",
       "artifacts",
       "benchmarks",
@@ -98,52 +97,52 @@
       {
         "command": "pnpm install --frozen-lockfile",
         "ok": true,
-        "durationMs": 3636
+        "durationMs": 3739
       },
       {
         "command": "pnpm typecheck",
         "ok": true,
-        "durationMs": 5654
+        "durationMs": 5076
       },
       {
         "command": "pnpm test",
         "ok": true,
-        "durationMs": 15784
+        "durationMs": 14028
       },
       {
         "command": "pnpm benchmark:validate",
         "ok": true,
-        "durationMs": 1638
+        "durationMs": 1433
       },
       {
         "command": "pnpm benchmark:validate-hard",
         "ok": true,
-        "durationMs": 1668
+        "durationMs": 1534
       },
       {
         "command": "pnpm reproduce",
         "ok": true,
-        "durationMs": 4682
+        "durationMs": 4362
       },
       {
         "command": "pnpm dashboard:build",
         "ok": true,
-        "durationMs": 2217
+        "durationMs": 2101
       },
       {
         "command": "pnpm sample:build",
         "ok": true,
-        "durationMs": 1261
+        "durationMs": 1182
       },
       {
         "command": "pnpm product:build",
         "ok": true,
-        "durationMs": 1883
+        "durationMs": 1698
       },
       {
         "command": "pnpm product:test",
         "ok": true,
-        "durationMs": 3370
+        "durationMs": 3494
       }
     ],
     "dashboardStructureOk": true,
