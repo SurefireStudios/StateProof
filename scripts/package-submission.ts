@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -7,6 +7,7 @@ import path from 'node:path';
 import { platform, release, arch } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { toJsonValue } from '@stateproof/core';
+import { readZip, writeZip } from '../apps/product/src/server/zip';
 
 /**
  * `pnpm package:submission`
@@ -155,17 +156,33 @@ function renderContents(
 }
 
 /**
- * A scratch directory that every `tar` invocation runs from.
+ * Archives are read and written in-process rather than by shelling out.
  *
- * Windows `tar` is bsdtar, and bsdtar reads `-f C:\path\to.zip` as a *remote*
- * archive on host `C` — "Cannot connect to C: resolve failed". Keeping the
- * archive argument a bare filename in the working directory sidesteps that
- * without a platform branch, and `-C` takes an absolute path safely.
+ * `tar` on Windows is either GNU tar, which cannot read a ZIP at all, or bsdtar,
+ * which reads `-f C:\path\to.zip` as a remote archive on host `C`. Both were hit
+ * here. The repository already owns a defensive ZIP reader and a writer, so the
+ * external binary buys nothing and costs portability.
  */
-const scratch = mkdtempSync(path.join(tmpdir(), 'stateproof-tar-'));
+const PACKAGE_ZIP_LIMITS = {
+  maxEntries: 20_000,
+  maxEntryBytes: 64 * 1024 * 1024,
+  maxTotalBytes: 512 * 1024 * 1024,
+};
 
-function untar(archiveName: string, into: string): void {
-  execFileSync('tar', ['-xf', archiveName, '-C', into], { cwd: scratch });
+function extractZip(zipPath: string, into: string): void {
+  for (const entry of readZip(readFileSync(zipPath), PACKAGE_ZIP_LIMITS)) {
+    const target = path.join(into, entry.name);
+    mkdirSync(path.dirname(target), { recursive: true });
+    writeFileSync(target, entry.contents);
+  }
+}
+
+function createZip(fromDir: string, zipPath: string): void {
+  const entries = walk(fromDir).map((relative) => ({
+    name: relative,
+    contents: readFileSync(path.join(fromDir, relative)),
+  }));
+  writeFileSync(zipPath, writeZip(entries, { compress: true }));
 }
 
 async function main(): Promise<void> {
@@ -190,8 +207,7 @@ async function main(): Promise<void> {
   // Stage: tracked files at HEAD, plus both prebuilt surfaces for convenience.
   const staging = mkdtempSync(path.join(tmpdir(), 'stateproof-package-'));
   execFileSync('git', ['archive', '--format=zip', '-o', zipPath, head], { cwd: REPO_ROOT });
-  copyFileSync(zipPath, path.join(scratch, 'source.zip'));
-  untar('source.zip', staging);
+  extractZip(zipPath, staging);
 
   for (const [source, relative] of [
     [DASHBOARD_DIST, path.join('apps', 'dashboard', 'dist')],
@@ -205,9 +221,7 @@ async function main(): Promise<void> {
   }
 
   rmSync(zipPath, { force: true });
-  rmSync(path.join(scratch, 'package.zip'), { force: true });
-  execFileSync('tar', ['-a', '-c', '-f', 'package.zip', '-C', staging, '.'], { cwd: scratch });
-  copyFileSync(path.join(scratch, 'package.zip'), zipPath);
+  createZip(staging, zipPath);
 
   const digest = await sha256File(zipPath);
   const sizeBytes = statSync(zipPath).size;
@@ -217,7 +231,7 @@ async function main(): Promise<void> {
 
   // --- prove the package ---------------------------------------------------
   const extracted = mkdtempSync(path.join(tmpdir(), 'stateproof-extract-'));
-  untar('package.zip', extracted);
+  extractZip(zipPath, extracted);
 
   const env: NodeJS.ProcessEnv = { ...process.env };
   delete env['STATEPROOF_ANTHROPIC_API_KEY'];
@@ -359,11 +373,11 @@ async function main(): Promise<void> {
     ].join('\n'),
   );
 
-  for (const directory of [staging, extracted, scratch]) {
+  for (const directory of [staging, extracted]) {
     try {
       rmSync(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 250 });
     } catch {
-      process.stdout.write(`note: could not remove ${scratch}; delete it manually.\n`);
+      process.stdout.write(`note: could not remove ${directory}; delete it manually.\n`);
     }
   }
 

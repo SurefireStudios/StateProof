@@ -1,4 +1,4 @@
-import { inflateRawSync } from 'node:zlib';
+import { deflateRawSync, inflateRawSync } from 'node:zlib';
 
 /**
  * A minimal, defensive ZIP reader for uploaded run packages.
@@ -52,40 +52,54 @@ export function assertSafeEntryName(name: string): string {
 }
 
 /**
- * A minimal, stored-only ZIP writer, used to build the sample run package.
+ * A minimal ZIP writer.
  *
- * Stored rather than deflated on purpose: the sample is a handful of small text
- * files, and an archive whose bytes are a direct function of its contents is one
- * a reviewer can diff, and one whose hash does not move when a compression
- * library changes its defaults.
+ * It exists so that neither building the sample run package nor building the
+ * release archive depends on an external `tar`/`zip` binary. That turned out to
+ * matter: `tar` on Windows may be GNU tar, which cannot read a ZIP at all, or
+ * bsdtar, which reads `-f C:\…` as a remote host.
+ *
+ * `compress` defaults to false. Stored entries make the sample package's bytes a
+ * direct function of its contents — diffable, and its hash does not move when a
+ * compression library changes its defaults. The release archive turns it on.
  */
-export function writeZip(entries: ReadonlyArray<{ name: string; contents: string }>): Buffer {
+export function writeZip(
+  entries: ReadonlyArray<{ name: string; contents: string | Buffer }>,
+  options: { compress?: boolean } = {},
+): Buffer {
   const locals: Buffer[] = [];
   const centrals: Buffer[] = [];
   let offset = 0;
 
   for (const entry of entries) {
     const name = Buffer.from(assertSafeEntryName(entry.name), 'utf8');
-    const data = Buffer.from(entry.contents, 'utf8');
-    const crc = crc32(data);
+    const raw = Buffer.isBuffer(entry.contents) ? entry.contents : Buffer.from(entry.contents, 'utf8');
+    const crc = crc32(raw);
+
+    // Only take the compressed form when it is actually smaller; deflate can
+    // grow already-compressed bytes, and a larger "compressed" entry is silly.
+    const deflated = options.compress === true && raw.length > 0 ? deflateRawSync(raw) : null;
+    const useDeflate = deflated !== null && deflated.length < raw.length;
+    const data = useDeflate && deflated !== null ? deflated : raw;
+    const method = useDeflate ? 8 : 0;
 
     const local = Buffer.alloc(30);
     local.writeUInt32LE(LOCAL_SIGNATURE, 0);
     local.writeUInt16LE(20, 4);
-    local.writeUInt16LE(0, 8);
+    local.writeUInt16LE(method, 8);
     local.writeUInt32LE(crc, 14);
     local.writeUInt32LE(data.length, 18);
-    local.writeUInt32LE(data.length, 22);
+    local.writeUInt32LE(raw.length, 22);
     local.writeUInt16LE(name.length, 26);
     locals.push(local, name, data);
 
     const central = Buffer.alloc(46);
     central.writeUInt32LE(CENTRAL_SIGNATURE, 0);
     central.writeUInt16LE(20, 6);
-    central.writeUInt16LE(0, 10);
+    central.writeUInt16LE(method, 10);
     central.writeUInt32LE(crc, 16);
     central.writeUInt32LE(data.length, 20);
-    central.writeUInt32LE(data.length, 24);
+    central.writeUInt32LE(raw.length, 24);
     central.writeUInt16LE(name.length, 28);
     central.writeUInt32LE(offset, 42);
     centrals.push(central, name);
