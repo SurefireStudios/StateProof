@@ -1,20 +1,20 @@
 {
   "schemaVersion": "1.1.0",
-  "generatedAt": "2026-08-29T17:45:39.813Z",
+  "generatedAt": "2026-08-29T18:00:34.926Z",
   "note": "The sha256 below is of the archive built from `package.sourceCommit`. Rebuilding from that commit reproduces it: the writer stores no timestamps and both bundled surfaces build deterministically. `release/` itself is not tracked, because a contents note describing an archive that contains it would be circular.",
   "package": {
     "path": "release/stateproof-submission-final.zip",
-    "sha256": "cc3113e22331205cd4626da851ac953f21f0372306f164401af618d59965bae7",
-    "sizeBytes": 1227333,
+    "sha256": "3f06c96135eab4bdb543e093ae4faf0ed3325a9fef25f4e43449586e09d60d92",
+    "sizeBytes": 1231561,
     "sizeMb": 1.17,
-    "sourceCommit": "db77c75e89c3bdc495501aa611e9b88a3ad7acc8",
+    "sourceCommit": "31f1d02cf8e0e4be017bdcb09bbd9a0da2b4e957",
     "trackedTreeClean": true
   },
   "environment": {
     "os": "win32 10.0.26200 (x64)",
     "node": "v20.10.0",
     "pnpm": "8.12.0",
-    "installDurationMs": 3376
+    "installDurationMs": 3970
   },
   "contents": {
     "fileCount": 560,
@@ -97,52 +97,52 @@
       {
         "command": "pnpm install --frozen-lockfile",
         "ok": true,
-        "durationMs": 3376
+        "durationMs": 3970
       },
       {
         "command": "pnpm typecheck",
         "ok": true,
-        "durationMs": 4994
+        "durationMs": 5739
       },
       {
         "command": "pnpm test",
         "ok": true,
-        "durationMs": 15235
+        "durationMs": 14057
       },
       {
         "command": "pnpm benchmark:validate",
         "ok": true,
-        "durationMs": 1440
+        "durationMs": 1427
       },
       {
         "command": "pnpm benchmark:validate-hard",
         "ok": true,
-        "durationMs": 1534
+        "durationMs": 1473
       },
       {
         "command": "pnpm reproduce",
         "ok": true,
-        "durationMs": 4136
+        "durationMs": 4014
       },
       {
         "command": "pnpm dashboard:build",
         "ok": true,
-        "durationMs": 1936
+        "durationMs": 1917
       },
       {
         "command": "pnpm sample:build",
         "ok": true,
-        "durationMs": 1123
+        "durationMs": 1074
       },
       {
         "command": "pnpm product:build",
         "ok": true,
-        "durationMs": 1644
+        "durationMs": 1548
       },
       {
         "command": "pnpm product:test",
         "ok": true,
-        "durationMs": 3145
+        "durationMs": 2941
       }
     ],
     "dashboardStructureOk": true,
