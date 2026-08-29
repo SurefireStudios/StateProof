@@ -334,8 +334,9 @@
       "inputTokens": 74291,
       "outputTokens": 10325,
       "totalTokens": 84616,
-      "modelWallClockMs": 115119,
-      "deterministicVerificationMs": null
+      "modelCallWallMs": null,
+      "deterministicVerificationMs": null,
+      "endToEndElapsedMs": 115119
     },
     "baselineLocked": {
       "modelCalls": 4,
@@ -343,8 +344,9 @@
       "inputTokens": 36643,
       "outputTokens": 3895,
       "totalTokens": 40538,
-      "modelWallClockMs": 41920,
-      "deterministicVerificationMs": null
+      "modelCallWallMs": null,
+      "deterministicVerificationMs": null,
+      "endToEndElapsedMs": 41920
     },
     "baselineCombined": {
       "modelCalls": 12,
@@ -352,8 +354,9 @@
       "inputTokens": 110934,
       "outputTokens": 14220,
       "totalTokens": 125154,
-      "modelWallClockMs": 157039,
-      "deterministicVerificationMs": null
+      "modelCallWallMs": null,
+      "deterministicVerificationMs": null,
+      "endToEndElapsedMs": 157039
     },
     "stateproofFirstDeployment": {
       "modelCalls": 3,
@@ -361,8 +364,9 @@
       "inputTokens": 24245,
       "outputTokens": 5644,
       "totalTokens": 29889,
-      "modelWallClockMs": 53562,
-      "deterministicVerificationMs": 143
+      "modelCallWallMs": 53287,
+      "deterministicVerificationMs": 143,
+      "endToEndElapsedMs": 53763
     },
     "stateproofRepeatedVerification": {
       "modelCalls": 0,
@@ -370,8 +374,9 @@
       "inputTokens": 0,
       "outputTokens": 0,
       "totalTokens": 0,
-      "modelWallClockMs": 587,
-      "deterministicVerificationMs": 133
+      "modelCallWallMs": 0,
+      "deterministicVerificationMs": 133,
+      "endToEndElapsedMs": 587
     }
   },
   "efficiency": {
@@ -381,8 +386,9 @@
       "inputTokens": 110934,
       "outputTokens": 14220,
       "totalTokens": 125154,
-      "modelWallClockMs": 157039,
-      "deterministicVerificationMs": null
+      "modelCallWallMs": null,
+      "deterministicVerificationMs": null,
+      "endToEndElapsedMs": 157039
     },
     "firstDeployment": {
       "modelCalls": 3,
@@ -390,8 +396,9 @@
       "inputTokens": 24245,
       "outputTokens": 5644,
       "totalTokens": 29889,
-      "modelWallClockMs": 53562,
-      "deterministicVerificationMs": 143
+      "modelCallWallMs": 53287,
+      "deterministicVerificationMs": 143,
+      "endToEndElapsedMs": 53763
     },
     "repeatedVerification": {
       "modelCalls": 0,
@@ -399,16 +406,41 @@
       "inputTokens": 0,
       "outputTokens": 0,
       "totalTokens": 0,
-      "modelWallClockMs": 587,
-      "deterministicVerificationMs": 133
+      "modelCallWallMs": 0,
+      "deterministicVerificationMs": 133,
+      "endToEndElapsedMs": 587
     },
     "firstDeploymentCallReduction": 0.75,
     "firstDeploymentTokenReduction": 0.7611822235006472,
-    "firstDeploymentWallClockReduction": 0.6589254898464713,
+    "firstDeploymentElapsedReduction": 0.657645553015493,
     "repeatedCallReduction": 1,
     "repeatedTokenReduction": 1,
-    "repeatedWallClockReduction": 0.996262075025949,
+    "repeatedElapsedReduction": 0.996262075025949,
     "breakEvenSuiteRuns": 1,
-    "estimatedCostUsd": null
+    "cost": {
+      "baselineUsd": 0.9101699999999999,
+      "firstDeploymentUsd": 0.26232500000000003,
+      "repeatedUsd": 0,
+      "absoluteSavingsUsd": 0.6478449999999999,
+      "percentSavings": 0.7117846116659524,
+      "breakEvenRuns": 1
+    },
+    "pricing": {
+      "modelId": "claude-opus-5",
+      "asOf": "2026-08-29",
+      "currency": "USD",
+      "inputUsdPerMillionTokens": 5,
+      "outputUsdPerMillionTokens": 25,
+      "formula": "inputTokens * 5 / 1e6 + outputTokens * 25 / 1e6",
+      "sources": [
+        "Anthropic, \"Pricing - Claude Platform Docs\"",
+        "Anthropic, \"Introducing Claude Opus 5\""
+      ],
+      "excludes": [
+        "local compute and developer time",
+        "hosting or storage of artifacts",
+        "smoke tests and exploratory calls, reported separately as development overhead"
+      ]
+    }
   }
 }

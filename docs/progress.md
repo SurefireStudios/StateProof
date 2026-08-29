@@ -316,7 +316,66 @@ over-reaching scope clause. Two of the three share the DSL gap as root cause.
 Per gate rule the Contract Agent prompt was **not** tuned after seeing this
 result. The fix is the next documented iteration.
 
-## Gates 3B–5 — not started
+## Gate 3B — DSL v2 and real warm cache: complete, quality guardrails not met
 
-No Contract Agent, Evidence Agent, Auditor, StateProof workflow, dashboard, or
-locked evaluation has been implemented.
+`mutations_limited_to` closed the relational-scope gap, one
+`record_array_contains_exact` bound note text to its refund reference, scope
+stopped duplicating the refund prohibition, and semantic validation began
+*rejecting* rather than recording. Assertion schema `1.0.0` → `2.0.0`.
+
+The cold run reached SVR 91.7%, CDR 75.0%, FVR 0% — better on every guardrail
+than v1 — but BVA fell to 75.0%, because outbound messages were identified by
+recipient alone and every fixture holds an older message to that recipient. Two
+matches means no verdict. **The warm run was therefore withheld**, and no
+efficiency figure was claimed.
+
+Decision record: `docs/decisions/0006-gate-3b.md`.
+
+## Gate 3C — existential matching: complete, all guardrails met
+
+`record_exists_matching` asks whether a record satisfying every condition exists
+rather than which record to inspect first, and a semantic lint refuses a
+contract that identifies an output record too loosely. Assertion schema
+`2.1.0`.
+
+Cold: SVR 100%, FVR 0%, CDR 100%, BVA 100%, evidence-reference validity 100%
+(80/80), zero partial requirements, zero repair retries. Three warm runs from
+the persisted bundle produced byte-identical predictions with no credential in
+the environment.
+
+Decision record: `docs/decisions/0007-gate-3c.md`.
+
+## Gate 4A — judge-facing dashboard and credential-free replay: complete
+
+Pinned artifact registry (`submission/reproduction-manifest.json`) plus a loader
+that re-derives every hash and refuses to render unverified data; a
+zero-dependency static dashboard with six views; and `pnpm reproduce`, which
+replays the development split offline and fails on a tampered artifact.
+
+## Gate 4B — untouched locked evaluation: complete
+
+Source frozen at `c976e3838477afbf951d0faf57011be1b4ef6864`
+(`stateproof-evaluation-freeze-v1`). Both locked workflows ran exactly once
+under a one-time protocol with an append-only ledger.
+
+Locked: both systems SVR 100% (6/6), FVR 0% (0/11), CDR 100% (2/2), BVA 100%.
+StateProof made zero model calls; the baseline emitted one unresolvable evidence
+reference. Combined across all twelve, recomputed from counts: both perfect,
+evidence-reference validity 99.5% (205/206) baseline versus 100% (116/116)
+StateProof.
+
+Model usage over the suite: baseline 12 calls / 125,154 tokens; StateProof first
+deployment 3 / 29,889; repeated verification 0 / 0.
+
+## Gate 5 — submission polish: complete
+
+Timing labels split into model-call wall time, deterministic verification and
+end-to-end elapsed. API cost added from a dated pricing snapshot. MIT license,
+secret scan, release package with extraction test, submission and video
+documents.
+
+## Not built, deliberately
+
+No Evidence Agent, no Auditor Agent, no mutation generation, no production
+integrations. Each was scoped out because it added no measured value on this
+benchmark — see `docs/competition-scope.md`.

@@ -1,4 +1,38 @@
-# Competition scope
+# Competition scope — final state
+
+**Status: complete.** This document recorded the 48-hour scope commitments up
+front; the summary below records what was actually delivered against them. The
+original commitments are preserved beneath it, unedited.
+
+## Delivered
+
+| Committed | Delivered |
+| --- | --- |
+| Product named StateProof | Yes |
+| `PhantomBench-12`, 12 manually reviewed cases | Yes, plus `PhantomBench-Hard-12` with requirement-level scoring |
+| 8 development / 4 locked split | Yes, on both suites |
+| Primary metric: Balanced Verdict Accuracy | Superseded by requirement-level metrics once BVA saturated; BVA still reported |
+| One fair general-purpose baseline | Yes, frozen before StateProof was tuned |
+| Contract Agent → Evidence Agent → deterministic verifier | Contract Agent and deterministic verifier shipped. **The Evidence Agent was not built** — it added no measured value on this benchmark, and shipping a decorative agent would have weakened the design story. |
+| Auditor Agent as one focused experiment | Not built; the DSL iterations produced the same insight more cheaply |
+| One Run Inspector and one Benchmark Comparison view | Shipped, plus Overview, Changelog, Trajectories and Architecture |
+| TypeScript-first, synthetic data, no real integrations | Yes |
+| Locked evaluation held back | Run exactly once, after the source freeze, under a one-time protocol |
+
+## Scope decisions worth naming
+
+- **Two benchmarks, not one.** Core-12 saturated immediately, so Hard-12 was
+  built to measure requirement-level diagnosis rather than overall PASS/FAIL.
+- **No Evidence Agent.** The read-only evidence registry exists in the fixtures,
+  but verification reads the trajectory and both snapshots directly. Adding an
+  agent would have cost tokens and bought nothing measurable.
+- **Three Contract Agent versions.** Two failed and are preserved with their
+  artifacts; the changelog explains what each taught.
+- **The efficiency claim is gated in code.** No reduction figure is emitted
+  unless SVR, CDR, FVR and evidence-reference validity all hold.
+
+---
+
 
 Canonical source: `01_CLAUDE_48H.md` (copied to `CLAUDE.md`). This document
 restates the boundary in the terms the code is organised around.

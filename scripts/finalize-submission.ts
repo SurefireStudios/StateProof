@@ -3,11 +3,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { EvaluationRunManifestSchema, formatRate, hashJson, toJsonValue } from '@stateproof/core';
 import {
+  CLAUDE_OPUS_5_PRICING,
   type LoadedRun,
   type MetricView,
   type UsageView,
   combineMetrics,
   combineUsage,
+  compareCosts,
+  estimateCostUsd,
+  formatUsd,
   guardrailFailures,
   loadSubmissionView,
   meetsFinalGuardrails,
@@ -158,8 +162,10 @@ const USAGE_LABELS = [
   'Input tokens',
   'Output tokens',
   'Total tokens',
-  'Model wall clock (ms)',
+  'Model-call wall time (ms)',
   'Deterministic verification (ms)',
+  'End-to-end elapsed (ms)',
+  'API cost estimate (USD)',
 ];
 
 function usageRows(usage: UsageView): string[] {
@@ -169,8 +175,12 @@ function usageRows(usage: UsageView): string[] {
     String(usage.inputTokens),
     String(usage.outputTokens),
     String(usage.totalTokens),
-    String(usage.modelWallClockMs),
+    usage.modelCallWallMs === null ? 'not isolated' : String(usage.modelCallWallMs),
     usage.deterministicVerificationMs === null ? '—' : String(usage.deterministicVerificationMs),
+    String(usage.endToEndElapsedMs),
+    formatUsd(
+      estimateCostUsd({ inputTokens: usage.inputTokens, outputTokens: usage.outputTokens }),
+    ),
   ];
 }
 
@@ -252,6 +262,15 @@ function main(): void {
   const stateproofCombined =
     stateproofLockedView === null ? null : combineMetrics(stateproofDevView, stateproofLockedView);
 
+  // The contract-compilation manifest measures the model phase on its own; the
+  // baseline manifests do not, so their model time stays honestly unisolated.
+  const compilationWallMs = ((): number | null => {
+    const filePath = path.join(REPO_ROOT, bundle.registered.manifestPath);
+    if (!existsSync(filePath)) return null;
+    const manifest = JSON.parse(readFileSync(filePath, 'utf8')) as { wallClockMs?: number };
+    return manifest.wallClockMs ?? null;
+  })();
+
   const baselineDevUsage = usageOf(baselineDev);
   const baselineLockedUsage = lockedBaseline === null ? null : usageOf(lockedBaseline);
   const baselineCombinedUsage =
@@ -260,9 +279,11 @@ function main(): void {
   // First deployment: the frozen contracts are compiled once and cover all 12
   // cases, because the locked tasks share the three development fingerprints.
   const firstDeployment: UsageView = {
-    ...usageOf(coldDev),
+    ...usageOf(coldDev, compilationWallMs),
     deterministicVerificationMs:
       (coldDev.verificationWallMs ?? 0) + (lockedStateProof?.verificationWallMs ?? 0),
+    endToEndElapsedMs:
+      coldDev.wallClockMs + (lockedStateProof === null ? 0 : lockedStateProof.wallClockMs),
   };
   const repeated: UsageView =
     lockedStateProof === null
@@ -292,15 +313,15 @@ function main(): void {
             baselineCombinedUsage.totalTokens,
             firstDeployment.totalTokens,
           ),
-          firstDeploymentWallClockReduction: ratio(
-            baselineCombinedUsage.modelWallClockMs,
-            firstDeployment.modelWallClockMs,
+          firstDeploymentElapsedReduction: ratio(
+            baselineCombinedUsage.endToEndElapsedMs,
+            firstDeployment.endToEndElapsedMs,
           ),
           repeatedCallReduction: ratio(baselineCombinedUsage.modelCalls, repeated.modelCalls),
           repeatedTokenReduction: ratio(baselineCombinedUsage.totalTokens, repeated.totalTokens),
-          repeatedWallClockReduction: ratio(
-            baselineCombinedUsage.modelWallClockMs,
-            repeated.modelWallClockMs,
+          repeatedElapsedReduction: ratio(
+            baselineCombinedUsage.endToEndElapsedMs,
+            repeated.endToEndElapsedMs,
           ),
           breakEvenSuiteRuns:
             baselineCombinedUsage.totalTokens > repeated.totalTokens
@@ -312,7 +333,15 @@ function main(): void {
                   ),
                 )
               : null,
-          estimatedCostUsd: null,
+          cost: compareCosts(
+            {
+              inputTokens: baselineCombinedUsage.inputTokens,
+              outputTokens: baselineCombinedUsage.outputTokens,
+            },
+            { inputTokens: firstDeployment.inputTokens, outputTokens: firstDeployment.outputTokens },
+            { inputTokens: repeated.inputTokens, outputTokens: repeated.outputTokens },
+          ),
+          pricing: CLAUDE_OPUS_5_PRICING,
         }
       : null;
 
@@ -381,6 +410,68 @@ function main(): void {
       reportMarkdownPath: run.registered.reportMarkdownPath,
     })),
   };
+  // The pricing snapshot travels with the numbers it produced, so a reader can
+  // check the arithmetic without trusting the prose.
+  const smokeUsage = { inputTokens: 73, outputTokens: 21 };
+  writeFileSync(
+    path.join(OUT_DIR, 'final-pricing-manifest.json'),
+    `${JSON.stringify(
+      toJsonValue({
+        schemaVersion: '1.0.0',
+        generatedAt: new Date().toISOString(),
+        disclaimer:
+          'A pricing-snapshot estimate against published list prices on the stated date. ' +
+          'Not an invoice. Excludes local compute, developer time and hosting.',
+        pricing: CLAUDE_OPUS_5_PRICING,
+        inputs: {
+          baselineCombined: {
+            inputTokens: baselineCombinedUsage?.inputTokens ?? null,
+            outputTokens: baselineCombinedUsage?.outputTokens ?? null,
+          },
+          stateproofFirstDeployment: {
+            inputTokens: firstDeployment.inputTokens,
+            outputTokens: firstDeployment.outputTokens,
+          },
+          stateproofRepeatedVerification: {
+            inputTokens: repeated.inputTokens,
+            outputTokens: repeated.outputTokens,
+          },
+        },
+        estimates: {
+          baselineCombinedUsd:
+            baselineCombinedUsage === null
+              ? null
+              : estimateCostUsd({
+                  inputTokens: baselineCombinedUsage.inputTokens,
+                  outputTokens: baselineCombinedUsage.outputTokens,
+                }),
+          stateproofFirstDeploymentUsd: estimateCostUsd({
+            inputTokens: firstDeployment.inputTokens,
+            outputTokens: firstDeployment.outputTokens,
+          }),
+          stateproofRepeatedVerificationUsd: estimateCostUsd({
+            inputTokens: repeated.inputTokens,
+            outputTokens: repeated.outputTokens,
+          }),
+          comparison: efficiency?.cost ?? null,
+        },
+        developmentOverhead: {
+          note:
+            'Excluded from the baseline-versus-StateProof comparison. One provider smoke ' +
+            'test was run before the v3 cold experiment to confirm the model configuration.',
+          smokeTest: {
+            ...smokeUsage,
+            estimatedCostUsd: estimateCostUsd(smokeUsage),
+          },
+        },
+      }),
+      null,
+      2,
+    )}
+`,
+    'utf8',
+  );
+
   writeFileSync(
     path.join(OUT_DIR, 'final-run-registry.json'),
     `${JSON.stringify(toJsonValue(registry), null, 2)}\n`,
@@ -438,7 +529,7 @@ function main(): void {
     '## Model usage',
     '',
     table(
-      ['Metric', 'Baseline combined', 'StateProof first deployment', 'StateProof repeated'],
+      ['Metric', 'Baseline combined (12)', 'StateProof first deployment (12)', 'StateProof repeated (12)'],
       USAGE_LABELS.map((label, index) => [
         label,
         baselineCombinedUsage === null ? '—' : (usageRows(baselineCombinedUsage)[index] ?? '—'),
@@ -450,6 +541,20 @@ function main(): void {
     'First deployment compiles the three frozen contracts once and verifies all twelve',
     'cases; the locked tasks resolve to the same three task fingerprints, so no second',
     'compilation happens. Repeated verification loads those contracts and calls no model.',
+    '',
+    '**Timing labels.** Model-call wall time is the measured contract-compilation phase;',
+    'for a run with zero model calls it is zero by definition. The baseline manifests do',
+    'not isolate model time from process overhead, so theirs reads "not isolated" and only',
+    'end-to-end elapsed time is quoted for them. Deterministic verification time is the',
+    "verifier's own measurement, and end-to-end elapsed is what each manifest recorded.",
+    '',
+    '**Disclosure.** The locked StateProof invocation printed no inline efficiency',
+    'comparison because no baseline run id was supplied to that individual command. The',
+    'post-run final report above compares the two immutable locked artifacts and confirms',
+    'the quality guardrails passed.',
+    '',
+    '**Scope.** This is a 12-case synthetic evaluation. It does not establish',
+    'generalization beyond the submitted benchmark.',
     '',
     '## Efficiency',
     '',
@@ -471,12 +576,23 @@ function main(): void {
       '',
       `- First deployment: ${formatRate(efficiency.firstDeploymentCallReduction)} fewer model calls, ` +
         `${formatRate(efficiency.firstDeploymentTokenReduction)} fewer tokens, ` +
-        `${formatRate(efficiency.firstDeploymentWallClockReduction)} less model wall clock.`,
+        `${formatRate(efficiency.firstDeploymentElapsedReduction)} less end-to-end elapsed time.`,
       `- Repeated verification: ${formatRate(efficiency.repeatedCallReduction)} fewer model calls, ` +
         `${formatRate(efficiency.repeatedTokenReduction)} fewer tokens, ` +
-        `${formatRate(efficiency.repeatedWallClockReduction)} less model wall clock.`,
-      `- Break-even: ${String(efficiency.breakEvenSuiteRuns ?? 'n/a')} run(s) of the full suite.`,
-      '- Cost in USD: `null`. No pricing rule is implemented, and none was added after the freeze.',
+        `${formatRate(efficiency.repeatedElapsedReduction)} less end-to-end elapsed time.`,
+      `- Break-even on tokens: ${String(efficiency.breakEvenSuiteRuns ?? 'n/a')} run(s) of the full suite.`,
+      '',
+      `**API cost estimate** at ${CLAUDE_OPUS_5_PRICING.modelId} list prices as of ` +
+        `${CLAUDE_OPUS_5_PRICING.asOf} ($${CLAUDE_OPUS_5_PRICING.inputUsdPerMillionTokens}/M input, ` +
+        `$${CLAUDE_OPUS_5_PRICING.outputUsdPerMillionTokens}/M output). This is a pricing-snapshot ` +
+        'estimate, not an invoice, and excludes local compute.',
+      '',
+      `- Frontier baseline, all 12 cases: **${formatUsd(efficiency.cost.baselineUsd)}**`,
+      `- StateProof first deployment: **${formatUsd(efficiency.cost.firstDeploymentUsd)}**`,
+      `- StateProof repeated verification: **${formatUsd(efficiency.cost.repeatedUsd)}** (zero model calls)`,
+      `- Saving on first deployment: **${formatUsd(efficiency.cost.absoluteSavingsUsd)}** ` +
+        `(${formatRate(efficiency.cost.percentSavings)})`,
+      `- Break-even on cost: ${String(efficiency.cost.breakEvenRuns ?? 'n/a')} run(s) of the full suite.`,
     );
   }
   lines.push('');
@@ -548,6 +664,7 @@ function main(): void {
       'written: submission/final-evaluation.md',
       'written: submission/final-claims-evidence-map.md',
       'written: submission/final-run-registry.json',
+      'written: submission/final-pricing-manifest.json',
       '',
     ].join('\n'),
   );

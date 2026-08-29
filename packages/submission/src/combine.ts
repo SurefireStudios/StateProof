@@ -41,14 +41,28 @@ export interface MetricView {
   readonly evidenceRefCounts: Counts;
 }
 
+/**
+ * Three different clocks, kept apart on purpose.
+ *
+ * A run manifest records one number — how long the whole invocation took. For a
+ * warm run that is almost entirely process startup and file I/O, and calling it
+ * "model wall clock" when the run made zero model calls would be false. So:
+ *
+ * - `modelCallWallMs` is 0 when there were no calls, and otherwise the measured
+ *   compilation phase where one exists. It is `null` when the artifacts do not
+ *   isolate model time from the rest of the run.
+ * - `deterministicVerificationMs` is the verifier's own measured time.
+ * - `endToEndElapsedMs` is what the manifest actually recorded.
+ */
 export interface UsageView {
   readonly modelCalls: number;
   readonly repairCalls: number;
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly totalTokens: number;
-  readonly modelWallClockMs: number;
+  readonly modelCallWallMs: number | null;
   readonly deterministicVerificationMs: number | null;
+  readonly endToEndElapsedMs: number;
 }
 
 function rate(numerator: number, denominator: number): number | null {
@@ -149,30 +163,36 @@ export function combineMetrics(left: MetricView, right: MetricView): MetricView 
   };
 }
 
-export function usageOf(run: LoadedRun): UsageView {
+export function usageOf(run: LoadedRun, modelCallWallMs?: number | null): UsageView {
   return {
     modelCalls: run.modelCalls,
     repairCalls: run.repairCalls,
     inputTokens: run.inputTokens,
     outputTokens: run.outputTokens,
     totalTokens: run.totalTokens,
-    modelWallClockMs: run.wallClockMs,
+    // Zero calls means zero model time, by definition rather than by measurement.
+    modelCallWallMs: run.modelCalls === 0 ? 0 : (modelCallWallMs ?? null),
     deterministicVerificationMs: run.verificationWallMs,
+    endToEndElapsedMs: run.wallClockMs,
   };
 }
 
 export function combineUsage(left: UsageView, right: UsageView): UsageView {
+  const sumOrNull = (a: number | null, b: number | null): number | null =>
+    a === null || b === null ? null : a + b;
   return {
     modelCalls: left.modelCalls + right.modelCalls,
     repairCalls: left.repairCalls + right.repairCalls,
     inputTokens: left.inputTokens + right.inputTokens,
     outputTokens: left.outputTokens + right.outputTokens,
     totalTokens: left.totalTokens + right.totalTokens,
-    modelWallClockMs: left.modelWallClockMs + right.modelWallClockMs,
+    // One unmeasured half makes the sum unmeasured; it does not make it smaller.
+    modelCallWallMs: sumOrNull(left.modelCallWallMs, right.modelCallWallMs),
     deterministicVerificationMs:
       left.deterministicVerificationMs === null && right.deterministicVerificationMs === null
         ? null
         : (left.deterministicVerificationMs ?? 0) + (right.deterministicVerificationMs ?? 0),
+    endToEndElapsedMs: left.endToEndElapsedMs + right.endToEndElapsedMs,
   };
 }
 

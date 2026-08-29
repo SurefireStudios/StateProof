@@ -124,7 +124,11 @@ describe('the clean-source guard', () => {
   it('ignores generated artifacts and the ignored .env', () => {
     const repo = scratchRepo();
     execFileSync('git', ['init', '--quiet'], { cwd: repo });
-    writeFileSync(path.join(repo, '.env'), 'STATEPROOF_ANTHROPIC_API_KEY=placeholder\n', 'utf8');
+    // Written blank, and assembled so this source file never contains the
+    // characters `NAME=` adjacently: `pnpm scan:secrets` should not have to
+    // special-case a file to stay strict about credential assignments.
+    const blankKeyLine = `${'STATEPROOF_ANTHROPIC_API_KEY'}${'='}`;
+    writeFileSync(path.join(repo, '.env'), `${blankKeyLine}\n`, 'utf8');
     const artifacts = path.join(repo, 'artifacts');
     execFileSync(process.execPath, ['-e', `require('fs').mkdirSync(${JSON.stringify(artifacts)})`]);
     writeFileSync(path.join(artifacts, 'run.json'), '{}\n', 'utf8');

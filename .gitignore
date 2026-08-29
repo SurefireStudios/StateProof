@@ -38,3 +38,6 @@ Thumbs.db
 0[0-9]_*.md
 CLAUDE_*.md
 apps/dashboard/dist/
+
+# release packages are built artifacts, not source
+release/

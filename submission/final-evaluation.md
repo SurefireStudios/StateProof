@@ -68,27 +68,50 @@ Locked evaluation complete: **yes**.
 
 ## Model usage
 
-| Metric | Baseline combined | StateProof first deployment | StateProof repeated |
+| Metric | Baseline combined (12) | StateProof first deployment (12) | StateProof repeated (12) |
 | --- | --- | --- | --- |
 | Model calls | 12 | 3 | 0 |
 | Repair calls | 0 | 0 | 0 |
 | Input tokens | 110934 | 24245 | 0 |
 | Output tokens | 14220 | 5644 | 0 |
 | Total tokens | 125154 | 29889 | 0 |
-| Model wall clock (ms) | 157039 | 53562 | 587 |
+| Model-call wall time (ms) | not isolated | 53287 | 0 |
 | Deterministic verification (ms) | — | 143 | 133 |
+| End-to-end elapsed (ms) | 157039 | 53763 | 587 |
+| API cost estimate (USD) | $0.91 | $0.26 | $0.00 |
 
 First deployment compiles the three frozen contracts once and verifies all twelve
 cases; the locked tasks resolve to the same three task fingerprints, so no second
 compilation happens. Repeated verification loads those contracts and calls no model.
+
+**Timing labels.** Model-call wall time is the measured contract-compilation phase;
+for a run with zero model calls it is zero by definition. The baseline manifests do
+not isolate model time from process overhead, so theirs reads "not isolated" and only
+end-to-end elapsed time is quoted for them. Deterministic verification time is the
+verifier's own measurement, and end-to-end elapsed is what each manifest recorded.
+
+**Disclosure.** The locked StateProof invocation printed no inline efficiency
+comparison because no baseline run id was supplied to that individual command. The
+post-run final report above compares the two immutable locked artifacts and confirms
+the quality guardrails passed.
+
+**Scope.** This is a 12-case synthetic evaluation. It does not establish
+generalization beyond the submitted benchmark.
 
 ## Efficiency
 
 Quality guardrails hold on both the locked and the combined result, so the
 comparison below is a claim this evaluation earned.
 
-- First deployment: 75.0% fewer model calls, 76.1% fewer tokens, 65.9% less model wall clock.
-- Repeated verification: 100.0% fewer model calls, 100.0% fewer tokens, 99.6% less model wall clock.
-- Break-even: 1 run(s) of the full suite.
-- Cost in USD: `null`. No pricing rule is implemented, and none was added after the freeze.
+- First deployment: 75.0% fewer model calls, 76.1% fewer tokens, 65.8% less end-to-end elapsed time.
+- Repeated verification: 100.0% fewer model calls, 100.0% fewer tokens, 99.6% less end-to-end elapsed time.
+- Break-even on tokens: 1 run(s) of the full suite.
+
+**API cost estimate** at claude-opus-5 list prices as of 2026-08-29 ($5/M input, $25/M output). This is a pricing-snapshot estimate, not an invoice, and excludes local compute.
+
+- Frontier baseline, all 12 cases: **$0.91**
+- StateProof first deployment: **$0.26**
+- StateProof repeated verification: **$0.00** (zero model calls)
+- Saving on first deployment: **$0.65** (71.2%)
+- Break-even on cost: 1 run(s) of the full suite.
 

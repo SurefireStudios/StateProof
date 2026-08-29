@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-08-29T05:17:33.833Z",
+  "disclaimer": "A pricing-snapshot estimate against published list prices on the stated date. Not an invoice. Excludes local compute, developer time and hosting.",
+  "pricing": {
+    "modelId": "claude-opus-5",
+    "asOf": "2026-08-29",
+    "currency": "USD",
+    "inputUsdPerMillionTokens": 5,
+    "outputUsdPerMillionTokens": 25,
+    "formula": "inputTokens * 5 / 1e6 + outputTokens * 25 / 1e6",
+    "sources": [
+      "Anthropic, \"Pricing - Claude Platform Docs\"",
+      "Anthropic, \"Introducing Claude Opus 5\""
+    ],
+    "excludes": [
+      "local compute and developer time",
+      "hosting or storage of artifacts",
+      "smoke tests and exploratory calls, reported separately as development overhead"
+    ]
+  },
+  "inputs": {
+    "baselineCombined": {
+      "inputTokens": 110934,
+      "outputTokens": 14220
+    },
+    "stateproofFirstDeployment": {
+      "inputTokens": 24245,
+      "outputTokens": 5644
+    },
+    "stateproofRepeatedVerification": {
+      "inputTokens": 0,
+      "outputTokens": 0
+    }
+  },
+  "estimates": {
+    "baselineCombinedUsd": 0.9101699999999999,
+    "stateproofFirstDeploymentUsd": 0.26232500000000003,
+    "stateproofRepeatedVerificationUsd": 0,
+    "comparison": {
+      "baselineUsd": 0.9101699999999999,
+      "firstDeploymentUsd": 0.26232500000000003,
+      "repeatedUsd": 0,
+      "absoluteSavingsUsd": 0.6478449999999999,
+      "percentSavings": 0.7117846116659524,
+      "breakEvenRuns": 1
+    }
+  },
+  "developmentOverhead": {
+    "note": "Excluded from the baseline-versus-StateProof comparison. One provider smoke test was run before the v3 cold experiment to confirm the model configuration.",
+    "smokeTest": {
+      "inputTokens": 73,
+      "outputTokens": 21,
+      "estimatedCostUsd": 0.00089
+    }
+  }
+}

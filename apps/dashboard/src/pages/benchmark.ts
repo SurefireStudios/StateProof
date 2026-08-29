@@ -1,4 +1,10 @@
-import type { LoadedRun, MetricView } from '@stateproof/submission';
+import {
+  CLAUDE_OPUS_5_PRICING,
+  type LoadedRun,
+  type MetricView,
+  estimateCostUsd,
+  formatUsd,
+} from '@stateproof/submission';
 import type { DashboardModel } from '../model';
 import { esc, integer, page, percent, seconds } from '../shell';
 
@@ -146,14 +152,30 @@ function finalViews(model: DashboardModel): string {
         <tr><th scope="row">Input tokens</th><td class="num">${integer(final.baselineCombinedUsage.inputTokens)}</td><td class="num">${integer(final.firstDeployment.inputTokens)}</td><td class="num">${integer(final.repeatedVerification.inputTokens)}</td></tr>
         <tr><th scope="row">Output tokens</th><td class="num">${integer(final.baselineCombinedUsage.outputTokens)}</td><td class="num">${integer(final.firstDeployment.outputTokens)}</td><td class="num">${integer(final.repeatedVerification.outputTokens)}</td></tr>
         <tr><th scope="row">Total tokens</th><td class="num">${integer(final.baselineCombinedUsage.totalTokens)}</td><td class="num">${integer(final.firstDeployment.totalTokens)}</td><td class="num">${integer(final.repeatedVerification.totalTokens)}</td></tr>
-        <tr><th scope="row">Model wall clock</th><td class="num">${seconds(final.baselineCombinedUsage.modelWallClockMs)}</td><td class="num">${seconds(final.firstDeployment.modelWallClockMs)}</td><td class="num">${seconds(final.repeatedVerification.modelWallClockMs)}</td></tr>
+        <tr><th scope="row">Model-call wall time</th><td class="num">${final.baselineCombinedUsage.modelCallWallMs === null ? 'not isolated' : seconds(final.baselineCombinedUsage.modelCallWallMs)}</td><td class="num">${final.firstDeployment.modelCallWallMs === null ? 'not isolated' : seconds(final.firstDeployment.modelCallWallMs)}</td><td class="num">${seconds(final.repeatedVerification.modelCallWallMs ?? 0)}</td></tr>
         <tr><th scope="row">Deterministic verification</th><td class="num">—</td><td class="num">${seconds(final.firstDeployment.deterministicVerificationMs)}</td><td class="num">${seconds(final.repeatedVerification.deterministicVerificationMs)}</td></tr>
+        <tr><th scope="row">End-to-end elapsed</th><td class="num">${seconds(final.baselineCombinedUsage.endToEndElapsedMs)}</td><td class="num">${seconds(final.firstDeployment.endToEndElapsedMs)}</td><td class="num">${seconds(final.repeatedVerification.endToEndElapsedMs)}</td></tr>
+        <tr><th scope="row">API cost estimate</th><td class="num">${esc(formatUsd(estimateCostUsd({ inputTokens: final.baselineCombinedUsage.inputTokens, outputTokens: final.baselineCombinedUsage.outputTokens })))}</td><td class="num">${esc(formatUsd(estimateCostUsd({ inputTokens: final.firstDeployment.inputTokens, outputTokens: final.firstDeployment.outputTokens })))}</td><td class="num">${esc(formatUsd(estimateCostUsd({ inputTokens: final.repeatedVerification.inputTokens, outputTokens: final.repeatedVerification.outputTokens })))}</td></tr>
       </tbody>
     </table>
   </div>
   <p class="faint small">First deployment compiles the three frozen contracts once and covers all
   twelve cases: the locked tasks resolve to the same three task fingerprints, so no second
   compilation happens. Repeated verification loads those contracts and calls no model.</p>
+  <p class="faint small"><strong>Timing labels.</strong> Model-call wall time is the measured
+  contract-compilation phase, and is zero by definition where there were no model calls. The
+  baseline manifests do not separate model time from process overhead, so theirs reads
+  &quot;not isolated&quot;. End-to-end elapsed is what each manifest recorded.</p>
+  <p class="faint small"><strong>API cost</strong> is an estimate against
+  ${esc(CLAUDE_OPUS_5_PRICING.modelId)} list prices as of ${esc(CLAUDE_OPUS_5_PRICING.asOf)}
+  ($${esc(String(CLAUDE_OPUS_5_PRICING.inputUsdPerMillionTokens))}/M input,
+  $${esc(String(CLAUDE_OPUS_5_PRICING.outputUsdPerMillionTokens))}/M output), computed from the
+  input and output counts separately. It is a pricing snapshot, not an invoice, and excludes
+  local compute.</p>
+  <p class="faint small"><strong>Disclosure.</strong> The locked StateProof invocation printed no
+  inline efficiency comparison because no baseline run id was supplied to that individual command.
+  The final report compares the two immutable locked artifacts and confirms the quality guardrails
+  passed.</p>
   <div class="callout${final.guardrailsMet ? '' : ' warn'}" style="margin-top:12px">
     <p style="margin:0">${
       final.guardrailsMet
@@ -282,7 +304,10 @@ ${finalViews(model)}
   return page({
     title: 'Benchmark comparison',
     active: 'benchmark.html',
-    subtitle: 'PhantomBench-Hard-12, development split. Locked cases not run.',
+    subtitle:
+      model.final === null
+        ? 'PhantomBench-Hard-12, development split. Locked cases not run.'
+        : 'PhantomBench-Hard-12. A 12-case synthetic evaluation — not a generalization claim.',
     body,
   });
 }

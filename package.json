@@ -2,6 +2,7 @@
   "name": "stateproof",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@8.12.0",
   "engines": {
@@ -27,6 +28,8 @@
     "submission:summary": "tsx scripts/generate-submission-summary.ts",
     "submission:manifest": "tsx scripts/generate-reproduction-manifest.ts",
     "compare:development": "tsx scripts/compare-development-runs.ts",
+    "package:submission": "tsx scripts/package-submission.ts",
+    "scan:secrets": "tsx scripts/scan-secrets.ts",
     "check:provenance": "tsx scripts/check-run-provenance.ts",
     "fixtures:generate": "tsx scripts/generate-fixtures.ts",
     "fixtures:generate-hard": "tsx scripts/generate-hard-fixtures.ts"
