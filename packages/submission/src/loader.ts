@@ -316,8 +316,15 @@ export function loadSubmissionView(options: LoadOptions): SubmissionView {
     if (report.runId !== registered.id) {
       problems.push(`${registered.id}: report names a different run (${report.runId})`);
     }
-    if (registered.split === 'locked') {
-      problems.push(`${registered.id}: a locked-split run must never be registered`);
+    // A locked run may only be registered under a locked role, so a
+    // development run can never be relabelled into the held-out comparison.
+    const lockedRole =
+      registered.role === 'baseline-hard-locked' || registered.role === 'stateproof-v3-locked';
+    if (registered.split === 'locked' && !lockedRole) {
+      problems.push(`${registered.id}: a locked-split run must use a locked role`);
+    }
+    if (lockedRole && registered.split !== 'locked') {
+      problems.push(`${registered.id}: a locked role must name a locked-split run`);
     }
 
     let canonical = '';

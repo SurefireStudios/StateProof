@@ -1,4 +1,4 @@
-import type { LoadedRun } from '@stateproof/submission';
+import type { LoadedRun, MetricView } from '@stateproof/submission';
 import type { DashboardModel } from '../model';
 import { esc, integer, page, percent, seconds } from '../shell';
 
@@ -60,6 +60,112 @@ function failureMatrix(model: DashboardModel): string {
       <tbody>${rows}</tbody>
     </table>
   </div>`;
+}
+
+/** The three evaluation views, side by side, once the locked run exists. */
+function finalViews(model: DashboardModel): string {
+  const final = model.final;
+  if (final === null) {
+    return `
+<section>
+  <h2>Locked and combined results</h2>
+  <div class="callout warn">
+    <p style="margin:0">The four locked challenge cases have <strong>not been run</strong>.
+    Nothing is shown here rather than showing a placeholder, because a table that
+    renders before the measurement exists is the failure this project is about.</p>
+  </div>
+</section>`;
+  }
+
+  const rows: Array<[string, (view: MetricView) => string]> = [
+    ['Safety Violation Recall', (view) => `${percent(view.safetyViolationRecall)} <span class="faint">(${view.safetyViolationCounts[0]}/${view.safetyViolationCounts[1]})</span>`],
+    ['False Violation Rate', (view) => `${percent(view.falseViolationRate)} <span class="faint">(${view.falseViolationCounts[0]}/${view.falseViolationCounts[1]})</span>`],
+    ['Complete Diagnosis Rate', (view) => `${percent(view.completeDiagnosisRate)} <span class="faint">(${view.completeDiagnosisCounts[0]}/${view.completeDiagnosisCounts[1]})</span>`],
+    ['Balanced Verdict Accuracy', (view) => percent(view.balancedVerdictAccuracy)],
+    ['Valid Run Acceptance', (view) => percent(view.validRunAcceptanceRate)],
+    ['Invalid Run Rejection', (view) => percent(view.invalidRunRejectionRate)],
+    ['Unsafe false completion', (view) => percent(view.unsafeFalseCompletionRate)],
+    ['NEEDS_REVIEW frequency', (view) => percent(view.needsReviewRate)],
+    ['Assessment completeness', (view) => percent(view.assessmentCompleteness)],
+    ['Evidence-reference validity', (view) => `${percent(view.evidenceRefValidity)} <span class="faint">(${view.evidenceRefCounts[0]}/${view.evidenceRefCounts[1]})</span>`],
+  ];
+
+  const block = (
+    caption: string,
+    note: string,
+    baseline: MetricView,
+    stateproof: MetricView,
+  ): string => `
+    <h3>${esc(caption)}</h3>
+    <p class="faint small" style="margin:0 0 8px">${esc(note)}</p>
+    <div class="table-wrap" style="margin-bottom:18px">
+      <table>
+        <thead><tr><th>Metric</th><th class="num">Frontier baseline</th><th class="num">StateProof v3</th></tr></thead>
+        <tbody>
+          ${rows
+            .map(
+              ([label, pick]) =>
+                `<tr><th scope="row">${esc(label)}</th><td class="num">${pick(baseline)}</td><td class="num">${pick(stateproof)}</td></tr>`,
+            )
+            .join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  return `
+<section>
+  <h2>Development, locked and combined</h2>
+  ${block(
+    'Observed development result (8 cases)',
+    'The split the system was iterated against.',
+    final.baselineDevelopment,
+    final.stateproofDevelopment,
+  )}
+  ${block(
+    'Observed untouched locked result (4 cases)',
+    'Run exactly once, after the source freeze. Never used for tuning.',
+    final.baselineLocked,
+    final.stateproofLocked,
+  )}
+  ${block(
+    'Recomputed combined result (12 cases)',
+    'Rebuilt from case and requirement counts — not an average of the two percentages.',
+    final.baselineCombined,
+    final.stateproofCombined,
+  )}
+</section>
+
+<section>
+  <h2>Operating modes across the full suite</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th class="num">Baseline (12 cases)</th><th class="num">StateProof first deployment</th><th class="num">StateProof repeated verification</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Model calls</th><td class="num">${integer(final.baselineCombinedUsage.modelCalls)}</td><td class="num">${integer(final.firstDeployment.modelCalls)}</td><td class="num">${integer(final.repeatedVerification.modelCalls)}</td></tr>
+        <tr><th scope="row">Repair calls</th><td class="num">${integer(final.baselineCombinedUsage.repairCalls)}</td><td class="num">${integer(final.firstDeployment.repairCalls)}</td><td class="num">${integer(final.repeatedVerification.repairCalls)}</td></tr>
+        <tr><th scope="row">Input tokens</th><td class="num">${integer(final.baselineCombinedUsage.inputTokens)}</td><td class="num">${integer(final.firstDeployment.inputTokens)}</td><td class="num">${integer(final.repeatedVerification.inputTokens)}</td></tr>
+        <tr><th scope="row">Output tokens</th><td class="num">${integer(final.baselineCombinedUsage.outputTokens)}</td><td class="num">${integer(final.firstDeployment.outputTokens)}</td><td class="num">${integer(final.repeatedVerification.outputTokens)}</td></tr>
+        <tr><th scope="row">Total tokens</th><td class="num">${integer(final.baselineCombinedUsage.totalTokens)}</td><td class="num">${integer(final.firstDeployment.totalTokens)}</td><td class="num">${integer(final.repeatedVerification.totalTokens)}</td></tr>
+        <tr><th scope="row">Model wall clock</th><td class="num">${seconds(final.baselineCombinedUsage.modelWallClockMs)}</td><td class="num">${seconds(final.firstDeployment.modelWallClockMs)}</td><td class="num">${seconds(final.repeatedVerification.modelWallClockMs)}</td></tr>
+        <tr><th scope="row">Deterministic verification</th><td class="num">—</td><td class="num">${seconds(final.firstDeployment.deterministicVerificationMs)}</td><td class="num">${seconds(final.repeatedVerification.deterministicVerificationMs)}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="faint small">First deployment compiles the three frozen contracts once and covers all
+  twelve cases: the locked tasks resolve to the same three task fingerprints, so no second
+  compilation happens. Repeated verification loads those contracts and calls no model.</p>
+  <div class="callout${final.guardrailsMet ? '' : ' warn'}" style="margin-top:12px">
+    <p style="margin:0">${
+      final.guardrailsMet
+        ? `<strong>Quality guardrails hold on both the locked and the combined result</strong>, so
+           these reductions are claimed: ${percent(final.callReduction)} fewer model calls and
+           ${percent(final.tokenReduction)} fewer tokens on first deployment,
+           ${percent(final.repeatedTokenReduction)} fewer on every repeat, break-even after
+           ${final.breakEvenRuns ?? '—'} run(s) of the full suite.`
+        : '<strong>No efficiency improvement is claimed.</strong> A guardrail (SVR 100%, CDR 100%, FVR 0%, evidence-reference validity 100%) did not hold on the locked or combined result, so every reduction figure is withheld.'
+    }</p>
+  </div>
+</section>`;
 }
 
 export function renderBenchmark(model: DashboardModel): string {
@@ -125,6 +231,8 @@ export function renderBenchmark(model: DashboardModel): string {
     </div>
   </div>
 </section>
+
+${finalViews(model)}
 
 <section>
   <h2>Requirement-level failure matrix</h2>

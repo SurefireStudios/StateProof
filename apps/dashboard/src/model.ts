@@ -7,7 +7,18 @@ import {
   diffSnapshots,
 } from '@stateproof/core';
 import { HARD_CASES_DIR, loadAgentVisibleCase } from '@stateproof/benchmark';
-import { type LoadedRun, type SubmissionView, loadSubmissionView } from '@stateproof/submission';
+import {
+  type LoadedRun,
+  type MetricView,
+  type SubmissionView,
+  type UsageView,
+  combineMetrics,
+  combineUsage,
+  loadSubmissionView,
+  meetsFinalGuardrails,
+  metricViewOfRun,
+  usageOf,
+} from '@stateproof/submission';
 
 /**
  * Assembles everything the pages render, once, from artifacts.
@@ -66,6 +77,24 @@ export interface CaseView {
   } | null;
 }
 
+/** The final three-view result, present only once the locked run exists. */
+export interface FinalViews {
+  readonly baselineDevelopment: MetricView;
+  readonly stateproofDevelopment: MetricView;
+  readonly baselineLocked: MetricView;
+  readonly stateproofLocked: MetricView;
+  readonly baselineCombined: MetricView;
+  readonly stateproofCombined: MetricView;
+  readonly baselineCombinedUsage: UsageView;
+  readonly firstDeployment: UsageView;
+  readonly repeatedVerification: UsageView;
+  readonly guardrailsMet: boolean;
+  readonly callReduction: number | null;
+  readonly tokenReduction: number | null;
+  readonly repeatedTokenReduction: number | null;
+  readonly breakEvenRuns: number | null;
+}
+
 export interface DashboardModel {
   readonly view: SubmissionView;
   readonly baseline: LoadedRun;
@@ -75,8 +104,12 @@ export interface DashboardModel {
   readonly cold: LoadedRun;
   readonly warm: LoadedRun;
   readonly warmRepeats: LoadedRun[];
+  readonly lockedBaseline: LoadedRun | null;
+  readonly lockedStateProof: LoadedRun | null;
+  readonly final: FinalViews | null;
   readonly comparisonRuns: LoadedRun[];
   readonly cases: CaseView[];
+  readonly lockedCaseIds: string[];
   readonly defaultCaseId: string;
   readonly reductions: {
     readonly coldCalls: number | null;
@@ -133,6 +166,8 @@ export function buildModel(repoRoot: string): DashboardModel {
   const warm = requireRun(view, 'stateproof-v3-warm');
   const warmRepeats = view.byRole.get('stateproof-v3-warm-repeat') ?? [];
   const coreBaseline = view.byRole.get('baseline-core')?.[0] ?? null;
+  const lockedBaseline = view.byRole.get('baseline-hard-locked')?.[0] ?? null;
+  const lockedStateProof = view.byRole.get('stateproof-v3-locked')?.[0] ?? null;
 
   const bundle = view.bundles[0];
   if (bundle === undefined) throw new Error('the registry pins no contract bundle');
@@ -140,12 +175,27 @@ export function buildModel(repoRoot: string): DashboardModel {
     readFileSync(path.join(repoRoot, bundle.registered.manifestPath), 'utf8'),
   ) as { promptPath: string; promptHash: string; assertionSchemaVersion: string };
 
-  const coldById = new Map(predictionsOf(cold).map((entry) => [entry.caseId, entry]));
-  const warmById = new Map(predictionsOf(warm).map((entry) => [entry.caseId, entry]));
-  const baselineRows = new Map(
-    (baseline.report.caseResults ?? []).map((row) => [row.caseId, row]),
-  );
-  const coldRows = new Map((cold.report.caseResults ?? []).map((row) => [row.caseId, row]));
+  // Locked predictions come from the locked run; development from the cold run.
+  const coldById = new Map([
+    ...predictionsOf(cold).map((entry) => [entry.caseId, entry] as const),
+    ...(lockedStateProof === null
+      ? []
+      : predictionsOf(lockedStateProof).map((entry) => [entry.caseId, entry] as const)),
+  ]);
+  const warmById = new Map([
+    ...predictionsOf(warm).map((entry) => [entry.caseId, entry] as const),
+    ...(lockedStateProof === null
+      ? []
+      : predictionsOf(lockedStateProof).map((entry) => [entry.caseId, entry] as const)),
+  ]);
+  const baselineRows = new Map([
+    ...(baseline.report.caseResults ?? []).map((row) => [row.caseId, row] as const),
+    ...(lockedBaseline?.report.caseResults ?? []).map((row) => [row.caseId, row] as const),
+  ]);
+  const coldRows = new Map([
+    ...(cold.report.caseResults ?? []).map((row) => [row.caseId, row] as const),
+    ...(lockedStateProof?.report.caseResults ?? []).map((row) => [row.caseId, row] as const),
+  ]);
 
   // Requirement descriptions live in the compiled contract, keyed by fingerprint.
   const descriptionByFingerprint = new Map<string, Map<string, string>>();
@@ -161,7 +211,8 @@ export function buildModel(repoRoot: string): DashboardModel {
     );
   }
 
-  const cases: CaseView[] = view.manifest.replayCaseIds.map((caseId) => {
+  const lockedCaseIds = view.manifest.lockedReplayCaseIds ?? [];
+  const cases: CaseView[] = [...view.manifest.replayCaseIds, ...lockedCaseIds].map((caseId) => {
     const entry = coldById.get(caseId);
     if (entry === undefined) throw new Error(`the pinned cold run has no prediction for ${caseId}`);
     const agentVisible = loadAgentVisibleCase(caseId, { casesDir: HARD_CASES_DIR });
@@ -240,6 +291,63 @@ export function buildModel(repoRoot: string): DashboardModel {
         : null,
   };
 
+  const ratioOf = (before: number, after: number): number | null =>
+    before === 0 ? null : (before - after) / before;
+
+  // The final three-view result exists only when the locked evaluation does.
+  let final: FinalViews | null = null;
+  if (lockedBaseline !== null && lockedStateProof !== null) {
+    const baselineDevelopment = metricViewOfRun(baseline);
+    const stateproofDevelopment = metricViewOfRun(cold);
+    const baselineLocked = metricViewOfRun(lockedBaseline);
+    const stateproofLocked = metricViewOfRun(lockedStateProof);
+    const baselineCombined = combineMetrics(baselineDevelopment, baselineLocked);
+    const stateproofCombined = combineMetrics(stateproofDevelopment, stateproofLocked);
+    const baselineCombinedUsage = combineUsage(usageOf(baseline), usageOf(lockedBaseline));
+    // First deployment pays for the three contracts once and covers all twelve
+    // cases: the locked tasks resolve to the same three fingerprints.
+    const firstDeployment: UsageView = {
+      ...usageOf(cold),
+      deterministicVerificationMs:
+        (cold.verificationWallMs ?? 0) + (lockedStateProof.verificationWallMs ?? 0),
+    };
+    const repeatedVerification = combineUsage(usageOf(warm), usageOf(lockedStateProof));
+    const guardrails =
+      meetsFinalGuardrails(stateproofLocked) && meetsFinalGuardrails(stateproofCombined);
+
+    final = {
+      baselineDevelopment,
+      stateproofDevelopment,
+      baselineLocked,
+      stateproofLocked,
+      baselineCombined,
+      stateproofCombined,
+      baselineCombinedUsage,
+      firstDeployment,
+      repeatedVerification,
+      guardrailsMet: guardrails,
+      callReduction: guardrails
+        ? ratioOf(baselineCombinedUsage.modelCalls, firstDeployment.modelCalls)
+        : null,
+      tokenReduction: guardrails
+        ? ratioOf(baselineCombinedUsage.totalTokens, firstDeployment.totalTokens)
+        : null,
+      repeatedTokenReduction: guardrails
+        ? ratioOf(baselineCombinedUsage.totalTokens, repeatedVerification.totalTokens)
+        : null,
+      breakEvenRuns:
+        guardrails && baselineCombinedUsage.totalTokens > repeatedVerification.totalTokens
+          ? Math.max(
+              1,
+              Math.ceil(
+                (firstDeployment.totalTokens - repeatedVerification.totalTokens) /
+                  (baselineCombinedUsage.totalTokens - repeatedVerification.totalTokens),
+              ),
+            )
+          : null,
+    };
+  }
+
   return {
     view,
     baseline,
@@ -249,8 +357,12 @@ export function buildModel(repoRoot: string): DashboardModel {
     cold,
     warm,
     warmRepeats,
+    lockedBaseline,
+    lockedStateProof,
+    final,
     comparisonRuns: [baseline, v1, v2, cold, warm],
     cases,
+    lockedCaseIds,
     defaultCaseId: cases.some((entry) => entry.caseId === DEFAULT_CASE_ID)
       ? DEFAULT_CASE_ID
       : (cases[0]?.caseId ?? DEFAULT_CASE_ID),

@@ -19,6 +19,16 @@ import { REPO_ROOT } from '@stateproof/benchmark';
 /** Untracked paths that do not affect what the run computes. */
 const EXEMPT_UNTRACKED_PREFIXES = ['artifacts/'] as const;
 
+/**
+ * Generated evaluation records, exempt whether tracked or not.
+ *
+ * The final-evaluation ledger is appended to *by the run itself*, so a second
+ * locked workflow would otherwise find the tree dirty because the first one
+ * recorded that it happened. It is an output, not an input: nothing about what
+ * a run computes depends on it.
+ */
+const EXEMPT_PATHS = ['submission/final-evaluation-ledger.jsonl'] as const;
+
 export interface SourceTreeStatus {
   readonly commitSha: string | null;
   readonly clean: boolean;
@@ -58,7 +68,9 @@ export function inspectSourceTree(repoRoot: string = REPO_ROOT): SourceTreeStatu
   let porcelain: string;
   try {
     commitSha = git(['rev-parse', 'HEAD'], repoRoot).trim();
-    porcelain = git(['status', '--porcelain'], repoRoot);
+    // -uall lists untracked files individually; the default collapses a new
+    // directory to one entry, which would hide what is actually inside it.
+    porcelain = git(['status', '--porcelain', '--untracked-files=all'], repoRoot);
   } catch {
     // No git available, or no repository: report unknown rather than clean.
     return { commitSha: null, clean: false, offending: ['git status is unavailable'] };
@@ -71,6 +83,7 @@ export function inspectSourceTree(repoRoot: string = REPO_ROOT): SourceTreeStatu
     const target = line.slice(3).trim().replace(/^"|"$/g, '');
     // A rename prints "old -> new"; the destination is what matters.
     const filePath = target.includes(' -> ') ? (target.split(' -> ')[1] ?? target) : target;
+    if (EXEMPT_PATHS.some((exempt) => filePath === exempt)) continue;
     if (
       code === '??' &&
       EXEMPT_UNTRACKED_PREFIXES.some((prefix) => filePath.startsWith(prefix))

@@ -108,6 +108,66 @@ const PROMPTS: Array<{ id: string; label: string; path: string }> = [
 
 const V3_CONTRACT_RUN_ID = 'RUN-stateproof-hard-development-cold-20260829T022133Z-contracts';
 
+/**
+ * Locked runs join the registry only once they exist on disk.
+ *
+ * Before the one-time locked evaluation there is nothing to pin, and pinning a
+ * placeholder would let the dashboard and the reports describe a measurement
+ * that had not happened.
+ */
+function discoverLockedRuns(): Array<{
+  id: string;
+  label: string;
+  role: 'baseline-hard-locked' | 'stateproof-v3-locked';
+  system: 'baseline' | 'stateproof';
+  promptId: string;
+  provenance: 'verified' | 'known-defect';
+}> {
+  const dir = path.join(REPO_ROOT, 'artifacts', 'run-manifests');
+  if (!existsSync(dir)) return [];
+  const found: Array<{
+    id: string;
+    label: string;
+    role: 'baseline-hard-locked' | 'stateproof-v3-locked';
+    system: 'baseline' | 'stateproof';
+    promptId: string;
+    provenance: 'verified' | 'known-defect';
+  }> = [];
+
+  for (const file of readdirSync(dir).sort()) {
+    if (!file.endsWith('.json')) continue;
+    const runId = file.replace(/\.json$/, '');
+    if (!runId.includes('-locked-')) continue;
+    const manifest = EvaluationRunManifestSchema.parse(
+      readJson(relative('artifacts', 'run-manifests', file)),
+    );
+    if (!manifest.splits.includes('locked')) continue;
+    if (manifest.datasetName !== 'phantombench-hard-12') {
+      throw new Error(`${runId} is a locked run on ${manifest.datasetName}, which must not exist`);
+    }
+    found.push(
+      manifest.system === 'baseline'
+        ? {
+            id: runId,
+            label: 'Frontier baseline (locked)',
+            role: 'baseline-hard-locked',
+            system: 'baseline',
+            promptId: 'baseline-evaluator-v2',
+            provenance: 'verified',
+          }
+        : {
+            id: runId,
+            label: 'StateProof v3 (locked)',
+            role: 'stateproof-v3-locked',
+            system: 'stateproof',
+            promptId: 'contract-agent-v3',
+            provenance: 'verified',
+          },
+    );
+  }
+  return found;
+}
+
 function readJson(relativePath: string): unknown {
   return JSON.parse(readFileSync(path.join(REPO_ROOT, relativePath), 'utf8')) as unknown;
 }
@@ -122,14 +182,11 @@ function main(): void {
     sha256: sha256Hex(readFileSync(path.join(REPO_ROOT, prompt.path), 'utf8')),
   }));
 
-  const runs = RUNS.map((run) => {
+  const lockedRuns = discoverLockedRuns();
+  const runs = [...RUNS, ...lockedRuns].map((run) => {
     const manifestPath = relative('artifacts', 'run-manifests', `${run.id}.json`);
     const manifest = EvaluationRunManifestSchema.parse(readJson(manifestPath));
     const predictionPath = relative('artifacts', 'predictions', `${run.id}.json`);
-
-    if (manifest.splits.includes('locked')) {
-      throw new Error(`${run.id} covers the locked split and must not be registered`);
-    }
 
     return {
       id: run.id,
@@ -172,6 +229,9 @@ function main(): void {
         rawResponsePaths: artifact.rawResponsePaths.map((raw) => relative('artifacts', raw)),
       };
     });
+
+  const lockedStateProofRunId =
+    lockedRuns.find((run) => run.role === 'stateproof-v3-locked')?.id ?? null;
 
   const coreCases = readdirSync(path.join(REPO_ROOT, 'benchmarks', 'phantombench-12', 'cases')).length;
   const hardCases = readdirSync(
@@ -217,6 +277,12 @@ function main(): void {
       ...caseIdsForSplit('locked', HARD_SPLITS_DIR),
       ...caseIdsForSplit('locked', SPLITS_DIR),
     ],
+    ...(lockedStateProofRunId === null
+      ? {}
+      : {
+          lockedReplayCaseIds: caseIdsForSplit('locked', HARD_SPLITS_DIR),
+          lockedReplayTargetRunId: lockedStateProofRunId,
+        }),
   });
 
   const outPath = path.join(REPO_ROOT, 'submission', 'reproduction-manifest.json');
@@ -229,6 +295,7 @@ function main(): void {
       `prompts pinned:   ${registry.prompts.length}`,
       `contracts pinned: ${contracts.length} (${V3_CONTRACT_RUN_ID})`,
       `replay cases:     ${registry.replayCaseIds.join(', ')}`,
+    `locked replay:    ${(registry.lockedReplayCaseIds ?? []).join(', ') || 'not yet evaluated'}`,
       `locked excluded:  ${registry.lockedCaseIds.join(', ')}`,
       `written:          submission/reproduction-manifest.json`,
       '',

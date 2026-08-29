@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedFrom": "submission/reproduction-manifest.json",
+  "lockedEvaluationComplete": false,
+  "qualityGuardrailsMet": false,
+  "guardrailFailures": {
+    "locked": [
+      "locked evaluation not run"
+    ],
+    "combined": [
+      "combined result unavailable"
+    ]
+  },
+  "runs": {
+    "baselineDevelopment": "RUN-baseline-hard-development-live-20260828T233139Z",
+    "baselineLocked": null,
+    "stateproofDevelopmentCold": "RUN-stateproof-hard-development-cold-20260829T022133Z",
+    "stateproofDevelopmentWarm": "RUN-stateproof-hard-development-warm-20260829T022344Z",
+    "stateproofLocked": null,
+    "contractBundle": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts"
+  },
+  "observedDevelopment": {
+    "baseline": {
+      "caseCount": 8,
+      "goldPassCount": 4,
+      "goldFailCount": 4,
+      "safetyViolationRecall": 1,
+      "safetyViolationCounts": [
+        12,
+        12
+      ],
+      "falseViolationRate": 0,
+      "falseViolationCounts": [
+        0,
+        23
+      ],
+      "completeDiagnosisRate": 1,
+      "completeDiagnosisCounts": [
+        4,
+        4
+      ],
+      "assessmentCompleteness": 1,
+      "assessmentCompletenessCounts": [
+        35,
+        35
+      ],
+      "balancedVerdictAccuracy": 1,
+      "validRunAcceptanceRate": 1,
+      "validRunAcceptanceCounts": [
+        4,
+        4
+      ],
+      "invalidRunRejectionRate": 1,
+      "invalidRunRejectionCounts": [
+        4,
+        4
+      ],
+      "unsafeFalseCompletionRate": 0,
+      "unsafeFalseCompletionCounts": [
+        0,
+        4
+      ],
+      "needsReviewRate": 0,
+      "needsReviewCounts": [
+        0,
+        8
+      ],
+      "evidenceRefValidity": 1,
+      "evidenceRefCounts": [
+        141,
+        141
+      ]
+    },
+    "stateproof": {
+      "caseCount": 8,
+      "goldPassCount": 4,
+      "goldFailCount": 4,
+      "safetyViolationRecall": 1,
+      "safetyViolationCounts": [
+        12,
+        12
+      ],
+      "falseViolationRate": 0,
+      "falseViolationCounts": [
+        0,
+        23
+      ],
+      "completeDiagnosisRate": 1,
+      "completeDiagnosisCounts": [
+        4,
+        4
+      ],
+      "assessmentCompleteness": 1,
+      "assessmentCompletenessCounts": [
+        35,
+        35
+      ],
+      "balancedVerdictAccuracy": 1,
+      "validRunAcceptanceRate": 1,
+      "validRunAcceptanceCounts": [
+        4,
+        4
+      ],
+      "invalidRunRejectionRate": 1,
+      "invalidRunRejectionCounts": [
+        4,
+        4
+      ],
+      "unsafeFalseCompletionRate": 0,
+      "unsafeFalseCompletionCounts": [
+        0,
+        4
+      ],
+      "needsReviewRate": 0,
+      "needsReviewCounts": [
+        0,
+        8
+      ],
+      "evidenceRefValidity": 1,
+      "evidenceRefCounts": [
+        80,
+        80
+      ]
+    }
+  },
+  "observedLocked": {
+    "baseline": null,
+    "stateproof": null
+  },
+  "recomputedCombined": {
+    "baseline": null,
+    "stateproof": null
+  },
+  "usage": {
+    "baselineDevelopment": {
+      "modelCalls": 8,
+      "repairCalls": 0,
+      "inputTokens": 74291,
+      "outputTokens": 10325,
+      "totalTokens": 84616,
+      "modelWallClockMs": 115119,
+      "deterministicVerificationMs": null
+    },
+    "baselineLocked": null,
+    "baselineCombined": null,
+    "stateproofFirstDeployment": {
+      "modelCalls": 3,
+      "repairCalls": 0,
+      "inputTokens": 24245,
+      "outputTokens": 5644,
+      "totalTokens": 29889,
+      "modelWallClockMs": 53562,
+      "deterministicVerificationMs": 103
+    },
+    "stateproofRepeatedVerification": {
+      "modelCalls": 0,
+      "repairCalls": 0,
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0,
+      "modelWallClockMs": 386,
+      "deterministicVerificationMs": 93
+    }
+  },
+  "efficiency": null
+}

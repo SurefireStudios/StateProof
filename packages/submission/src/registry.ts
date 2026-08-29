@@ -46,11 +46,13 @@ export const RegisteredRunSchema = z
     role: z.enum([
       'baseline-core',
       'baseline-hard',
+      'baseline-hard-locked',
       'stateproof-v1-cold',
       'stateproof-v2-cold',
       'stateproof-v3-cold',
       'stateproof-v3-warm',
       'stateproof-v3-warm-repeat',
+      'stateproof-v3-locked',
     ]),
     system: z.enum(['baseline', 'stateproof']),
     dataset: NonEmpty,
@@ -109,11 +111,22 @@ export const ReproductionManifestSchema = z
     prompts: z.array(RegisteredPromptSchema).min(1),
     runs: z.array(RegisteredRunSchema).min(1),
     contractBundles: z.array(RegisteredContractBundleSchema).min(1),
-    /** The run whose predictions a replay must reproduce exactly. */
+    /** The run whose development predictions a replay must reproduce exactly. */
     replayTargetRunId: NonEmpty,
-    /** Cases the replay covers. Locked ids must never appear here. */
+    /** Development cases the replay covers. Locked ids must never appear here. */
     replayCaseIds: z.array(NonEmpty).min(1),
     lockedCaseIds: z.array(NonEmpty).min(1),
+    /**
+     * Locked cases the replay may re-verify, and the run it must reproduce.
+     *
+     * Absent until the one-time locked evaluation has happened. Re-verifying a
+     * locked case deterministically from committed artifacts is reproduction,
+     * not a second evaluation — but it is only legitimate once the evaluation
+     * itself is on the record, which is why this field is driven by artifact
+     * presence rather than being always-on.
+     */
+    lockedReplayCaseIds: z.array(NonEmpty).optional(),
+    lockedReplayTargetRunId: NonEmpty.optional(),
   })
   .strict()
   .superRefine((manifest, ctx) => {
@@ -134,6 +147,31 @@ export const ReproductionManifestSchema = z
         path: ['replayTargetRunId'],
         message: 'the replay target must be one of the registered runs',
       });
+    }
+
+    for (const caseId of manifest.lockedReplayCaseIds ?? []) {
+      if (!locked.has(caseId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['lockedReplayCaseIds'],
+          message: `${caseId} is not a locked case`,
+        });
+      }
+    }
+    if ((manifest.lockedReplayCaseIds ?? []).length > 0) {
+      if (manifest.lockedReplayTargetRunId === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['lockedReplayTargetRunId'],
+          message: 'a locked replay set needs the locked run it must reproduce',
+        });
+      } else if (!runIds.has(manifest.lockedReplayTargetRunId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['lockedReplayTargetRunId'],
+          message: 'the locked replay target must be one of the registered runs',
+        });
+      }
     }
   });
 

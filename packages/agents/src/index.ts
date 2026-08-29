@@ -7,6 +7,7 @@ export * from './baseline/score';
 export * from './baseline/hard-score';
 export * from './contract/bundle';
 export * from './contract/compiler';
+export * from './run/final-lock';
 export * from './run/source-guard';
 export * from './verify/executor';
 export * from './stateproof/runner';

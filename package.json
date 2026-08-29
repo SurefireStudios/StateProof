@@ -22,6 +22,8 @@
     "dev": "pnpm --filter dashboard dev",
     "reproduce": "tsx scripts/reproduce.ts",
     "reproduce:check": "tsx scripts/reproduce.ts --check-only",
+    "test:clean-reproduction": "tsx scripts/clean-reproduction.ts",
+    "submission:finalize": "tsx scripts/finalize-submission.ts",
     "submission:summary": "tsx scripts/generate-submission-summary.ts",
     "submission:manifest": "tsx scripts/generate-reproduction-manifest.ts",
     "compare:development": "tsx scripts/compare-development-runs.ts",

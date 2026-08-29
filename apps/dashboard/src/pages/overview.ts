@@ -96,6 +96,60 @@ export function renderOverview(model: DashboardModel): string {
   </div>
 </section>
 
+${
+    model.final === null
+      ? `
+<section>
+  <div class="callout warn">
+    <p style="margin:0"><strong>The locked split has not been run.</strong> Everything above is a
+    development result, and is labelled as one.</p>
+  </div>
+</section>`
+      : `
+<section>
+  <h2>Final result across all twelve Hard cases</h2>
+  <p class="muted small">Development (8 cases, iterated against) plus the untouched locked split
+  (4 cases, run once after the freeze), recomputed from counts.</p>
+  <div class="grid grid-4">
+    <div class="card">
+      <h3>Locked quality</h3>
+      <p class="stat">${esc(percent(model.final.stateproofLocked.safetyViolationRecall))}</p>
+      <p class="stat-note">SVR on cases never used for tuning.
+      FVR ${esc(percent(model.final.stateproofLocked.falseViolationRate))},
+      CDR ${esc(percent(model.final.stateproofLocked.completeDiagnosisRate))},
+      BVA ${esc(percent(model.final.stateproofLocked.balancedVerdictAccuracy))}.</p>
+    </div>
+    <div class="card">
+      <h3>Combined quality</h3>
+      <p class="stat">${esc(percent(model.final.stateproofCombined.safetyViolationRecall))}</p>
+      <p class="stat-note">All twelve cases. Baseline
+      ${esc(percent(model.final.baselineCombined.safetyViolationRecall))} SVR,
+      ${esc(percent(model.final.baselineCombined.balancedVerdictAccuracy))} BVA.</p>
+    </div>
+    <div class="card">
+      <h3>First deployment</h3>
+      <p class="stat">${esc(integer(model.final.firstDeployment.modelCalls))} <span class="faint" style="font-size:16px">of ${esc(integer(model.final.baselineCombinedUsage.modelCalls))}</span></p>
+      <p class="stat-note">${esc(integer(model.final.firstDeployment.totalTokens))} tokens vs
+      ${esc(integer(model.final.baselineCombinedUsage.totalTokens))} for the full suite.</p>
+    </div>
+    <div class="card">
+      <h3>Repeated verification</h3>
+      <p class="stat">${esc(integer(model.final.repeatedVerification.modelCalls))}</p>
+      <p class="stat-note">${esc(integer(model.final.repeatedVerification.totalTokens))} tokens,
+      ${esc(seconds(model.final.repeatedVerification.deterministicVerificationMs))} of deterministic
+      verification for all twelve.</p>
+    </div>
+  </div>
+  <div class="callout${model.final.guardrailsMet ? '' : ' warn'}" style="margin-top:14px">
+    <p style="margin:0">${
+      model.final.guardrailsMet
+        ? 'Guardrails held on the locked and combined results — SVR 100%, CDR 100%, FVR 0%, evidence-reference validity 100% — so the efficiency figures above are claimed.'
+        : 'A quality guardrail did not hold on the locked or combined result, so no efficiency figure is claimed.'
+    }</p>
+  </div>
+</section>`
+  }
+
 <section>
   <h2>What it costs to keep verifying</h2>
   <div class="grid grid-2">

@@ -9,6 +9,14 @@ import {
 } from '@stateproof/model-provider';
 import { ContractBundleError } from '../contract/bundle';
 import { CONTRACT_PROMPT_PATH, loadContractPrompt } from '../contract/compiler';
+import {
+  type FinalLockedApproval,
+  FinalLockedProtocolError,
+  assertFinalLockedProtocol,
+  recordCompleted,
+  recordFailed,
+  recordStarted,
+} from '../run/final-lock';
 import { DirtySourceTreeError } from '../run/source-guard';
 import { WarmContractMissError, runStateProof } from '../stateproof/runner';
 import { scoreStateProof } from '../stateproof/score';
@@ -30,7 +38,6 @@ import { scoreStateProof } from '../stateproof/score';
 
 const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
 const DEFAULT_ARTIFACTS_DIR = path.join(REPO_ROOT, 'artifacts');
-const LOCKED_RUN_ENV = 'STATEPROOF_ALLOW_LOCKED_RUN';
 
 interface CliOptions {
   readonly split: Split;
@@ -39,6 +46,8 @@ interface CliOptions {
   readonly promptPath: string;
   readonly contractsFrom: string | undefined;
   readonly coldRunId: string | undefined;
+  readonly finalLocked: boolean;
+  readonly expectedFreeze: string | undefined;
 }
 
 function parseArgs(argv: readonly string[]): CliOptions {
@@ -48,6 +57,8 @@ function parseArgs(argv: readonly string[]): CliOptions {
   let promptPath = CONTRACT_PROMPT_PATH;
   let contractsFrom: string | undefined;
   let coldRunId: string | undefined;
+  let finalLocked = false;
+  let expectedFreeze: string | undefined;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -84,11 +95,27 @@ function parseArgs(argv: readonly string[]): CliOptions {
       if (value === undefined) throw new Error('--cold-run needs a run id');
       coldRunId = value;
       index += 1;
+    } else if (arg === '--final-locked') {
+      finalLocked = true;
+    } else if (arg === '--expected-freeze') {
+      const value = argv[index + 1];
+      if (value === undefined) throw new Error('--expected-freeze needs a full commit sha');
+      expectedFreeze = value;
+      index += 1;
     } else if (arg !== undefined && arg.startsWith('--')) {
       throw new Error(`unknown flag ${arg}`);
     }
   }
-  return { split, artifactsDir, baselineRunId, promptPath, contractsFrom, coldRunId };
+  return {
+    split,
+    artifactsDir,
+    baselineRunId,
+    promptPath,
+    contractsFrom,
+    coldRunId,
+    finalLocked,
+    expectedFreeze,
+  };
 }
 
 async function main(): Promise<void> {
@@ -101,21 +128,44 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (options.split === 'locked' && process.env[LOCKED_RUN_ENV] !== '1') {
-    process.stderr.write(
-      [
-        'Refusing to run the hard locked challenge split.',
-        '',
-        'These four cases are the one comparison the final system is measured by.',
-        `If the freeze has genuinely happened, set ${LOCKED_RUN_ENV}=1 and re-run.`,
-        '',
-      ].join('\n'),
-    );
-    process.exitCode = 2;
-    return;
-  }
-
   const warm = options.contractsFrom !== undefined;
+
+  // The locked split has no casual mode, and it may only be verified from a
+  // persisted bundle: compiling fresh contracts against held-out cases would
+  // make the measurement something other than what it claims to be.
+  let approval: FinalLockedApproval | null = null;
+  if (options.split === 'locked') {
+    if (!warm) {
+      process.stderr.write(
+        [
+          'Refusing to run the locked split in cold mode.',
+          '',
+          'The locked evaluation verifies the frozen contract bundle, so it must be',
+          'run with --contracts-from <contractRunId>.',
+          '',
+        ].join('\n'),
+      );
+      process.exitCode = 2;
+      return;
+    }
+    try {
+      approval = assertFinalLockedProtocol({
+        workflow: 'stateproof-hard-locked',
+        split: options.split,
+        finalLocked: options.finalLocked,
+        expectedFreeze: options.expectedFreeze,
+        dataset: 'phantombench-hard-12',
+        repoRoot: REPO_ROOT,
+      });
+    } catch (error) {
+      if (error instanceof FinalLockedProtocolError) {
+        process.stderr.write(`${error.message}\n`);
+        process.exitCode = 2;
+        return;
+      }
+      throw error;
+    }
+  }
   let client: AnthropicModelClient | null = null;
 
   if (!warm) {
@@ -138,6 +188,10 @@ async function main(): Promise<void> {
 
   const prompt = loadContractPrompt(options.promptPath);
   process.stdout.write(`StateProof - split=${options.split} mode=${warm ? 'warm' : 'cold'}\n`);
+  if (approval !== null) {
+    process.stdout.write(`FINAL LOCKED RUN - freeze ${approval.freezeCommit}\n`);
+    recordStarted(approval, 'locked verification starting from the frozen contract bundle');
+  }
   process.stdout.write(`assertion schema=${ASSERTION_SCHEMA_VERSION}\n`);
   if (warm) {
     process.stdout.write(`contracts-from=${String(options.contractsFrom)}\n`);
@@ -173,6 +227,9 @@ async function main(): Promise<void> {
             onProgress: (message) => process.stdout.write(`  ${message}\n`),
           });
   } catch (error) {
+    if (approval !== null) {
+      recordFailed(approval, error instanceof Error ? error.message : String(error));
+    }
     if (
       error instanceof DirtySourceTreeError ||
       error instanceof ContractBundleError ||
@@ -183,6 +240,18 @@ async function main(): Promise<void> {
       return;
     }
     throw error;
+  }
+
+  if (approval !== null) {
+    // Belt and braces: the run reports zero calls, and the protocol refuses to
+    // record a completion that spent any.
+    if (run.compilation.compilationCalls !== 0 || run.manifest.modelUsage !== null) {
+      recordFailed(approval, 'the locked run reported model usage, which must never happen');
+      process.stderr.write('Locked verification made a model call. Refusing to record it.\n');
+      process.exitCode = 1;
+      return;
+    }
+    recordCompleted(approval, run.runId, 'locked verification completed with zero model calls');
   }
 
   process.stdout.write(

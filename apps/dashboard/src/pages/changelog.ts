@@ -121,6 +121,30 @@ function rows(model: DashboardModel): Row[] {
         { label: 'changelog', href: artifact('IMPROVEMENT_CHANGELOG.md') },
       ],
     },
+    ...(model.lockedStateProof === null || model.lockedBaseline === null
+      ? []
+      : [
+          {
+            stage: '7',
+            title: 'Untouched locked evaluation, run once',
+            finding:
+              'After the source freeze, the four held-out cases were run exactly once for both ' +
+              'systems: the frontier baseline live, and StateProof from the frozen contract ' +
+              'bundle with no credential in the environment. Neither was rerun, and the ' +
+              'one-time protocol makes a second attempt impossible.',
+            outcome:
+              `StateProof locked SVR ${percent(model.lockedStateProof.svr)} · ` +
+              `CDR ${percent(model.lockedStateProof.cdr)} · ` +
+              `BVA ${percent(model.lockedStateProof.bva)} · ` +
+              `${model.lockedStateProof.modelCalls} model calls`,
+            links: [
+              { label: 'locked StateProof report', href: artifact(model.lockedStateProof.registered.reportMarkdownPath) },
+              { label: 'locked baseline report', href: artifact(model.lockedBaseline.registered.reportMarkdownPath) },
+              { label: 'final evaluation', href: artifact('submission/final-evaluation.md') },
+              { label: 'ledger', href: artifact('submission/final-evaluation-ledger.jsonl') },
+            ],
+          },
+        ]),
   ];
 }
 

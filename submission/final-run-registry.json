@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "1.0.0",
+  "freezeCommit": {
+    "gate3cSource": "42135267c23841b7c8bb960c01749f58bb53481a",
+    "gate3cResult": "57b8c59"
+  },
+  "prompts": [
+    {
+      "id": "baseline-evaluator-v1",
+      "label": "Baseline evaluator v1",
+      "path": "prompts/baseline-evaluator/v1.md",
+      "sha256": "c2bcb3f7adb43e6c8c3c5ba0efb223373ac31500107860c4cd57e203f6646d62"
+    },
+    {
+      "id": "baseline-evaluator-v2",
+      "label": "Baseline evaluator v2",
+      "path": "prompts/baseline-evaluator/v2.md",
+      "sha256": "d5a03c05b36d9b6886298b4d2228a79e04d2726152bee3df9844d2923a0695e4"
+    },
+    {
+      "id": "contract-agent-v1",
+      "label": "Contract Agent v1",
+      "path": "prompts/contract-agent/v1.md",
+      "sha256": "fea2ee3fa5d9d5886435b7d448e7c5ce645abec8bff00e0b8797ab41b3c1d1e1"
+    },
+    {
+      "id": "contract-agent-v2",
+      "label": "Contract Agent v2",
+      "path": "prompts/contract-agent/v2.md",
+      "sha256": "880e3e23b6c3557b1ed11b60922c061e29d46f43e8c61f15849510c4357aec8d"
+    },
+    {
+      "id": "contract-agent-v3",
+      "label": "Contract Agent v3",
+      "path": "prompts/contract-agent/v3.md",
+      "sha256": "b3b93c18b63f2794056c7e419c6f78974fa7e95eaf62d0fa2a4b9e7620db6534"
+    }
+  ],
+  "contractBundle": {
+    "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+    "assertionSchemaVersion": "2.1.0",
+    "contracts": [
+      {
+        "taskFingerprint": "518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7",
+        "contractHash": "45f5df4dca8ba843de9e601747f3b130ad50ccc516a3742ce3decd10f0e9ad54",
+        "path": "artifacts/contracts/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7.json"
+      },
+      {
+        "taskFingerprint": "92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793",
+        "contractHash": "661d1b5385b57de366b98a5e4a8378587e83c8e51235b309f1dd1a3d8ae93f43",
+        "path": "artifacts/contracts/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793.json"
+      },
+      {
+        "taskFingerprint": "9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858",
+        "contractHash": "3ba65540a8dcad356ded2af6ebde5c42564fc42c141ef886bfec7577e9960629",
+        "path": "artifacts/contracts/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858.json"
+      }
+    ]
+  },
+  "runs": [
+    {
+      "id": "RUN-baseline-development-live-20260828T222134Z",
+      "label": "Core-12 diagnostic baseline",
+      "role": "baseline-core",
+      "system": "baseline",
+      "split": "development",
+      "sourceCommit": "a470aa80deccfb97459b8a683a907602426e6e95",
+      "canonicalPredictionSha256": "fe0414685189019dbade76bd2e54d37a2d04449bc2764a635096ebe98134b886",
+      "manifestPath": "artifacts/run-manifests/RUN-baseline-development-live-20260828T222134Z.json",
+      "predictionPath": "artifacts/predictions/RUN-baseline-development-live-20260828T222134Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-baseline-development-live-20260828T222134Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-baseline-development-live-20260828T222134Z.md"
+    },
+    {
+      "id": "RUN-baseline-hard-development-live-20260828T233139Z",
+      "label": "Frontier baseline (Hard-12)",
+      "role": "baseline-hard",
+      "system": "baseline",
+      "split": "development",
+      "sourceCommit": "41602f8bdd5d2732f7c675c98b620324308be66d",
+      "canonicalPredictionSha256": "442419e5c27334beb6161b17bfc696b08d658009ad3771b42e4f1a5655731880",
+      "manifestPath": "artifacts/run-manifests/RUN-baseline-hard-development-live-20260828T233139Z.json",
+      "predictionPath": "artifacts/predictions/RUN-baseline-hard-development-live-20260828T233139Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-baseline-hard-development-live-20260828T233139Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-baseline-hard-development-live-20260828T233139Z.md"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-live-20260829T004039Z",
+      "label": "StateProof v1 cold",
+      "role": "stateproof-v1-cold",
+      "system": "stateproof",
+      "split": "development",
+      "sourceCommit": "ee8ac5cd03d9d03ba4772f889c5239d2d8524c3b",
+      "canonicalPredictionSha256": "e98c0da07dca72cd6eaea7eab1e5a56be241df3bce10c75ec84718206ebd4b85",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-live-20260829T004039Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-live-20260829T004039Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-live-20260829T004039Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-live-20260829T004039Z.md"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-cold-20260829T013429Z",
+      "label": "StateProof v2 cold",
+      "role": "stateproof-v2-cold",
+      "system": "stateproof",
+      "split": "development",
+      "sourceCommit": "7cfb23ca366cb49917b6b069d69514e700c7c6ce",
+      "canonicalPredictionSha256": "791f62311d44f8e1c4dd16f2238b03f56ec453e787934005aa0b6f447156e824",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-cold-20260829T013429Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-cold-20260829T013429Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-cold-20260829T013429Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-cold-20260829T013429Z.md"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-cold-20260829T022133Z",
+      "label": "StateProof v3 cold",
+      "role": "stateproof-v3-cold",
+      "system": "stateproof",
+      "split": "development",
+      "sourceCommit": "42135267c23841b7c8bb960c01749f58bb53481a",
+      "canonicalPredictionSha256": "3d8ef516fa5d6d6bd673fbb87ae2ce49b2af9eaac10850c2f6bf679444ca0651",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-cold-20260829T022133Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-cold-20260829T022133Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-cold-20260829T022133Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-cold-20260829T022133Z.md"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-warm-20260829T022344Z",
+      "label": "StateProof v3 warm (measured)",
+      "role": "stateproof-v3-warm",
+      "system": "stateproof",
+      "split": "development",
+      "sourceCommit": "42135267c23841b7c8bb960c01749f58bb53481a",
+      "canonicalPredictionSha256": "3d8ef516fa5d6d6bd673fbb87ae2ce49b2af9eaac10850c2f6bf679444ca0651",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-warm-20260829T022344Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-warm-20260829T022344Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022344Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022344Z.md"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-warm-20260829T022354Z",
+      "label": "StateProof v3 warm repeat 1",
+      "role": "stateproof-v3-warm-repeat",
+      "system": "stateproof",
+      "split": "development",
+      "sourceCommit": "42135267c23841b7c8bb960c01749f58bb53481a",
+      "canonicalPredictionSha256": "3d8ef516fa5d6d6bd673fbb87ae2ce49b2af9eaac10850c2f6bf679444ca0651",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-warm-20260829T022354Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-warm-20260829T022354Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022354Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022354Z.md"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-warm-20260829T022355Z",
+      "label": "StateProof v3 warm repeat 2",
+      "role": "stateproof-v3-warm-repeat",
+      "system": "stateproof",
+      "split": "development",
+      "sourceCommit": "42135267c23841b7c8bb960c01749f58bb53481a",
+      "canonicalPredictionSha256": "3d8ef516fa5d6d6bd673fbb87ae2ce49b2af9eaac10850c2f6bf679444ca0651",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-warm-20260829T022355Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-warm-20260829T022355Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022355Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022355Z.md"
+    }
+  ]
+}

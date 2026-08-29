@@ -241,23 +241,36 @@ describe('the dashboard refuses tampered or missing artifacts', () => {
 });
 
 describe('the registry never reaches a locked case', () => {
-  it('registers only development-split runs', () => {
+  it('registers a locked run only under a locked role', () => {
     const model = buildModel(REPO_ROOT);
-    for (const run of model.view.runs) expect(run.registered.split).toBe('development');
+    for (const run of model.view.runs) {
+      const lockedRole =
+        run.registered.role === 'baseline-hard-locked' ||
+        run.registered.role === 'stateproof-v3-locked';
+      expect(run.registered.split === 'locked').toBe(lockedRole);
+    }
   });
 
   it('keeps locked ids out of the replay set', () => {
     const model = buildModel(REPO_ROOT);
     const locked = new Set(model.view.manifest.lockedCaseIds);
+    const evaluated = new Set(model.view.manifest.lockedReplayCaseIds ?? []);
     expect(locked.size).toBeGreaterThan(0);
     for (const caseId of model.view.manifest.replayCaseIds) expect(locked.has(caseId)).toBe(false);
-    for (const caseView of model.cases) expect(locked.has(caseView.caseId)).toBe(false);
+    for (const caseView of model.cases) {
+      if (!locked.has(caseView.caseId)) continue;
+      expect(evaluated.has(caseView.caseId), caseView.caseId).toBe(true);
+    }
   });
 
-  it('renders no locked case id anywhere in the built site', () => {
+  it('renders only the locked cases whose evaluation is on the record', () => {
     const model = buildModel(REPO_ROOT);
+    const evaluated = new Set(model.view.manifest.lockedReplayCaseIds ?? []);
     for (const caseId of model.view.manifest.lockedCaseIds) {
-      expect(allHtml).not.toContain(caseId);
+      if (evaluated.has(caseId)) continue;
+      // A locked case that has not been run must not appear anywhere: the site
+      // would otherwise describe a measurement that never happened.
+      expect(allHtml, caseId).not.toContain(caseId);
     }
   });
 });

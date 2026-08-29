@@ -1,15 +1,19 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { formatRate } from '@stateproof/core';
+import { type Split, formatRate } from '@stateproof/core';
 import { HARD_CASES_DIR, HARD_SPLITS_DIR, onCaseFileRead } from '@stateproof/benchmark';
 import { runStateProof, scoreStateProof } from '@stateproof/agents';
 import {
+  type MetricView,
   SubmissionArtifactError,
   canonicalPredictionFileHash,
+  combineMetrics,
   loadSubmissionView,
+  metricViewOf,
+  metricViewOfRun,
 } from '@stateproof/submission';
 
 /**
@@ -64,6 +68,24 @@ function runCli(script: string, args: readonly string[]): { code: number; output
     const failure = error as { status?: number; stdout?: string; stderr?: string };
     return { code: failure.status ?? 1, output: `${failure.stdout ?? ''}${failure.stderr ?? ''}` };
   }
+}
+
+/** A cheap fingerprint of every submitted artifact file. */
+function snapshotArtifacts(): string {
+  const walk = (dir: string): string[] => {
+    if (!existsSync(dir)) return [];
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) return walk(full);
+      const stats = statSync(full);
+      return [`${path.relative(ARTIFACTS, full)}:${stats.size}:${stats.mtimeMs}`];
+    });
+  };
+  return walk(ARTIFACTS).sort().join('\n');
+}
+
+function sameArtifacts(before: string, after: string): boolean {
+  return before === after;
 }
 
 function promptHashAtCommit(commitSha: string, repoRelativePath: string): string | null {
@@ -149,16 +171,37 @@ async function main(): Promise<void> {
     return;
   }
 
-  // --- 4. re-verify the eight development cases ----------------------------
+  // --- 4. re-verify every case the registry says was evaluated -------------
   const scratch = mkdtempSync(path.join(tmpdir(), 'stateproof-reproduce-'));
-  const predictionPath = path.join(scratch, 'predictions', 'RUN-reproduce.json');
+  // Nothing is written into artifacts/: a reproduction must never be able to
+  // overwrite the submitted result it is checking.
+  const artifactsBefore = snapshotArtifacts();
+
+  const lockedReplayIds = view.manifest.lockedReplayCaseIds ?? [];
+  const lockedTarget =
+    view.manifest.lockedReplayTargetRunId === undefined
+      ? null
+      : (view.runs.find((run) => run.registered.id === view.manifest.lockedReplayTargetRunId) ?? null);
+  if (view.manifest.lockedReplayTargetRunId !== undefined && lockedTarget === null) {
+    fail('locked replay target', 'the registry names a locked run that did not load');
+  }
+
+  const predictionPaths = new Map<Split, string>([
+    ['development', path.join(scratch, 'predictions', 'RUN-reproduce-development.json')],
+    ['locked', path.join(scratch, 'predictions', 'RUN-reproduce-locked.json')],
+  ]);
   // Two different questions. Reading a locked fixture to compute the
   // gold-inclusive dataset hash is legitimate and happens during scoring; a
-  // locked case reaching the prediction phase would mean it was evaluated.
+  // locked case reaching the *development* prediction phase would mean it was
+  // evaluated where it must not be.
+  let currentSplit: Split = 'development';
   const lockedBeforePredictions: string[] = [];
   const stopObserving = onCaseFileRead(({ caseDir }) => {
     const caseId = path.basename(caseDir);
-    if (lockedIds.has(caseId) && !existsSync(predictionPath)) lockedBeforePredictions.push(caseId);
+    if (currentSplit !== 'development') return;
+    if (lockedIds.has(caseId) && !existsSync(predictionPaths.get('development') ?? '')) {
+      lockedBeforePredictions.push(caseId);
+    }
   });
 
   try {
@@ -168,7 +211,7 @@ async function main(): Promise<void> {
       contractsArtifactsDir: ARTIFACTS,
       split: 'development',
       artifactsDir: scratch,
-      runId: 'RUN-reproduce',
+      runId: 'RUN-reproduce-development',
       casesDir: HARD_CASES_DIR,
       splitsDir: HARD_SPLITS_DIR,
     });
@@ -273,13 +316,120 @@ async function main(): Promise<void> {
       'all requirements declare complete coverage',
     );
 
+    // --- 5. the locked split, once its evaluation is on the record ----------
+    let lockedView: MetricView | null = null;
+    if (lockedReplayIds.length > 0 && lockedTarget !== null) {
+      currentSplit = 'locked';
+      const lockedReplay = await runStateProof({
+        mode: 'warm',
+        contractsFrom: bundle.registered.contractRunId,
+        contractsArtifactsDir: ARTIFACTS,
+        split: 'locked',
+        artifactsDir: scratch,
+        runId: 'RUN-reproduce-locked',
+        casesDir: HARD_CASES_DIR,
+        splitsDir: HARD_SPLITS_DIR,
+      });
+
+      check(
+        'locked replay makes zero model calls',
+        lockedReplay.compilation.compilationCalls === 0 && lockedReplay.manifest.modelUsage === null,
+        `${lockedReplay.predictionFile.predictions.length} case(s), 0 calls, 0 tokens`,
+      );
+      check(
+        'locked replay reused the frozen contracts',
+        lockedReplay.predictionFile.predictions.every((entry) => entry.cacheHit),
+        `${lockedReplay.predictionFile.predictions.length}/${lockedReplay.predictionFile.predictions.length} cache hits`,
+      );
+
+      const lockedHash = canonicalPredictionFileHash(
+        JSON.parse(readFileSync(lockedReplay.paths.predictionPath, 'utf8')),
+      );
+      check(
+        'locked predictions are byte-identical to the submitted run',
+        lockedHash === lockedTarget.canonicalPredictionSha256,
+        `sha256 ${lockedHash.slice(0, 16)}`,
+      );
+
+      const lockedScore = scoreStateProof({
+        predictionPath: lockedReplay.paths.predictionPath,
+        artifactsDir: scratch,
+        manifestPath: lockedReplay.paths.manifestPath,
+        contractArtifacts: lockedReplay.compilation.artifacts,
+        mode: 'warm',
+        usage: {
+          contractCalls: 0,
+          repairCalls: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          compilationWallMs: lockedReplay.compilation.wallClockMs,
+          verificationWallMs: lockedReplay.verificationMs,
+          cacheHits: lockedReplay.compilation.cacheHits,
+        },
+      });
+      check(
+        'locked quality metrics match the submitted report',
+        lockedScore.requirementMetrics.safetyViolationRecall === lockedTarget.svr &&
+          lockedScore.requirementMetrics.falseViolationRate === lockedTarget.fvr &&
+          lockedScore.requirementMetrics.completeDiagnosisRate === lockedTarget.cdr &&
+          lockedScore.verdictMetrics.balancedVerdictAccuracy === lockedTarget.bva,
+        `SVR ${formatRate(lockedScore.requirementMetrics.safetyViolationRecall)}, ` +
+          `FVR ${formatRate(lockedScore.requirementMetrics.falseViolationRate)}, ` +
+          `CDR ${formatRate(lockedScore.requirementMetrics.completeDiagnosisRate)}, ` +
+          `BVA ${formatRate(lockedScore.verdictMetrics.balancedVerdictAccuracy)}`,
+      );
+      check(
+        'every locked evidence reference resolves',
+        lockedScore.evidenceRefValidity === 1,
+        `${lockedScore.evidenceRefCounts[0]}/${lockedScore.evidenceRefCounts[1]}`,
+      );
+      lockedView = metricViewOfRun(lockedTarget);
+    } else {
+      ok('locked evaluation not yet on the record', 'development split only');
+    }
+
+    // --- 6. recomputed combined view ---------------------------------------
+    const developmentView = metricViewOf(target.report, [
+      score.evidenceRefCounts[0],
+      score.evidenceRefCounts[1],
+    ]);
+    if (lockedView !== null) {
+      const combined = combineMetrics(developmentView, lockedView);
+      check(
+        'combined metrics recompute from counts',
+        combined.safetyViolationCounts[1] ===
+          developmentView.safetyViolationCounts[1] + lockedView.safetyViolationCounts[1],
+        `SVR ${formatRate(combined.safetyViolationRecall)} ` +
+          `(${combined.safetyViolationCounts[0]}/${combined.safetyViolationCounts[1]}), ` +
+          `CDR ${formatRate(combined.completeDiagnosisRate)}, ` +
+          `BVA ${formatRate(combined.balancedVerdictAccuracy)}`,
+      );
+    }
+
+    // --- 7. the frozen baselines still say what the reports say -------------
+    for (const baselineRun of view.runs.filter((run) => run.registered.system === 'baseline')) {
+      check(
+        `baseline artifact consistent (${baselineRun.registered.label})`,
+        baselineRun.report.runId === baselineRun.registered.id &&
+          baselineRun.canonicalPredictionSha256 === baselineRun.registered.canonicalPredictionSha256,
+        `${baselineRun.modelCalls} call(s), ${baselineRun.totalTokens} tokens`,
+      );
+    }
+
+    check(
+      'submitted artifacts are untouched',
+      sameArtifacts(artifactsBefore, snapshotArtifacts()),
+      'the replay wrote only to a scratch directory',
+    );
+
     process.stdout.write(
       [
         '',
         'Reproduced from the committed contract bundle:',
         `  contract bundle    ${bundle.registered.contractRunId}`,
         `  pinned warm run    ${target.registered.id}`,
-        `  cases              ${replay.predictionFile.predictions.length} hard-development`,
+        `  cases              ${replay.predictionFile.predictions.length} hard-development` +
+          (lockedReplayIds.length > 0 ? ` + ${lockedReplayIds.length} hard-locked` : ''),
         `  model calls        0 (baseline needed ${view.byRole.get('baseline-hard')?.[0]?.modelCalls ?? 0})`,
         `  model tokens       0 (baseline needed ${view.byRole.get('baseline-hard')?.[0]?.totalTokens ?? 0})`,
         `  verification time  ${replay.verificationMs} ms`,
