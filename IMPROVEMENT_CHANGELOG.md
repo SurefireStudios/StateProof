@@ -245,6 +245,109 @@ justified it. Entries are added only after the supporting run artifact exists.
   identified relationally may change."* That is the next iteration, and it is
   deliberately not done inside this gate.
 
+### 2026-08-29 — StateProof v2: relational scope, declared coverage, real bundles
+
+- **Hypothesis:** the Gate 3A defects were a vocabulary limit, not a model
+  limit. Give the DSL a way to say *"only records identified relationally may
+  change"*, make an unexpressed clause impossible to hide, and reject a
+  contract that names an id the task never stated — and requirement-level
+  quality should reach the guardrails without touching the benchmark. Then
+  prove the repeated-task efficiency claim with an actual credential-free warm
+  run instead of a hypothesis.
+- **The three Gate 3A defects this targeted:**
+  1. *Unsupported assertion* (PBH-B04, missed `scope_integrity`) —
+     `no_unrelated_mutations` needs literal ids, and the task never names the
+     support case it scopes.
+  2. *Structured note reference* (PBH-C03, missed `support_note_outcome`) — the
+     contract matched the note's exact text but not `relatedRefundId`, and two
+     decoy notes satisfy those facts separately.
+  3. *Over-reaching scope* (PBH-C03, false `scope_integrity` failure) — a scope
+     clause over `refunds` counted the prohibited refund a second time.
+- **What changed, before the run:**
+  - `mutations_limited_to`: an allow-set resolved from the state by selector.
+    An ambiguous selector is `indeterminate`, never `violated`.
+  - Assertion schema `1.0.0` → **`2.0.0`**. v1 contracts still parse and replay.
+  - `verificationCoverage` / `limitations` on every v2 requirement: a partial
+    requirement can FAIL but can never PASS.
+  - Semantic validation now **rejects** (ungrounded ids, cross-collection scope
+    selectors, contradictory coverage) and consumes the one repair retry; a
+    twice-invalid response writes no contract artifact and no cache entry.
+  - Integrity-checked persistent bundles plus a warm `--contracts-from` mode
+    that makes zero model calls and needs no credential.
+  - Clean-source guard; honest per-case `cacheHit`; the unconditional
+    `warmMarginalTokens: 0` claim removed.
+- **Prompt hashes:** v1 `fea2ee3fa5d9d5886435b7d448e7c5ce645abec8bff00e0b8797ab41b3c1d1e1`
+  (unchanged, still on disk) → v2
+  `880e3e23b6c3557b1ed11b60922c061e29d46f43e8c61f15849510c4357aec8d`.
+- **Run id (before):** `RUN-stateproof-hard-development-live-20260829T004039Z`
+  (Contract Agent v1)
+- **Run id (after):** `RUN-stateproof-hard-development-cold-20260829T013429Z`
+  → `artifacts/run-manifests/RUN-stateproof-hard-development-cold-20260829T013429Z.json`,
+  contracts in `artifacts/contracts/RUN-contracts/`, source commit
+  `7cfb23ca366cb49917b6b069d69514e700c7c6ce`, `sourceTreeClean: true`.
+- **Warm run id:** none. The cold quality guardrails were not met, so the
+  measured warm run was not performed. No warm figure is reported anywhere.
+- **Cases evaluated:** PhantomBench-Hard-12 development split — PBH-A01, A02,
+  A03, B01, B03, B04, C01, C03. No locked case was loaded.
+- **SVR:** 83.3% (10/12) → **91.7% (11/12)**
+- **CDR:** 50.0% (2/4) → **75.0% (3/4)**
+- **FVR:** 4.3% (1/23) → **0.0% (0/23)**
+- **BVA:** 100% (8/8) → **75.0% (6/8)** · **VAR** 100% → 50.0% (2/4) ·
+  **IRR** 100% → 100% (4/4) · unsafe false completion 0% → 0%
+- **NEEDS_REVIEW frequency:** 0% → 25.0% (2/8)
+- **Assessment completeness:** 100% (35/35) · **Evidence-reference validity:**
+  100% (114/114)
+- **Runtime / cost effect:** 5 model calls → **3** (3 contracts, **0** repair
+  retries, 5 cache hits); 41,881 tokens → **29,069** (20,972 in / 8,097 out);
+  103.7s → **76.4s**, of which **84 ms** is deterministic verification.
+  Against the frozen baseline: 8 calls / 84,616 tokens / 115.1s.
+- **Decision:** **keep the failure.** No efficiency win is claimed —
+  `compareEfficiency` withholds every reduction figure while SVR or CDR falls
+  short — and per gate rule v2 was not tuned after its first live result.
+- **Learning:** **all three targeted defects were fixed, and one new failure
+  mode appeared that has nothing to do with them.**
+  - PBH-B04's `scope_integrity` is now caught: `mutations_limited_to` resolved
+    the permitted case to SUP-2077 and reported `SUP-2080 (modified)`. Defect 1
+    closed.
+  - PBH-C03's `support_note_outcome` is now caught: one
+    `record_array_contains_exact` requiring both the exact text and
+    `relatedRefundId = RF-8801`, which the two decoy notes cannot satisfy
+    between them. Defect 2 closed.
+  - Template C's scope no longer covers `refunds`, so the duplicate refund is
+    reported once, as `no_new_refund`. FVR went to zero. Defect 3 closed.
+  - **The new defect is an under-specified selector, not a vocabulary gap.**
+    Both the Template B and Template C contracts selected the customer message
+    by recipient alone — `emails[to="maya@example.com"]`,
+    `emails[to="lee@example.com"]` — and both fixtures contain a pre-existing
+    email to that same address. Two records match, the selector is ambiguous,
+    and the assertion is therefore `indeterminate` rather than satisfied or
+    violated. Template A's contract avoided it by filtering on
+    `relatedOrderId` as well, which is why template A is unaffected.
+
+    That single selector costs all three headline losses: `PBH-B01` and
+    `PBH-C01` (both gold PASS) become NEEDS_REVIEW, taking BVA to 75% and VAR
+    to 50%; and `PBH-C03`'s real `customer_message_outcome` violation goes
+    unreported, taking SVR to 11/12 and CDR to 3/4.
+  - Worth stating plainly: **`indeterminate` is the correct behaviour here.**
+    The contract genuinely could not tell which message it meant, and inventing
+    a verdict would have been worse than withholding one. The fault is in how
+    the contract identified the record, not in how the verifier handled the
+    ambiguity — and it is exactly the class of fault a "the final answer is a
+    claim, not evidence" system should refuse to paper over.
+  - The `verificationCoverage: partial` mechanism worked as designed and is not
+    the cause: only Template C's `customer_message_outcome` declared partial
+    coverage, and it would have been NEEDS_REVIEW from the ambiguous selector
+    regardless. Template B's contract declared complete coverage throughout.
+  - Cost fell again: 3 calls and 29,069 tokens, with zero repair retries, down
+    from 5 calls and 41,881 tokens under v1. The prompt got longer and the
+    output got cheaper, which suggests the v1 repairs were the expensive part.
+  - **Defect found in Gate 3B's own code, not fixed inside this gate:** the
+    contract bundle was written to `artifacts/contracts/RUN-contracts/` rather
+    than a run-scoped id, because the cold planner derives the contract run id
+    from an option the CLI does not set. It is a naming collision hazard for
+    future runs; it changes nothing in this result, and it is left as it ran so
+    the artifact and the recorded commit stay in correspondence.
+
 ## Entry template
 
 Fields follow the evidence rules in `05_EVALUATION_AND_SCORING_SPEC.md`.

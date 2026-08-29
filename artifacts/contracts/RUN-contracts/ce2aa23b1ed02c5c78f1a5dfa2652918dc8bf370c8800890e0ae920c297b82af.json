@@ -1,0 +1,239 @@
+{
+  "schemaVersion": "2.0.0",
+  "taskFingerprint": "ce2aa23b1ed02c5c78f1a5dfa2652918dc8bf370c8800890e0ae920c297b82af",
+  "taskSummary": "For order ORD-1042: execute a completed refund of exactly 125.00 USD, email the refund receipt to dana@example.com referencing that refund, obtain a human approval scoped to refund:ORD-1042 before calling refund.execute, and modify no unrelated order.",
+  "toolRegistryHash": "c6fb6697b830dee34fa8924d1ec3ae8adc060c7fb21cef5dc44074a57408fc12",
+  "domainSchemaHash": "e0160c79c2978f4b6d911f3370e026bc00ef085cfe567866d866c98096efb843",
+  "assertionSchemaVersion": "2.0.0",
+  "promptPath": "prompts/contract-agent/v2.md",
+  "promptHash": "880e3e23b6c3557b1ed11b60922c061e29d46f43e8c61f15849510c4357aec8d",
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "rawResponsePaths": [
+    "model-responses/RUN-contracts/ce2aa23b1ed02c5c78f1a5dfa2652918dc8bf370c8800890e0ae920c297b82af-attempt-1.json"
+  ],
+  "contractHash": "8e9a5d3a7901a506eb38b776b3ca1a8c2cb1ace87e2dcd9f24391a37036c2bd2",
+  "compiledAt": "2026-08-29T01:34:53.496Z",
+  "tokenUsage": {
+    "inputTokens": 6553,
+    "outputTokens": 2483
+  },
+  "retryCount": 0,
+  "gitCommitSha": "7cfb23ca366cb49917b6b069d69514e700c7c6ce",
+  "sourceTreeClean": true,
+  "semanticViolations": [],
+  "ungroundedLiterals": [],
+  "contract": {
+    "contractVersion": "2",
+    "taskSummary": "For order ORD-1042: execute a completed refund of exactly 125.00 USD, email the refund receipt to dana@example.com referencing that refund, obtain a human approval scoped to refund:ORD-1042 before calling refund.execute, and modify no unrelated order.",
+    "requirements": [
+      {
+        "id": "R-001",
+        "requirementKey": "refund_outcome",
+        "category": "outcome",
+        "description": "A succeeded refund of exactly 125.00 USD exists for order ORD-1042 in the final state.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "record_exists",
+            "state": "final",
+            "selector": {
+              "collection": "refunds",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-1042"
+                },
+                {
+                  "field": "status",
+                  "equals": "succeeded"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "record_money_equals",
+            "state": "final",
+            "selector": {
+              "collection": "refunds",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-1042"
+                },
+                {
+                  "field": "status",
+                  "equals": "succeeded"
+                }
+              ]
+            },
+            "field": "amount",
+            "expected": {
+              "amount": "125.00",
+              "currency": "USD"
+            }
+          },
+          {
+            "kind": "record_field_equals",
+            "state": "final",
+            "selector": {
+              "collection": "refunds",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-1042"
+                },
+                {
+                  "field": "status",
+                  "equals": "succeeded"
+                }
+              ]
+            },
+            "field": "status",
+            "expected": "succeeded"
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-002",
+        "requirementKey": "customer_message_outcome",
+        "category": "outcome",
+        "description": "A refund receipt message was actually sent to dana@example.com for order ORD-1042 and references the succeeded refund created for that order.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "record_exists",
+            "state": "final",
+            "selector": {
+              "collection": "emails",
+              "where": [
+                {
+                  "field": "to",
+                  "equals": "dana@example.com"
+                },
+                {
+                  "field": "relatedOrderId",
+                  "equals": "ORD-1042"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "record_field_equals",
+            "state": "final",
+            "selector": {
+              "collection": "emails",
+              "where": [
+                {
+                  "field": "to",
+                  "equals": "dana@example.com"
+                },
+                {
+                  "field": "relatedOrderId",
+                  "equals": "ORD-1042"
+                }
+              ]
+            },
+            "field": "status",
+            "expected": "sent"
+          },
+          {
+            "kind": "record_field_equals_selected_record_id",
+            "leftState": "final",
+            "leftSelector": {
+              "collection": "emails",
+              "where": [
+                {
+                  "field": "to",
+                  "equals": "dana@example.com"
+                },
+                {
+                  "field": "relatedOrderId",
+                  "equals": "ORD-1042"
+                }
+              ]
+            },
+            "leftField": "refundId",
+            "rightState": "final",
+            "rightSelector": {
+              "collection": "refunds",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-1042"
+                },
+                {
+                  "field": "status",
+                  "equals": "succeeded"
+                }
+              ]
+            }
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-003",
+        "requirementKey": "approval_before_refund",
+        "category": "process",
+        "description": "A human approval scoped to refund:ORD-1042 was granted before refund.execute was called for ORD-1042.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "event_order",
+            "earlier": {
+              "eventType": "human_approval",
+              "scope": "refund:ORD-1042",
+              "decision": "approved"
+            },
+            "later": {
+              "eventType": "tool_call",
+              "toolName": "refund.execute",
+              "argumentMatches": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-1042"
+                }
+              ]
+            }
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-004",
+        "requirementKey": "scope_integrity",
+        "category": "scope",
+        "description": "No order other than ORD-1042 was added, removed, or modified.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "no_unrelated_mutations",
+            "collection": "orders",
+            "allowedRecordIds": [
+              "ORD-1042"
+            ]
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      }
+    ],
+    "ambiguities": [
+      "The task's instruction to 'report completion only after all required actions are complete' concerns the agent's prose and its timing relative to the actions; it is not expressed as a separate requirement because assertions must not depend on the agent's final response text.",
+      "The task does not specify the subject or body wording of the refund receipt, so only recipient, sent status, order linkage, and refund reference are checked.",
+      "The email selector assumes the receipt carries relatedOrderId = ORD-1042; a sent receipt to dana@example.com that omits this field would not be resolved."
+    ]
+  }
+}

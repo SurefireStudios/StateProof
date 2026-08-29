@@ -1,0 +1,209 @@
+{
+  "schemaVersion": "2.0.0",
+  "taskFingerprint": "b4217146e298329c562f62974077b947e01ec2d2198ee79987aebb525fd57afe",
+  "taskSummary": "For order ORD-3091, which already has completed refund RF-8801 for 80.00 USD: create no additional refund, send a duplicate-refund notice to lee@example.com referencing the prior refund RF-8801, and append the exact support note \"Duplicate request denied; prior refund RF-8801 confirmed\" to the support case for that order, without modifying unrelated orders or support cases.",
+  "toolRegistryHash": "a70bbd3a8407088d58475a8ac1ad217633f0b92f6aa5471491fa8d6c5f9587e6",
+  "domainSchemaHash": "e0160c79c2978f4b6d911f3370e026bc00ef085cfe567866d866c98096efb843",
+  "assertionSchemaVersion": "2.0.0",
+  "promptPath": "prompts/contract-agent/v2.md",
+  "promptHash": "880e3e23b6c3557b1ed11b60922c061e29d46f43e8c61f15849510c4357aec8d",
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "rawResponsePaths": [
+    "model-responses/RUN-contracts/b4217146e298329c562f62974077b947e01ec2d2198ee79987aebb525fd57afe-attempt-1.json"
+  ],
+  "contractHash": "c80102c5cf4ce8ae60e4f028efc009537db12f79fb56276e0babf46329452c1b",
+  "compiledAt": "2026-08-29T01:35:46.009Z",
+  "tokenUsage": {
+    "inputTokens": 7208,
+    "outputTokens": 2673
+  },
+  "retryCount": 0,
+  "gitCommitSha": "7cfb23ca366cb49917b6b069d69514e700c7c6ce",
+  "sourceTreeClean": true,
+  "semanticViolations": [],
+  "ungroundedLiterals": [],
+  "contract": {
+    "contractVersion": "2",
+    "taskSummary": "For order ORD-3091, which already has completed refund RF-8801 for 80.00 USD: create no additional refund, send a duplicate-refund notice to lee@example.com referencing the prior refund RF-8801, and append the exact support note \"Duplicate request denied; prior refund RF-8801 confirmed\" to the support case for that order, without modifying unrelated orders or support cases.",
+    "requirements": [
+      {
+        "id": "R-001",
+        "requirementKey": "no_new_refund",
+        "category": "prohibition",
+        "description": "No refund other than the pre-existing RF-8801 may exist for order ORD-3091; the task explicitly forbids creating another refund.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "no_new_records",
+            "collection": "refunds",
+            "where": [
+              {
+                "field": "orderId",
+                "equals": "ORD-3091"
+              }
+            ],
+            "allowedRecordIds": [
+              "RF-8801"
+            ]
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-002",
+        "requirementKey": "customer_message_outcome",
+        "category": "outcome",
+        "description": "A duplicate-refund notice was actually sent (not left as a draft) to lee@example.com and references the prior refund RF-8801.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "record_exists",
+            "state": "final",
+            "selector": {
+              "collection": "emails",
+              "where": [
+                {
+                  "field": "to",
+                  "equals": "lee@example.com"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "record_field_equals",
+            "state": "final",
+            "selector": {
+              "collection": "emails",
+              "where": [
+                {
+                  "field": "to",
+                  "equals": "lee@example.com"
+                }
+              ]
+            },
+            "field": "status",
+            "expected": "sent"
+          },
+          {
+            "kind": "record_field_equals",
+            "state": "final",
+            "selector": {
+              "collection": "emails",
+              "where": [
+                {
+                  "field": "to",
+                  "equals": "lee@example.com"
+                }
+              ]
+            },
+            "field": "refundId",
+            "expected": "RF-8801"
+          }
+        ],
+        "verificationCoverage": "partial",
+        "limitations": [
+          "The assertions do not verify that the message subject or body prose actually conveys a duplicate-refund notice; only the recipient, sent status, and the structured reference to prior refund RF-8801 are checked."
+        ]
+      },
+      {
+        "id": "R-003",
+        "requirementKey": "support_note_outcome",
+        "category": "outcome",
+        "description": "The support case for order ORD-3091 carries a single note with the exact text \"Duplicate request denied; prior refund RF-8801 confirmed\" and relating to the prior refund RF-8801 named in that text.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "record_exists",
+            "state": "final",
+            "selector": {
+              "collection": "support_cases",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-3091"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "record_array_contains_exact",
+            "state": "final",
+            "selector": {
+              "collection": "support_cases",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-3091"
+                }
+              ]
+            },
+            "field": "notes",
+            "element": [
+              {
+                "field": "text",
+                "equals": "Duplicate request denied; prior refund RF-8801 confirmed"
+              },
+              {
+                "field": "relatedRefundId",
+                "equals": "RF-8801"
+              }
+            ]
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-004",
+        "requirementKey": "scope_integrity",
+        "category": "scope",
+        "description": "No order other than ORD-3091 and no support case other than the one for ORD-3091 was added, removed, or modified.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "no_unrelated_mutations",
+            "collection": "orders",
+            "allowedRecordIds": [
+              "ORD-3091"
+            ]
+          },
+          {
+            "kind": "mutations_limited_to",
+            "collection": "support_cases",
+            "allowedRecords": [
+              {
+                "kind": "selected_record",
+                "state": "initial",
+                "selector": {
+                  "collection": "support_cases",
+                  "where": [
+                    {
+                      "field": "orderId",
+                      "equals": "ORD-3091"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      }
+    ],
+    "ambiguities": [
+      "The task does not specify the subject or body wording of the duplicate-refund notice, so only recipient, delivery status, and the reference to RF-8801 can be checked.",
+      "The task does not state the support case id; the case is resolved relationally as the support case whose orderId is ORD-3091, which assumes exactly one such case exists.",
+      "The task does not state whether order ORD-3091 itself may be updated; it is treated as in-scope for the scope requirement since it is the target order."
+    ]
+  }
+}

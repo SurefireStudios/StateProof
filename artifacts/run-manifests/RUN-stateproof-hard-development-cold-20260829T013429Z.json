@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "RUN-stateproof-hard-development-cold-20260829T013429Z",
+  "createdAt": "2026-08-29T01:34:29.543Z",
+  "system": "stateproof",
+  "stage": "gate-3b-stateproof-development-cold",
+  "mode": "live",
+  "gitCommitSha": "7cfb23ca366cb49917b6b069d69514e700c7c6ce",
+  "sourceTreeClean": true,
+  "assertionSchemaVersion": "2.0.0",
+  "sourceContractRunId": null,
+  "runtimeVersion": "node-20.10.0",
+  "packageLockHash": "673e1485a8b9793ba55fdcce3a210e5bcad0a7cd6d6b2111d90adbd5c46dce94",
+  "datasetName": "phantombench-hard-12",
+  "agentVisibleDatasetHash": "988495bd2bb56dc4340067b85d5cbe0bf6ca8342d82f06cde8f7e52d7f9e61f6",
+  "datasetHash": "6e603b631734552f188b589ec2b2df65bba858ee0a8758b411f16c6db5b9e4b2",
+  "splits": [
+    "development"
+  ],
+  "caseIds": [
+    "PBH-A01",
+    "PBH-A02",
+    "PBH-A03",
+    "PBH-B01",
+    "PBH-B03",
+    "PBH-B04",
+    "PBH-C01",
+    "PBH-C03"
+  ],
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "maxRetries": 1,
+  "timeoutPolicy": "120000",
+  "promptFilePaths": [
+    "prompts/contract-agent/v2.md"
+  ],
+  "promptHashes": {
+    "prompts/contract-agent/v2.md": "880e3e23b6c3557b1ed11b60922c061e29d46f43e8c61f15849510c4357aec8d"
+  },
+  "startedAt": "2026-08-29T01:34:29.543Z",
+  "finishedAt": "2026-08-29T01:35:46.111Z",
+  "wallClockMs": 76568,
+  "modelUsage": {
+    "inputTokens": 20972,
+    "outputTokens": 8097,
+    "calls": 3,
+    "retries": 0,
+    "estimatedCostUsd": null
+  },
+  "rawResponsePaths": [
+    "model-responses/RUN-contracts/ce2aa23b1ed02c5c78f1a5dfa2652918dc8bf370c8800890e0ae920c297b82af-attempt-1.json",
+    "model-responses/RUN-contracts/7529832b260480c404c616c678c62e36fcc0a9191ebc64ab8c6effd12112ba62-attempt-1.json",
+    "model-responses/RUN-contracts/b4217146e298329c562f62974077b947e01ec2d2198ee79987aebb525fd57afe-attempt-1.json"
+  ],
+  "trajectoryPaths": [
+    "benchmarks/phantombench-hard-12/cases/PBH-A01/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-A02/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-A03/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B01/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B03/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B04/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-C01/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-C03/trajectory.jsonl"
+  ],
+  "predictionPath": "predictions/RUN-stateproof-hard-development-cold-20260829T013429Z.json",
+  "reportPath": "reports/RUN-stateproof-hard-development-cold-20260829T013429Z.md",
+  "notes": [
+    "Predictions were written before any gold file was read.",
+    "Verification is deterministic: zero model calls during the run phase.",
+    "Contract compilation artifacts: run-manifests/RUN-contracts.json and contracts/RUN-contracts/.",
+    "Deterministic verification time: 84 ms across 8 case(s)."
+  ]
+}

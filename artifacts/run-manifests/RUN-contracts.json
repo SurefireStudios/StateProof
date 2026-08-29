@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "2.0.0",
+  "contractRunId": "RUN-contracts",
+  "createdAt": "2026-08-29T01:34:29.543Z",
+  "stage": "gate-3b-contract-compilation",
+  "promptPath": "prompts/contract-agent/v2.md",
+  "promptHash": "880e3e23b6c3557b1ed11b60922c061e29d46f43e8c61f15849510c4357aec8d",
+  "assertionSchemaVersion": "2.0.0",
+  "contractVersion": "2",
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "gitCommitSha": "7cfb23ca366cb49917b6b069d69514e700c7c6ce",
+  "sourceTreeClean": true,
+  "uniqueTaskFingerprints": [
+    "7529832b260480c404c616c678c62e36fcc0a9191ebc64ab8c6effd12112ba62",
+    "b4217146e298329c562f62974077b947e01ec2d2198ee79987aebb525fd57afe",
+    "ce2aa23b1ed02c5c78f1a5dfa2652918dc8bf370c8800890e0ae920c297b82af"
+  ],
+  "contractHashes": {
+    "ce2aa23b1ed02c5c78f1a5dfa2652918dc8bf370c8800890e0ae920c297b82af": "8e9a5d3a7901a506eb38b776b3ca1a8c2cb1ace87e2dcd9f24391a37036c2bd2",
+    "7529832b260480c404c616c678c62e36fcc0a9191ebc64ab8c6effd12112ba62": "a7c1724bd3543ba49f9771a4c72ef4dbdcb712870ed4f6bf7de59d93e42df424",
+    "b4217146e298329c562f62974077b947e01ec2d2198ee79987aebb525fd57afe": "c80102c5cf4ce8ae60e4f028efc009537db12f79fb56276e0babf46329452c1b"
+  },
+  "compilationCalls": 3,
+  "repairCalls": 0,
+  "cacheHits": 5,
+  "tokenUsage": {
+    "inputTokens": 20972,
+    "outputTokens": 8097
+  },
+  "wallClockMs": 76310,
+  "contractPaths": [
+    "contracts/RUN-contracts/7529832b260480c404c616c678c62e36fcc0a9191ebc64ab8c6effd12112ba62.json",
+    "contracts/RUN-contracts/b4217146e298329c562f62974077b947e01ec2d2198ee79987aebb525fd57afe.json",
+    "contracts/RUN-contracts/ce2aa23b1ed02c5c78f1a5dfa2652918dc8bf370c8800890e0ae920c297b82af.json"
+  ],
+  "rawResponsePaths": [
+    "model-responses/RUN-contracts/ce2aa23b1ed02c5c78f1a5dfa2652918dc8bf370c8800890e0ae920c297b82af-attempt-1.json",
+    "model-responses/RUN-contracts/7529832b260480c404c616c678c62e36fcc0a9191ebc64ab8c6effd12112ba62-attempt-1.json",
+    "model-responses/RUN-contracts/b4217146e298329c562f62974077b947e01ec2d2198ee79987aebb525fd57afe-attempt-1.json"
+  ]
+}

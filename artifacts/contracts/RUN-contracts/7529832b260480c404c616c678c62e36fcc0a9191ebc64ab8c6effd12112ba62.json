@@ -1,0 +1,291 @@
+{
+  "schemaVersion": "2.0.0",
+  "taskFingerprint": "7529832b260480c404c616c678c62e36fcc0a9191ebc64ab8c6effd12112ba62",
+  "taskSummary": "For order ORD-2077: execute a completed partial refund of exactly 40.00 USD after a human approval scoped to refund:ORD-2077, send the refund receipt email to maya@example.com referencing that refund, and append the support note \"Partial refund approved for damaged item\" to the support case for ORD-2077, without modifying unrelated orders or support cases.",
+  "toolRegistryHash": "a70bbd3a8407088d58475a8ac1ad217633f0b92f6aa5471491fa8d6c5f9587e6",
+  "domainSchemaHash": "e0160c79c2978f4b6d911f3370e026bc00ef085cfe567866d866c98096efb843",
+  "assertionSchemaVersion": "2.0.0",
+  "promptPath": "prompts/contract-agent/v2.md",
+  "promptHash": "880e3e23b6c3557b1ed11b60922c061e29d46f43e8c61f15849510c4357aec8d",
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "rawResponsePaths": [
+    "model-responses/RUN-contracts/7529832b260480c404c616c678c62e36fcc0a9191ebc64ab8c6effd12112ba62-attempt-1.json"
+  ],
+  "contractHash": "a7c1724bd3543ba49f9771a4c72ef4dbdcb712870ed4f6bf7de59d93e42df424",
+  "compiledAt": "2026-08-29T01:35:20.506Z",
+  "tokenUsage": {
+    "inputTokens": 7211,
+    "outputTokens": 2941
+  },
+  "retryCount": 0,
+  "gitCommitSha": "7cfb23ca366cb49917b6b069d69514e700c7c6ce",
+  "sourceTreeClean": true,
+  "semanticViolations": [],
+  "ungroundedLiterals": [],
+  "contract": {
+    "contractVersion": "2",
+    "taskSummary": "For order ORD-2077: execute a completed partial refund of exactly 40.00 USD after a human approval scoped to refund:ORD-2077, send the refund receipt email to maya@example.com referencing that refund, and append the support note \"Partial refund approved for damaged item\" to the support case for ORD-2077, without modifying unrelated orders or support cases.",
+    "requirements": [
+      {
+        "id": "R-001",
+        "requirementKey": "refund_outcome",
+        "category": "outcome",
+        "description": "A completed (succeeded) refund of exactly 40.00 USD exists for order ORD-2077 in the final state.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "record_exists",
+            "state": "final",
+            "selector": {
+              "collection": "refunds",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-2077"
+                },
+                {
+                  "field": "status",
+                  "equals": "succeeded"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "record_money_equals",
+            "state": "final",
+            "selector": {
+              "collection": "refunds",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-2077"
+                },
+                {
+                  "field": "status",
+                  "equals": "succeeded"
+                }
+              ]
+            },
+            "field": "amount",
+            "expected": {
+              "amount": "40.00",
+              "currency": "USD"
+            }
+          },
+          {
+            "kind": "record_field_equals",
+            "state": "final",
+            "selector": {
+              "collection": "refunds",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-2077"
+                },
+                {
+                  "field": "status",
+                  "equals": "succeeded"
+                }
+              ]
+            },
+            "field": "status",
+            "expected": "succeeded"
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-002",
+        "requirementKey": "customer_message_outcome",
+        "category": "outcome",
+        "description": "A receipt message was actually sent (not left as a draft) to maya@example.com and references the succeeded refund created for ORD-2077.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "record_exists",
+            "state": "final",
+            "selector": {
+              "collection": "emails",
+              "where": [
+                {
+                  "field": "to",
+                  "equals": "maya@example.com"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "record_field_equals",
+            "state": "final",
+            "selector": {
+              "collection": "emails",
+              "where": [
+                {
+                  "field": "to",
+                  "equals": "maya@example.com"
+                }
+              ]
+            },
+            "field": "status",
+            "expected": "sent"
+          },
+          {
+            "kind": "record_field_equals_selected_record_id",
+            "leftState": "final",
+            "leftSelector": {
+              "collection": "emails",
+              "where": [
+                {
+                  "field": "to",
+                  "equals": "maya@example.com"
+                }
+              ]
+            },
+            "leftField": "refundId",
+            "rightState": "final",
+            "rightSelector": {
+              "collection": "refunds",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-2077"
+                },
+                {
+                  "field": "status",
+                  "equals": "succeeded"
+                }
+              ]
+            }
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-003",
+        "requirementKey": "support_note_outcome",
+        "category": "outcome",
+        "description": "The support case for order ORD-2077 carries a note with the exact text \"Partial refund approved for damaged item\".",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "record_exists",
+            "state": "final",
+            "selector": {
+              "collection": "support_cases",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-2077"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "record_array_contains_exact",
+            "state": "final",
+            "selector": {
+              "collection": "support_cases",
+              "where": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-2077"
+                }
+              ]
+            },
+            "field": "notes",
+            "element": [
+              {
+                "field": "text",
+                "equals": "Partial refund approved for damaged item"
+              }
+            ]
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-004",
+        "requirementKey": "approval_before_refund",
+        "category": "process",
+        "description": "A human approval with scope refund:ORD-2077 and decision approved occurred before the refund.execute call for ORD-2077.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "event_order",
+            "earlier": {
+              "eventType": "human_approval",
+              "scope": "refund:ORD-2077",
+              "decision": "approved"
+            },
+            "later": {
+              "eventType": "tool_call",
+              "toolName": "refund.execute",
+              "argumentMatches": [
+                {
+                  "field": "orderId",
+                  "equals": "ORD-2077"
+                }
+              ]
+            }
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      },
+      {
+        "id": "R-005",
+        "requirementKey": "scope_integrity",
+        "category": "scope",
+        "description": "No order other than ORD-2077 and no support case other than the one for ORD-2077 was added, removed, or modified.",
+        "severity": "must_pass",
+        "assertions": [
+          {
+            "kind": "no_unrelated_mutations",
+            "collection": "orders",
+            "allowedRecordIds": [
+              "ORD-2077"
+            ]
+          },
+          {
+            "kind": "mutations_limited_to",
+            "collection": "support_cases",
+            "allowedRecords": [
+              {
+                "kind": "selected_record",
+                "state": "initial",
+                "selector": {
+                  "collection": "support_cases",
+                  "where": [
+                    {
+                      "field": "orderId",
+                      "equals": "ORD-2077"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "verificationCoverage": "complete",
+        "limitations": []
+      }
+    ],
+    "ambiguities": [
+      "The task says the refund must be 'completed'; this is interpreted as refund status 'succeeded' per the domain schema.",
+      "The task does not state a support case id; the case is identified relationally as the support case whose orderId is ORD-2077, assumed to resolve to exactly one record.",
+      "The task does not state exact subject or body text for the receipt email, so only recipient, sent status, and the reference to the created refund are verified.",
+      "The task does not name a refund id inside the note text, so no relatedRefundId is required on the support note."
+    ]
+  }
+}
