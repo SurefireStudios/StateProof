@@ -191,7 +191,9 @@ describe.skipIf(!inCheckout(REPO_ROOT))('prompt provenance', () => {
 });
 
 describe('historical prompts are untouched', () => {
-  it('keeps v1 exactly as Gate 3A froze it', () => {
+  // Only the first case compares against a commit; the rest compare files on
+  // disk and hold in an extracted release package too.
+  it.skipIf(!inCheckout(REPO_ROOT))('keeps v1 exactly as Gate 3A froze it', () => {
     const committed = fileHashAtCommit('HEAD', V1_PROMPT_REPO_PATH, REPO_ROOT);
     expect(loadContractPrompt(path.join(REPO_ROOT, V1_PROMPT_REPO_PATH)).hash).toBe(committed);
   });
