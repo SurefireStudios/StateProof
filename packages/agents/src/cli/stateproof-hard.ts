@@ -1,21 +1,31 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { formatRate, type Split } from '@stateproof/core';
+import { ASSERTION_SCHEMA_VERSION, formatRate, type Split } from '@stateproof/core';
 import {
   AnthropicModelClient,
   MISSING_CREDENTIALS_MESSAGE,
   ModelCredentialsError,
   hasAnthropicCredentials,
 } from '@stateproof/model-provider';
-import { runStateProof } from '../stateproof/runner';
+import { ContractBundleError } from '../contract/bundle';
+import { CONTRACT_PROMPT_PATH, loadContractPrompt } from '../contract/compiler';
+import { DirtySourceTreeError } from '../run/source-guard';
+import { WarmContractMissError, runStateProof } from '../stateproof/runner';
 import { scoreStateProof } from '../stateproof/score';
 
 /**
- * `pnpm benchmark:stateproof-hard -- --split development --baseline-run <id>`
+ * Cold:
+ *   `pnpm benchmark:stateproof-hard -- --split development \
+ *      --prompt prompts/contract-agent/v2.md --baseline-run <id>`
  *
- * Compiles one contract per unique task, then verifies every run with
- * deterministic code. Same credential and locked-split guards as every other
- * runner: no key means no run and no artifacts.
+ * Warm:
+ *   `pnpm benchmark:stateproof-hard -- --split development \
+ *      --contracts-from <contractRunId> --baseline-run <id>`
+ *
+ * Cold compiles one contract per unique task and needs credentials. Warm loads
+ * those contracts from disk, verifies their integrity, and needs no credential
+ * at all — that is the claim being measured, so the credential check is skipped
+ * rather than satisfied. Both refuse the locked split without an explicit gate.
  */
 
 const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
@@ -26,12 +36,18 @@ interface CliOptions {
   readonly split: Split;
   readonly artifactsDir: string;
   readonly baselineRunId: string | undefined;
+  readonly promptPath: string;
+  readonly contractsFrom: string | undefined;
+  readonly coldRunId: string | undefined;
 }
 
 function parseArgs(argv: readonly string[]): CliOptions {
   let split: Split = 'development';
   let artifactsDir = DEFAULT_ARTIFACTS_DIR;
   let baselineRunId: string | undefined;
+  let promptPath = CONTRACT_PROMPT_PATH;
+  let contractsFrom: string | undefined;
+  let coldRunId: string | undefined;
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -53,11 +69,26 @@ function parseArgs(argv: readonly string[]): CliOptions {
       if (value === undefined) throw new Error('--baseline-run needs a run id');
       baselineRunId = value;
       index += 1;
+    } else if (arg === '--prompt') {
+      const value = argv[index + 1];
+      if (value === undefined) throw new Error('--prompt needs a path');
+      promptPath = path.isAbsolute(value) ? value : path.join(REPO_ROOT, value);
+      index += 1;
+    } else if (arg === '--contracts-from') {
+      const value = argv[index + 1];
+      if (value === undefined) throw new Error('--contracts-from needs a contract run id');
+      contractsFrom = value;
+      index += 1;
+    } else if (arg === '--cold-run') {
+      const value = argv[index + 1];
+      if (value === undefined) throw new Error('--cold-run needs a run id');
+      coldRunId = value;
+      index += 1;
     } else if (arg !== undefined && arg.startsWith('--')) {
       throw new Error(`unknown flag ${arg}`);
     }
   }
-  return { split, artifactsDir, baselineRunId };
+  return { split, artifactsDir, baselineRunId, promptPath, contractsFrom, coldRunId };
 }
 
 async function main(): Promise<void> {
@@ -84,17 +115,69 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (!hasAnthropicCredentials()) {
-    process.stderr.write(`${MISSING_CREDENTIALS_MESSAGE}\n`);
-    process.exitCode = 2;
-    return;
+  const warm = options.contractsFrom !== undefined;
+  let client: AnthropicModelClient | null = null;
+
+  if (!warm) {
+    if (!hasAnthropicCredentials()) {
+      process.stderr.write(`${MISSING_CREDENTIALS_MESSAGE}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    try {
+      client = new AnthropicModelClient();
+    } catch (error) {
+      if (error instanceof ModelCredentialsError) {
+        process.stderr.write(`${error.message}\n`);
+        process.exitCode = 2;
+        return;
+      }
+      throw error;
+    }
   }
 
-  let client: AnthropicModelClient;
+  const prompt = loadContractPrompt(options.promptPath);
+  process.stdout.write(`StateProof - split=${options.split} mode=${warm ? 'warm' : 'cold'}\n`);
+  process.stdout.write(`assertion schema=${ASSERTION_SCHEMA_VERSION}\n`);
+  if (warm) {
+    process.stdout.write(`contracts-from=${String(options.contractsFrom)}\n`);
+    process.stdout.write('provider=none model=none (no credential is used)\n\n');
+  } else {
+    process.stdout.write(
+      `prompt=${path.relative(REPO_ROOT, options.promptPath).split(path.sep).join('/')} ` +
+        `sha256=${prompt.hash}\n`,
+    );
+    process.stdout.write(
+      `provider=${client?.provider ?? 'none'} model=${client?.modelId ?? 'none'}\n`,
+    );
+    process.stdout.write(`config=${JSON.stringify(client?.configuration ?? {})}\n\n`);
+  }
+
+  let run;
   try {
-    client = new AnthropicModelClient();
+    run =
+      warm && options.contractsFrom !== undefined
+        ? await runStateProof({
+            mode: 'warm',
+            contractsFrom: options.contractsFrom,
+            split: options.split,
+            artifactsDir: options.artifactsDir,
+            onProgress: (message) => process.stdout.write(`  ${message}\n`),
+          })
+        : await runStateProof({
+            client: client as AnthropicModelClient,
+            split: options.split,
+            artifactsDir: options.artifactsDir,
+            promptPath: options.promptPath,
+            requireCleanSource: true,
+            onProgress: (message) => process.stdout.write(`  ${message}\n`),
+          });
   } catch (error) {
-    if (error instanceof ModelCredentialsError) {
+    if (
+      error instanceof DirtySourceTreeError ||
+      error instanceof ContractBundleError ||
+      error instanceof WarmContractMissError
+    ) {
       process.stderr.write(`${error.message}\n`);
       process.exitCode = 2;
       return;
@@ -102,22 +185,13 @@ async function main(): Promise<void> {
     throw error;
   }
 
-  process.stdout.write(`StateProof - split=${options.split}\n`);
-  process.stdout.write(`provider=${client.provider} model=${client.modelId}\n`);
-  process.stdout.write(`config=${JSON.stringify(client.configuration)}\n\n`);
-
-  const run = await runStateProof({
-    client,
-    split: options.split,
-    artifactsDir: options.artifactsDir,
-    onProgress: (message) => process.stdout.write(`  ${message}\n`),
-  });
-
   process.stdout.write(
     `\ncontracts:   ${run.compilation.uniqueTaskFingerprints.length} unique task(s), ` +
       `${run.compilation.compilationCalls} compilation call(s), ` +
       `${run.compilation.repairCalls} repair(s), ${run.compilation.cacheHits} cache hit(s)\n`,
   );
+  process.stdout.write(`source:      ${run.source.commitSha ?? 'unknown'} `);
+  process.stdout.write(`(tracked tree ${run.source.clean ? 'clean' : 'DIRTY'})\n`);
   process.stdout.write(`predictions: ${run.paths.predictionPath}\n`);
   process.stdout.write(`manifest:    ${run.paths.manifestPath}\n`);
 
@@ -126,6 +200,8 @@ async function main(): Promise<void> {
     artifactsDir: options.artifactsDir,
     manifestPath: run.paths.manifestPath,
     contractArtifacts: run.compilation.artifacts,
+    mode: run.mode,
+    ...(options.coldRunId === undefined ? {} : { coldRunId: options.coldRunId }),
     ...(options.baselineRunId === undefined ? {} : { baselineRunId: options.baselineRunId }),
     usage: {
       contractCalls: run.compilation.compilationCalls,
@@ -149,11 +225,21 @@ async function main(): Promise<void> {
       `(${requirement.completeDiagnosisCounts[0]}/${requirement.completeDiagnosisCounts[1]})  ` +
       `BVA ${formatRate(score.verdictMetrics.balancedVerdictAccuracy)}\n`,
   );
-  if (score.efficiency.qualityGuardrailsMet && score.efficiency.baseline !== null) {
+  process.stdout.write(
+    `evidence refs ${formatRate(score.evidenceRefValidity)} ` +
+      `(${score.evidenceRefCounts[0]}/${score.evidenceRefCounts[1]} resolve)\n`,
+  );
+  const efficiency = score.efficiency;
+  if (efficiency.qualityGuardrailsMet && efficiency.baseline !== null) {
     process.stdout.write(
-      `tokens ${score.efficiency.stateproof.totalTokens} vs baseline ${score.efficiency.baseline.totalTokens}  ` +
-        `(${formatRate(score.efficiency.modelTokenReduction)} reduction)  ` +
-        `warm marginal ${score.efficiency.warmMarginalTokens} tokens\n`,
+      `tokens ${efficiency.cold?.totalTokens ?? 0} cold vs baseline ${efficiency.baseline.totalTokens}  ` +
+        `(${formatRate(efficiency.modelTokenReduction)} reduction)\n`,
+    );
+    process.stdout.write(
+      efficiency.warm === null
+        ? 'warm marginal cost: not measured in this run\n'
+        : `warm marginal ${efficiency.warm.totalTokens} tokens, ` +
+            `${efficiency.warm.modelCalls} model call(s), break-even ${String(efficiency.breakEvenRuns)} run(s)\n`,
     );
   } else {
     process.stdout.write('no efficiency claim: quality guardrails not met\n');

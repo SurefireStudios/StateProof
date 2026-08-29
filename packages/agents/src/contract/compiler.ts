@@ -1,18 +1,23 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   ASSERTION_SCHEMA_VERSION,
   type AgentVisibleCase,
+  type AnyCompiledContract,
   type CompiledContract,
   CompiledContractSchema,
+  type CompiledContractV2,
+  CompiledContractV2Schema,
   REFUND_OPS_DOMAIN_SCHEMA,
+  type SemanticViolation,
   type ToolRegistry,
   canonicalJson,
   findUngroundedLiterals,
+  formatSemanticViolations,
   hashJson,
   sha256Hex,
   toJsonValue,
+  validateContractSemantics,
 } from '@stateproof/core';
 import { REPO_ROOT } from '@stateproof/benchmark';
 import {
@@ -22,6 +27,11 @@ import {
   requestStructured,
 } from '@stateproof/model-provider';
 import { loadBaselinePrompt, type BaselinePrompt } from '../baseline/prompt';
+import { inspectSourceTree } from '../run/source-guard';
+import {
+  type CompiledContractArtifactV2,
+  CompiledContractArtifactV2Schema,
+} from './bundle';
 
 /**
  * Compiles a task's success criteria once, then reuses them.
@@ -32,11 +42,23 @@ import { loadBaselinePrompt, type BaselinePrompt } from '../baseline/prompt';
  * them and the contract is recompiled; change none and no model is called at
  * all. That reuse is the whole efficiency claim, so the key is deliberately
  * strict rather than convenient.
+ *
+ * A compiled contract is accepted only if it also survives semantic validation.
+ * Gate 3A recorded those defects and carried on, which meant a contract naming
+ * an id the task never stated could still be cached and used. Now the defects
+ * are sent back through the one repair retry, and a contract that fails twice
+ * produces no artifact at all.
  */
 
-export const CONTRACT_PROMPT_REPO_PATH = 'prompts/contract-agent/v1.md';
-export const CONTRACT_PROMPT_PATH = path.join(REPO_ROOT, 'prompts', 'contract-agent', 'v1.md');
+export const CONTRACT_PROMPT_V1_REPO_PATH = 'prompts/contract-agent/v1.md';
+export const CONTRACT_PROMPT_V2_REPO_PATH = 'prompts/contract-agent/v2.md';
+export const CONTRACT_PROMPT_V1_PATH = path.join(REPO_ROOT, 'prompts', 'contract-agent', 'v1.md');
+export const CONTRACT_PROMPT_PATH = path.join(REPO_ROOT, 'prompts', 'contract-agent', 'v2.md');
+/** Kept for artifacts written before v2 existed. */
+export const CONTRACT_PROMPT_REPO_PATH = CONTRACT_PROMPT_V2_REPO_PATH;
 export const CONTRACT_MAX_REPAIR_ATTEMPTS = 1;
+
+export type ContractVersion = '1' | '2';
 
 export interface ContractPromptInputs {
   readonly taskText: string;
@@ -47,6 +69,11 @@ export function loadContractPrompt(promptPath: string = CONTRACT_PROMPT_PATH): B
   return loadBaselinePrompt(promptPath);
 }
 
+/** Repo-relative, so a manifest records the prompt that was actually used. */
+export function contractPromptRepoPath(promptPath: string = CONTRACT_PROMPT_PATH): string {
+  return path.relative(REPO_ROOT, promptPath).split(path.sep).join('/');
+}
+
 /** Tools are described, never made callable. The agent only writes selectors. */
 export function renderContractUserMessage(
   prompt: BaselinePrompt,
@@ -54,7 +81,10 @@ export function renderContractUserMessage(
 ): string {
   return prompt.userTemplate
     .replace('{{TASK_TEXT}}', inputs.taskText)
-    .replace('{{TOOL_DEFINITIONS_JSON}}', JSON.stringify(toJsonValue(inputs.toolRegistry.tools), null, 2))
+    .replace(
+      '{{TOOL_DEFINITIONS_JSON}}',
+      JSON.stringify(toJsonValue(inputs.toolRegistry.tools), null, 2),
+    )
     .replace('{{DOMAIN_SCHEMA_JSON}}', JSON.stringify(toJsonValue(REFUND_OPS_DOMAIN_SCHEMA), null, 2));
 }
 
@@ -103,6 +133,7 @@ export function computeTaskFingerprint(inputs: TaskFingerprintInputs): TaskFinge
   };
 }
 
+/** The shape Gate 3A wrote. Read-only now; nothing new is written in it. */
 export interface CompiledContractArtifact {
   readonly schemaVersion: '1.0.0';
   readonly taskFingerprint: string;
@@ -125,6 +156,14 @@ export interface CompiledContractArtifact {
   readonly contract: CompiledContract;
 }
 
+/** Either generation, for code that only reads shared provenance fields. */
+export type AnyContractArtifact = CompiledContractArtifact | CompiledContractArtifactV2;
+
+export interface SourceProvenance {
+  readonly commitSha: string | null;
+  readonly clean: boolean;
+}
+
 export interface CompileOptions {
   readonly client: ModelClient;
   readonly agentVisible: AgentVisibleCase;
@@ -132,12 +171,14 @@ export interface CompileOptions {
   readonly contractRunId: string;
   readonly promptPath?: string;
   /** Existing artifacts, so a warm cache costs nothing. */
-  readonly cache: Map<string, CompiledContractArtifact>;
+  readonly cache: Map<string, CompiledContractArtifactV2>;
+  /** Measured once per run rather than per contract. */
+  readonly source?: SourceProvenance;
   readonly onProgress?: (message: string) => void;
 }
 
 export interface CompileResult {
-  readonly artifact: CompiledContractArtifact;
+  readonly artifact: CompiledContractArtifactV2;
   readonly cacheHit: boolean;
   readonly attempts: RawAttempt[];
 }
@@ -145,14 +186,6 @@ export interface CompileResult {
 function writeJson(filePath: string, value: unknown): void {
   mkdirSync(path.dirname(filePath), { recursive: true });
   writeFileSync(filePath, `${JSON.stringify(toJsonValue(value), null, 2)}\n`, 'utf8');
-}
-
-function gitCommitSha(): string | null {
-  try {
-    return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-  } catch {
-    return null;
-  }
 }
 
 function relative(root: string, target: string): string {
@@ -171,13 +204,29 @@ export function contractArtifactPath(
  * Identifiers a contract may legitimately contain that are not entity ids:
  * collection names, field names, and the requirement vocabulary.
  */
-function schemaIdentifiers(): Set<string> {
+export function schemaIdentifiers(): Set<string> {
   const identifiers = new Set<string>();
   for (const [collection, definition] of Object.entries(REFUND_OPS_DOMAIN_SCHEMA.collections)) {
     identifiers.add(collection);
     for (const field of Object.keys(definition.fields)) identifiers.add(field);
   }
   return identifiers;
+}
+
+export function domainCollections(): Set<string> {
+  return new Set(Object.keys(REFUND_OPS_DOMAIN_SCHEMA.collections));
+}
+
+/** Semantic validation as the compiler applies it: same inputs, every time. */
+export function checkContractSemantics(
+  contract: AnyCompiledContract,
+  taskText: string,
+): SemanticViolation[] {
+  return validateContractSemantics(contract, {
+    taskText,
+    knownCollections: domainCollections(),
+    allowedIdentifiers: schemaIdentifiers(),
+  });
 }
 
 export class ContractCompilationError extends Error {
@@ -201,7 +250,8 @@ export class ContractCompilationError extends Error {
  * reach a state snapshot, a trajectory, a final response, or gold data.
  */
 export async function compileContractForCase(options: CompileOptions): Promise<CompileResult> {
-  const prompt = loadContractPrompt(options.promptPath);
+  const promptPath = options.promptPath ?? CONTRACT_PROMPT_PATH;
+  const prompt = loadContractPrompt(promptPath);
   const taskText = options.agentVisible.task.instruction;
   const toolRegistry = options.agentVisible.toolRegistry;
 
@@ -225,8 +275,13 @@ export async function compileContractForCase(options: CompileOptions): Promise<C
     client: options.client,
     system: prompt.system,
     userMessage,
-    schema: CompiledContractSchema,
+    schema: CompiledContractV2Schema,
     maxRepairAttempts: CONTRACT_MAX_REPAIR_ATTEMPTS,
+    // Shares the single repair budget with schema failures, deliberately: a
+    // contract that names an invented id is as unusable as one that will not
+    // parse, and both deserve exactly one corrected attempt.
+    semanticValidate: (contract: CompiledContractV2) =>
+      formatSemanticViolations(checkContractSemantics(contract, taskText)),
   });
 
   const rawResponsePaths: string[] = [];
@@ -241,6 +296,8 @@ export async function compileContractForCase(options: CompileOptions): Promise<C
     rawResponsePaths.push(relative(options.artifactsDir, attemptPath));
   }
 
+  // No contract artifact and no cache entry on failure: the raw attempts stay
+  // for inspection, but nothing downstream may treat this task as compiled.
   if (result.value === null) {
     throw new ContractCompilationError(fingerprint.fingerprint, result.parseErrors, result.attempts);
   }
@@ -256,14 +313,15 @@ export async function compileContractForCase(options: CompileOptions): Promise<C
     null,
   );
 
-  const artifact: CompiledContractArtifact = {
-    schemaVersion: '1.0.0',
+  const source = options.source ?? inspectSourceTree();
+  const artifact = CompiledContractArtifactV2Schema.parse({
+    schemaVersion: '2.0.0',
     taskFingerprint: fingerprint.fingerprint,
     taskSummary: result.value.taskSummary,
     toolRegistryHash: fingerprint.toolRegistryHash,
     domainSchemaHash: fingerprint.domainSchemaHash,
     assertionSchemaVersion: fingerprint.assertionSchemaVersion,
-    promptPath: CONTRACT_PROMPT_REPO_PATH,
+    promptPath: contractPromptRepoPath(promptPath),
     promptHash: prompt.hash,
     modelProvider: options.client.provider,
     modelId: options.client.modelId,
@@ -273,14 +331,15 @@ export async function compileContractForCase(options: CompileOptions): Promise<C
     compiledAt: new Date().toISOString(),
     tokenUsage,
     retryCount: Math.max(0, result.attempts.length - 1),
-    gitCommitSha: gitCommitSha(),
-    // Recorded, not silently repaired: a contract naming an id the task never
-    // stated is a real defect and the run should say so.
+    gitCommitSha: source.commitSha,
+    sourceTreeClean: source.clean,
+    // Empty by construction: the accepted response passed semantic validation.
+    semanticViolations: checkContractSemantics(result.value, taskText),
     ungroundedLiterals: findUngroundedLiterals(result.value, taskText, {
       allowedIdentifiers: schemaIdentifiers(),
     }),
     contract: result.value,
-  };
+  });
 
   writeJson(
     contractArtifactPath(options.artifactsDir, options.contractRunId, fingerprint.fingerprint),
@@ -295,7 +354,11 @@ export async function compileContractForCase(options: CompileOptions): Promise<C
   return { artifact, cacheHit: false, attempts: result.attempts };
 }
 
-/** Loads previously persisted contracts so a later run can reuse them. */
+/**
+ * Loads previously persisted v1 contracts. Superseded by `loadContractBundle`,
+ * which verifies what it loads; kept so a Gate 3A artifact can still be read
+ * and replayed exactly as it was written.
+ */
 export function loadContractCache(
   artifactsDir: string,
   contractRunId: string,
@@ -305,7 +368,10 @@ export function loadContractCache(
   for (const fingerprint of fingerprints) {
     const filePath = contractArtifactPath(artifactsDir, contractRunId, fingerprint);
     if (!existsSync(filePath)) continue;
-    cache.set(fingerprint, JSON.parse(readFileSync(filePath, 'utf8')) as CompiledContractArtifact);
+    const artifact = JSON.parse(readFileSync(filePath, 'utf8')) as CompiledContractArtifact;
+    // Historical artifacts are v1; parsing proves the contract still validates.
+    CompiledContractSchema.parse(artifact.contract);
+    cache.set(fingerprint, artifact);
   }
   return cache;
 }

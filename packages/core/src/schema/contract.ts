@@ -74,6 +74,24 @@ export type EventSelector = z.infer<typeof EventSelectorSchema>;
 const StateRefSchema = SnapshotLabelSchema.default('final');
 
 /**
+ * A record a scope assertion permits to change: either named outright, or
+ * resolved from the state by a selector the task's own literals can express.
+ */
+export const AllowedRecordSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('literal_id'), id: NonEmptyStringSchema }).strict(),
+  z
+    .object({
+      kind: z.literal('selected_record'),
+      /** `initial` by default: an existing target record is identified before the run. */
+      state: SnapshotLabelSchema.default('initial'),
+      selector: RecordSelectorSchema,
+    })
+    .strict(),
+]);
+
+export type AllowedRecord = z.infer<typeof AllowedRecordSchema>;
+
+/**
  * The deterministic assertion vocabulary. These cover exactly the check types
  * the core benchmark needs: equality, existence/absence, exact numeric value,
  * exact recipient, event ordering, prohibited record creation, and unrelated
@@ -156,6 +174,26 @@ export const AssertionSchema = z.discriminatedUnion('kind', [
       kind: z.literal('no_unrelated_mutations'),
       collection: NonEmptyStringSchema,
       allowedRecordIds: z.array(NonEmptyStringSchema),
+    })
+    .strict(),
+  z
+    .object({
+      /**
+       * Scope, when the permitted record cannot be named.
+       *
+       * `no_unrelated_mutations` needs a literal allow-list, which is useless
+       * when a task identifies its target relationally - "the support case for
+       * this order" - and never states that case's id. This resolves the
+       * allow-set from the state itself, so the clause is expressible without
+       * inventing an id the task never gave.
+       *
+       * The rule that a `selected_record` selector must target the same
+       * collection as the assertion is enforced by semantic validation, not
+       * here: a discriminated union cannot carry a refinement.
+       */
+      kind: z.literal('mutations_limited_to'),
+      collection: NonEmptyStringSchema,
+      allowedRecords: z.array(AllowedRecordSchema).min(1),
     })
     .strict(),
 ]);

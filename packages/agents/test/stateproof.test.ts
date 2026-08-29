@@ -5,6 +5,8 @@ import { afterAll, describe, expect, it } from 'vitest';
 import {
   type CompiledContract,
   CompiledContractSchema,
+  type CompiledContractV2,
+  CompiledContractV2Schema,
   EvaluationRunManifestSchema,
   findUngroundedLiterals,
 } from '@stateproof/core';
@@ -46,8 +48,8 @@ const developmentCases = caseIdsForSplit('development', HARD_SPLITS_DIR);
 
 /** A contract good enough for template A, written by hand for the fake client. */
 function templateAContractJson(): string {
-  const contract: CompiledContract = {
-    contractVersion: '1',
+  const contract: CompiledContractV2 = {
+    contractVersion: '2',
     taskSummary: 'Refund ORD-1042 for 125.00 USD with prior scoped approval and a receipt.',
     requirements: [
       {
@@ -56,6 +58,8 @@ function templateAContractJson(): string {
         category: 'outcome',
         description: 'A succeeded refund of exactly 125.00 USD exists for ORD-1042.',
         severity: 'must_pass',
+        verificationCoverage: 'complete',
+        limitations: [],
         assertions: [
           {
             kind: 'record_money_equals',
@@ -78,6 +82,8 @@ function templateAContractJson(): string {
         category: 'process',
         description: 'Approval scoped to refund:ORD-1042 precedes refund.execute.',
         severity: 'must_pass',
+        verificationCoverage: 'complete',
+        limitations: [],
         assertions: [
           {
             kind: 'event_order',
@@ -87,6 +93,97 @@ function templateAContractJson(): string {
               toolName: 'refund.execute',
               argumentMatches: [{ field: 'orderId', equals: 'ORD-1042' }],
             },
+          },
+        ],
+      },
+    ],
+    ambiguities: [],
+  };
+  return JSON.stringify(contract);
+}
+
+/**
+ * The same contract in the v1 shape Gate 3A wrote. Kept verbatim so the claim
+ * that historical artifacts still parse and replay is tested, not asserted.
+ */
+function templateAContractV1Json(): string {
+  const v2 = JSON.parse(templateAContractJson()) as CompiledContractV2;
+  const contract: CompiledContract = {
+    contractVersion: '1',
+    taskSummary: v2.taskSummary,
+    ambiguities: v2.ambiguities,
+    requirements: v2.requirements.map((requirement) => ({
+      id: requirement.id,
+      requirementKey: requirement.requirementKey,
+      category: requirement.category,
+      description: requirement.description,
+      severity: requirement.severity,
+      assertions: requirement.assertions,
+    })),
+  };
+  return JSON.stringify(contract);
+}
+
+/**
+ * A per-task contract for the fake client.
+ *
+ * One hand-written contract can no longer serve all three templates: semantic
+ * validation now rejects a contract naming an order the task never states,
+ * which is exactly the protection being added. So the responder reads the order
+ * id out of the envelope it was given and grounds the contract in it.
+ */
+function contractForRequest(request: { messages: ReadonlyArray<{ content: string }> }): string {
+  const envelope = request.messages.map((message) => message.content).join('\n');
+  const orderId = /ORD-\d+/.exec(envelope)?.[0];
+  if (orderId === undefined) throw new Error('no order id in the contract envelope');
+
+  const contract: CompiledContractV2 = {
+    contractVersion: '2',
+    taskSummary: `Complete the refund-operations task for ${orderId}.`,
+    requirements: [
+      {
+        id: 'R-001',
+        requirementKey: 'approval_before_refund',
+        category: 'process',
+        description: `Approval scoped to refund:${orderId} precedes refund.execute.`,
+        severity: 'must_pass',
+        verificationCoverage: 'complete',
+        limitations: [],
+        assertions: [
+          {
+            kind: 'event_order',
+            earlier: { eventType: 'human_approval', scope: `refund:${orderId}`, decision: 'approved' },
+            later: {
+              eventType: 'tool_call',
+              toolName: 'refund.execute',
+              argumentMatches: [{ field: 'orderId', equals: orderId }],
+            },
+          },
+        ],
+      },
+      {
+        id: 'R-002',
+        requirementKey: 'scope_integrity',
+        category: 'scope',
+        description: `Only ${orderId} and its own support case changed.`,
+        severity: 'must_pass',
+        verificationCoverage: 'complete',
+        limitations: [],
+        assertions: [
+          { kind: 'no_unrelated_mutations', collection: 'orders', allowedRecordIds: [orderId] },
+          {
+            kind: 'mutations_limited_to',
+            collection: 'support_cases',
+            allowedRecords: [
+              {
+                kind: 'selected_record',
+                state: 'initial',
+                selector: {
+                  collection: 'support_cases',
+                  where: [{ field: 'orderId', equals: orderId }],
+                },
+              },
+            ],
           },
         ],
       },
@@ -215,7 +312,7 @@ describe('task fingerprinting and the contract cache', () => {
     expect(artifact.taskFingerprint).toMatch(/^[0-9a-f]{64}$/);
     expect(artifact.toolRegistryHash).toMatch(/^[0-9a-f]{64}$/);
     expect(artifact.domainSchemaHash).toMatch(/^[0-9a-f]{64}$/);
-    expect(artifact.assertionSchemaVersion).toBe('1.0.0');
+    expect(artifact.assertionSchemaVersion).toBe('2.0.0');
     expect(artifact.promptHash).toBe(prompt.hash);
     expect(artifact.contractHash).toMatch(/^[0-9a-f]{64}$/);
     expect(artifact.rawResponsePaths).toHaveLength(1);
@@ -231,12 +328,12 @@ describe('task fingerprinting and the contract cache', () => {
 
 describe('compiled contract validation', () => {
   it('rejects a duplicated requirement key', () => {
-    const contract = JSON.parse(templateAContractJson()) as CompiledContract;
+    const contract = JSON.parse(templateAContractJson()) as CompiledContractV2;
     const duplicated = {
       ...contract,
       requirements: [contract.requirements[0], { ...contract.requirements[0], id: 'R-009' }],
     };
-    const result = CompiledContractSchema.safeParse(duplicated);
+    const result = CompiledContractV2Schema.safeParse(duplicated);
     expect(result.success).toBe(false);
   });
 
@@ -244,25 +341,40 @@ describe('compiled contract validation', () => {
     const contract = JSON.parse(templateAContractJson()) as Record<string, unknown>;
     const requirements = contract['requirements'] as Array<Record<string, unknown>>;
     requirements[0] = { ...requirements[0], requirementKey: 'vibes_check' };
-    expect(CompiledContractSchema.safeParse(contract).success).toBe(false);
+    expect(CompiledContractV2Schema.safeParse(contract).success).toBe(false);
   });
 
   it('rejects a requirement with no executable assertion', () => {
     const contract = JSON.parse(templateAContractJson()) as Record<string, unknown>;
     const requirements = contract['requirements'] as Array<Record<string, unknown>>;
     requirements[0] = { ...requirements[0], assertions: [] };
-    expect(CompiledContractSchema.safeParse(contract).success).toBe(false);
+    expect(CompiledContractV2Schema.safeParse(contract).success).toBe(false);
+  });
+
+  it('still parses a v1 contract and replays it unchanged', () => {
+    const v1 = CompiledContractSchema.parse(JSON.parse(templateAContractV1Json()));
+    expect(v1.contractVersion).toBe('1');
+    const agentVisible = loadAgentVisibleCase('PBH-A03', { casesDir: HARD_CASES_DIR });
+    const fromV1 = executeContract({ contract: v1, contractHash: 'h', agentVisible });
+    const fromV2 = executeContract({
+      contract: CompiledContractV2Schema.parse(JSON.parse(templateAContractJson())),
+      contractHash: 'h',
+      agentVisible,
+    });
+    // A v1 requirement has no coverage fields and is treated as complete, so
+    // the two generations must produce the same verdicts on the same run.
+    expect(canonicalPrediction(fromV1)).toBe(canonicalPrediction(fromV2));
   });
 
   it('accepts ids the task states', () => {
-    const contract = CompiledContractSchema.parse(JSON.parse(templateAContractJson()));
+    const contract = CompiledContractV2Schema.parse(JSON.parse(templateAContractJson()));
     const task = loadAgentVisibleCase('PBH-A01', { casesDir: HARD_CASES_DIR }).task.instruction;
     expect(findUngroundedLiterals(contract, task)).toEqual([]);
   });
 
   it('rejects an id-like literal the task never states', () => {
-    const contract = CompiledContractSchema.parse(JSON.parse(templateAContractJson()));
-    const tampered: CompiledContract = {
+    const contract = CompiledContractV2Schema.parse(JSON.parse(templateAContractJson()));
+    const tampered: CompiledContractV2 = {
       ...contract,
       requirements: contract.requirements.map((requirement) =>
         requirement.id !== 'R-001'
@@ -288,7 +400,7 @@ describe('compiled contract validation', () => {
 });
 
 describe('deterministic executor', () => {
-  const contract = CompiledContractSchema.parse(JSON.parse(templateAContractJson()));
+  const contract = CompiledContractV2Schema.parse(JSON.parse(templateAContractJson()));
   const agentVisible = loadAgentVisibleCase('PBH-A03', { casesDir: HARD_CASES_DIR });
 
   it('produces one assessment per compiled requirement', () => {
@@ -344,7 +456,40 @@ describe('efficiency comparison refuses an unearned claim', () => {
     const met = compareEfficiency(baseline, usage, { svr: 1, cdr: 1, fvr: 0 }, 'RUN-x');
     expect(met.qualityGuardrailsMet).toBe(true);
     expect(met.modelTokenReduction).toBeGreaterThan(0);
-    expect(met.warmMarginalTokens).toBe(0);
+  });
+
+  it('reports no warm figure at all until a warm run has been measured', () => {
+    const cold = compareEfficiency(baseline, usage, { svr: 1, cdr: 1, fvr: 0 }, 'RUN-x', {
+      mode: 'cold',
+      runId: 'RUN-cold',
+    });
+    expect(cold.warm).toBeNull();
+    expect(cold.warmMarginalTokens).toBeNull();
+    expect(cold.breakEvenRuns).toBeNull();
+    expect(cold.warmModelTokenReduction).toBeNull();
+  });
+
+  it('reports warm figures once a warm run supplies them', () => {
+    const warmUsage = { ...usage, contractCalls: 0, inputTokens: 0, outputTokens: 0 };
+    const warm = compareEfficiency(baseline, warmUsage, { svr: 1, cdr: 1, fvr: 0 }, 'RUN-x', {
+      mode: 'warm',
+      runId: 'RUN-warm',
+      cold: {
+        runId: 'RUN-cold',
+        modelCalls: 3,
+        repairCalls: 0,
+        inputTokens: 1000,
+        outputTokens: 500,
+        totalTokens: 1500,
+        wallClockMs: 1010,
+        verificationWallMs: 10,
+        cacheHits: 5,
+      },
+    });
+    expect(warm.warm?.totalTokens).toBe(0);
+    expect(warm.warmMarginalTokens).toBe(0);
+    expect(warm.warmModelTokenReduction).toBe(1);
+    expect(warm.breakEvenRuns).toBe(1);
   });
 
   it('withholds every reduction when recall is short', () => {
@@ -374,9 +519,12 @@ describe('StateProof run over the development split', () => {
       reads.push({ fileName, predictionsWritten: existsSync(predictionPath) });
     });
     try {
-      // Every task gets the same hand-written contract; that is fine here,
-      // because what is under test is the workflow, not the model.
-      const client = new FakeModelClient(() => ({ text: templateAContractJson() }));
+      // Each task gets a contract grounded in its own order id: what is under
+      // test is the workflow, but a contract that names another task's order
+      // is now rejected outright, and rightly so.
+      const client = new FakeModelClient((request) => ({
+        text: contractForRequest(request),
+      }));
       const run = await runStateProof({
         client,
         split: 'development',
@@ -417,7 +565,7 @@ describe('StateProof run over the development split', () => {
       expect(manifest.system).toBe('stateproof');
       expect(manifest.datasetHash).toBe(score.datasetHash);
       expect(manifest.reportPath).toBe(`reports/${runId}.md`);
-      expect(Object.keys(manifest.promptHashes)).toEqual(['prompts/contract-agent/v1.md']);
+      expect(Object.keys(manifest.promptHashes)).toEqual(['prompts/contract-agent/v2.md']);
       expect(manifest.notes.join(' ')).toContain(`${runId}-contracts`);
     } finally {
       stopObserving();

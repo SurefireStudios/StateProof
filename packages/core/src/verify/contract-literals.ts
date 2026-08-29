@@ -1,6 +1,6 @@
 import type { JsonValue } from '../json';
 import { isJsonObject } from '../json';
-import type { CompiledContract } from '../schema/compiled-contract';
+import { type AnyCompiledContract, normalizeRequirements } from '../schema/compiled-contract';
 import { toJsonValue } from '../serialize/canonical';
 
 /**
@@ -52,14 +52,14 @@ function collectStrings(value: JsonValue, path: string, into: Array<[string, str
  * appear in the task text.
  */
 export function findUngroundedLiterals(
-  contract: CompiledContract,
+  contract: AnyCompiledContract,
   taskText: string,
   options: { readonly allowedIdentifiers?: ReadonlySet<string> } = {},
 ): LiteralViolation[] {
   const allowed = options.allowedIdentifiers ?? new Set<string>();
   const violations: LiteralViolation[] = [];
 
-  for (const requirement of contract.requirements) {
+  for (const requirement of normalizeRequirements(contract)) {
     // The requirement's own id is an internal identifier, not an entity id.
     const requirementAllowed = new Set([...allowed, requirement.id, requirement.requirementKey]);
 

@@ -1,7 +1,7 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
+  ASSERTION_SCHEMA_VERSION,
   type EvaluationRunManifest,
   EvaluationRunManifestSchema,
   type Split,
@@ -20,16 +20,33 @@ import {
 import type { ModelClient } from '@stateproof/model-provider';
 import { z } from 'zod';
 import {
-  CONTRACT_PROMPT_REPO_PATH,
-  type CompiledContractArtifact,
+  type CompiledContractArtifactV2,
+  ContractBundleError,
+  type SourceContractReference,
+  SourceContractReferenceSchema,
+  loadContractBundle,
+  verifyContractProvenance,
+} from '../contract/bundle';
+import {
+  CONTRACT_PROMPT_PATH,
   compileContractForCase,
+  computeTaskFingerprint,
+  contractPromptRepoPath,
   loadContractPrompt,
 } from '../contract/compiler';
+import { type SourceTreeStatus, assertCleanSourceTree, inspectSourceTree } from '../run/source-guard';
 import { StateProofPredictionSchema, executeContract } from '../verify/executor';
 
 /**
  * The StateProof workflow: compile once per unique task, then verify every run
  * with deterministic code.
+ *
+ * Two modes, and the difference between them is the whole point. A **cold** run
+ * compiles the contracts it needs and costs model tokens once. A **warm** run
+ * loads those same contracts from disk, verifies their integrity, and makes no
+ * model call at all — no client, no credential. Gate 3A could only demonstrate
+ * reuse inside a single process, which is a weaker claim than the one being
+ * made, so warm mode exists to measure it rather than assume it.
  *
  * Phase order is the same rule the baseline follows, for the same reason: this
  * module imports only the agent-facing benchmark surface, so gold data is
@@ -48,12 +65,16 @@ export const StateProofCaseEntrySchema = z
 
 export const StateProofPredictionFileSchema = z
   .object({
-    schemaVersion: z.literal('1.0.0'),
+    // 1.0.0 is Gate 3A's shape and still parses; 2.0.0 adds mode and the
+    // source-bundle reference a warm run needs to be traceable.
+    schemaVersion: z.union([z.literal('1.0.0'), z.literal('2.0.0')]),
     runId: z.string().min(1),
     system: z.literal('stateproof'),
     dataset: z.literal('phantombench-hard-12'),
     split: z.enum(['development', 'locked']),
     contractRunId: z.string().min(1),
+    mode: z.enum(['cold', 'warm']).optional(),
+    sourceContracts: SourceContractReferenceSchema.nullable().optional(),
     predictions: z.array(StateProofCaseEntrySchema).min(1),
   })
   .strict();
@@ -68,17 +89,33 @@ export interface StateProofRunPaths {
   readonly contractsDir: string;
 }
 
-export interface StateProofRunOptions {
-  readonly client: ModelClient;
+interface CommonRunOptions {
   readonly split: Split;
   readonly artifactsDir: string;
   readonly casesDir?: string;
   readonly splitsDir?: string;
-  readonly promptPath?: string;
   readonly runId?: string;
-  readonly contractRunId?: string;
   readonly onProgress?: (message: string) => void;
 }
+
+export interface ColdRunOptions extends CommonRunOptions {
+  readonly mode?: 'cold';
+  readonly client: ModelClient;
+  readonly promptPath?: string;
+  readonly contractRunId?: string;
+  /** Live runs set this; tests and replays do not need a committed tree. */
+  readonly requireCleanSource?: boolean;
+  /** Which repository the clean-source rule applies to. Defaults to this one. */
+  readonly sourceRepoRoot?: string;
+}
+
+export interface WarmRunOptions extends CommonRunOptions {
+  readonly mode: 'warm';
+  /** The contract run id whose persisted bundle this run verifies from. */
+  readonly contractsFrom: string;
+}
+
+export type StateProofRunOptions = ColdRunOptions | WarmRunOptions;
 
 export interface ContractCompilationSummary {
   readonly contractRunId: string;
@@ -89,30 +126,26 @@ export interface ContractCompilationSummary {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly wallClockMs: number;
-  readonly artifacts: CompiledContractArtifact[];
+  readonly artifacts: CompiledContractArtifactV2[];
 }
 
 export interface StateProofRunResult {
   readonly runId: string;
+  readonly mode: 'cold' | 'warm';
   readonly paths: StateProofRunPaths;
   readonly predictionFile: StateProofPredictionFile;
   readonly manifest: EvaluationRunManifest;
   readonly compilation: ContractCompilationSummary;
   readonly verificationMs: number;
+  readonly wallClockMs: number;
   readonly perCaseVerificationMs: Array<{ caseId: string; ms: number }>;
+  readonly sourceContracts: SourceContractReference | null;
+  readonly source: SourceTreeStatus;
 }
 
 function writeJson(filePath: string, value: unknown): void {
   mkdirSync(path.dirname(filePath), { recursive: true });
   writeFileSync(filePath, `${JSON.stringify(toJsonValue(value), null, 2)}\n`, 'utf8');
-}
-
-function gitCommitSha(): string | null {
-  try {
-    return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-  } catch {
-    return null;
-  }
 }
 
 function packageLockHash(): string | null {
@@ -125,164 +158,177 @@ function relative(root: string, target: string): string {
   return path.relative(root, target).split(path.sep).join('/');
 }
 
-export function makeStateProofRunId(split: Split): string {
+export function makeStateProofRunId(split: Split, mode: 'cold' | 'warm' = 'cold'): string {
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
-  return `RUN-stateproof-hard-${split}-live-${stamp}`;
+  return `RUN-stateproof-hard-${split}-${mode}-${stamp}`;
+}
+
+export class WarmContractMissError extends Error {
+  public readonly problems: string[];
+
+  public constructor(problems: string[]) {
+    super(
+      [
+        'Refusing to verify: the persisted contract bundle does not cover this run.',
+        '',
+        'Warm mode never compiles a miss — that would quietly turn a measured warm',
+        'run into a partly cold one. Problems:',
+        ...problems.map((problem) => `  - ${problem}`),
+        '',
+      ].join('\n'),
+    );
+    this.name = 'WarmContractMissError';
+    this.problems = problems;
+  }
+}
+
+/** Which contract each case verifies against, and whether it was already available. */
+interface CasePlan {
+  readonly caseId: string;
+  readonly artifact: CompiledContractArtifactV2;
+  readonly cacheHit: boolean;
 }
 
 export async function runStateProof(options: StateProofRunOptions): Promise<StateProofRunResult> {
+  const warm = options.mode === 'warm';
   const casesDir = options.casesDir ?? HARD_CASES_DIR;
   const splitsDir = options.splitsDir ?? HARD_SPLITS_DIR;
-  const runId = options.runId ?? makeStateProofRunId(options.split);
-  const contractRunId = options.contractRunId ?? `${runId}-contracts`;
-  const prompt = loadContractPrompt(options.promptPath);
-
-  const paths: StateProofRunPaths = {
-    artifactsDir: options.artifactsDir,
-    predictionPath: path.join(options.artifactsDir, 'predictions', `${runId}.json`),
-    manifestPath: path.join(options.artifactsDir, 'run-manifests', `${runId}.json`),
-    contractManifestPath: path.join(options.artifactsDir, 'run-manifests', `${contractRunId}.json`),
-    contractsDir: path.join(options.artifactsDir, 'contracts', contractRunId),
-  };
+  const runId = options.runId ?? makeStateProofRunId(options.split, warm ? 'warm' : 'cold');
 
   const startedAt = new Date().toISOString();
   const startedMs = Date.now();
   const caseIds = caseIdsForSplit(options.split, splitsDir);
 
-  // --- phase 1: compile the unique task contracts --------------------------
-  const cache = new Map<string, CompiledContractArtifact>();
-  const compilationStartedMs = Date.now();
-  let compilationCalls = 0;
-  let repairCalls = 0;
-  let cacheHits = 0;
-  let contractInputTokens = 0;
-  let contractOutputTokens = 0;
-  const rawResponsePaths: string[] = [];
+  // A live cold run must be re-derivable from a commit; a warm run reads only
+  // artifacts, so it is checked but never blocked on the tree being clean.
+  const repoRoot = !warm ? options.sourceRepoRoot : undefined;
+  const source =
+    !warm && options.requireCleanSource === true
+      ? assertCleanSourceTree(repoRoot)
+      : inspectSourceTree(repoRoot);
 
-  const perCaseContract = new Map<string, CompiledContractArtifact>();
   const agentVisibleHashes: string[] = [];
-
   for (const caseId of caseIds) {
-    const agentVisible = loadAgentVisibleCase(caseId, { casesDir });
-    agentVisibleHashes.push(hashAgentVisibleCase(agentVisible));
-
-    const result = await compileContractForCase({
-      client: options.client,
-      agentVisible,
-      artifactsDir: options.artifactsDir,
-      contractRunId,
-      ...(options.promptPath === undefined ? {} : { promptPath: options.promptPath }),
-      cache,
-      ...(options.onProgress === undefined
-        ? {}
-        : { onProgress: (message) => options.onProgress?.(`${caseId}: ${message}`) }),
-    });
-
-    if (result.cacheHit) {
-      cacheHits += 1;
-    } else {
-      compilationCalls += result.attempts.length;
-      repairCalls += Math.max(0, result.attempts.length - 1);
-      contractInputTokens += result.artifact.tokenUsage?.inputTokens ?? 0;
-      contractOutputTokens += result.artifact.tokenUsage?.outputTokens ?? 0;
-      rawResponsePaths.push(...result.artifact.rawResponsePaths);
-    }
-    perCaseContract.set(caseId, result.artifact);
+    agentVisibleHashes.push(hashAgentVisibleCase(loadAgentVisibleCase(caseId, { casesDir })));
   }
-  const compilationWallMs = Date.now() - compilationStartedMs;
+
+  const phase = warm
+    ? planWarm(options, caseIds, casesDir)
+    : await planCold(options, caseIds, casesDir, source);
 
   // --- phase 2: verify every run deterministically -------------------------
   const predictions: StateProofPredictionFile['predictions'] = [];
   const perCaseVerificationMs: Array<{ caseId: string; ms: number }> = [];
   const verificationStartedMs = Date.now();
 
-  for (const caseId of caseIds) {
-    const agentVisible = loadAgentVisibleCase(caseId, { casesDir });
-    const artifact = perCaseContract.get(caseId);
-    if (artifact === undefined) throw new Error(`no compiled contract for ${caseId}`);
-
+  for (const plan of phase.plans) {
+    const agentVisible = loadAgentVisibleCase(plan.caseId, { casesDir });
     const prediction = executeContract({
-      contract: artifact.contract,
-      contractHash: artifact.contractHash,
+      contract: plan.artifact.contract,
+      contractHash: plan.artifact.contractHash,
       agentVisible,
     });
 
     predictions.push({
-      caseId,
-      taskFingerprint: artifact.taskFingerprint,
-      contractHash: artifact.contractHash,
-      cacheHit: false,
+      caseId: plan.caseId,
+      taskFingerprint: plan.artifact.taskFingerprint,
+      contractHash: plan.artifact.contractHash,
+      cacheHit: plan.cacheHit,
       prediction,
     });
-    perCaseVerificationMs.push({ caseId, ms: prediction.verificationDurationMs });
+    perCaseVerificationMs.push({ caseId: plan.caseId, ms: prediction.verificationDurationMs });
     options.onProgress?.(
-      `${caseId}: ${prediction.verdict} (${prediction.requirementAssessments.length} assessed, ` +
+      `${plan.caseId}: ${prediction.verdict} (${prediction.requirementAssessments.length} assessed, ` +
         `${prediction.requirementAssessments.filter((a) => a.status === 'FAIL').length} failed, ` +
         `${prediction.verificationDurationMs} ms, 0 model calls)`,
     );
   }
   const verificationMs = Date.now() - verificationStartedMs;
 
+  const paths: StateProofRunPaths = {
+    artifactsDir: options.artifactsDir,
+    predictionPath: path.join(options.artifactsDir, 'predictions', `${runId}.json`),
+    manifestPath: path.join(options.artifactsDir, 'run-manifests', `${runId}.json`),
+    contractManifestPath: path.join(
+      options.artifactsDir,
+      'run-manifests',
+      `${phase.contractRunId}.json`,
+    ),
+    contractsDir: path.join(options.artifactsDir, 'contracts', phase.contractRunId),
+  };
+
   const predictionFile: StateProofPredictionFile = {
-    schemaVersion: '1.0.0',
+    schemaVersion: '2.0.0',
     runId,
     system: 'stateproof',
     dataset: 'phantombench-hard-12',
     split: options.split,
-    contractRunId,
+    contractRunId: phase.contractRunId,
+    mode: warm ? 'warm' : 'cold',
+    sourceContracts: phase.sourceContracts,
     predictions,
   };
   // Phase boundary: predictions exist before any gold file is opened.
   writeJson(paths.predictionPath, predictionFile);
 
-  const contractArtifacts = [...cache.values()];
-  const uniqueTaskFingerprints = contractArtifacts.map((artifact) => artifact.taskFingerprint).sort();
-
+  const uniqueTaskFingerprints = phase.artifacts.map((artifact) => artifact.taskFingerprint).sort();
   const compilation: ContractCompilationSummary = {
-    contractRunId,
+    contractRunId: phase.contractRunId,
     uniqueTaskFingerprints,
-    compilationCalls,
-    repairCalls,
-    cacheHits,
-    inputTokens: contractInputTokens,
-    outputTokens: contractOutputTokens,
-    wallClockMs: compilationWallMs,
-    artifacts: contractArtifacts,
+    compilationCalls: phase.compilationCalls,
+    repairCalls: phase.repairCalls,
+    cacheHits: phase.cacheHits,
+    inputTokens: phase.inputTokens,
+    outputTokens: phase.outputTokens,
+    wallClockMs: phase.wallClockMs,
+    artifacts: phase.artifacts,
   };
 
-  // A separate manifest for the compilation phase, so a cached contract can be
-  // traced to the exact prompt and model that produced it.
-  writeJson(paths.contractManifestPath, {
-    schemaVersion: '1.0.0',
-    contractRunId,
-    createdAt: startedAt,
-    stage: 'gate-3a-contract-compilation',
-    promptPath: CONTRACT_PROMPT_REPO_PATH,
-    promptHash: prompt.hash,
-    modelProvider: options.client.provider,
-    modelId: options.client.modelId,
-    modelConfiguration: options.client.configuration,
-    gitCommitSha: gitCommitSha(),
-    uniqueTaskFingerprints,
-    compilationCalls,
-    repairCalls,
-    cacheHits,
-    tokenUsage: { inputTokens: contractInputTokens, outputTokens: contractOutputTokens },
-    wallClockMs: compilationWallMs,
-    contractPaths: uniqueTaskFingerprints.map(
-      (fingerprint) => `contracts/${contractRunId}/${fingerprint}.json`,
-    ),
-    rawResponsePaths,
-  });
+  if (!warm) {
+    // A bundle manifest, not just a log: it binds every contract hash so a
+    // later warm run can tell a genuine artifact from an edited one.
+    writeJson(paths.contractManifestPath, {
+      schemaVersion: '2.0.0',
+      contractRunId: phase.contractRunId,
+      createdAt: startedAt,
+      stage: 'gate-3b-contract-compilation',
+      promptPath: phase.promptRepoPath,
+      promptHash: phase.promptHash,
+      assertionSchemaVersion: ASSERTION_SCHEMA_VERSION,
+      contractVersion: '2',
+      modelProvider: phase.modelProvider,
+      modelId: phase.modelId,
+      modelConfiguration: phase.modelConfiguration,
+      gitCommitSha: source.commitSha,
+      sourceTreeClean: source.clean,
+      uniqueTaskFingerprints,
+      contractHashes: Object.fromEntries(
+        phase.artifacts.map((artifact) => [artifact.taskFingerprint, artifact.contractHash]),
+      ),
+      compilationCalls: phase.compilationCalls,
+      repairCalls: phase.repairCalls,
+      cacheHits: phase.cacheHits,
+      tokenUsage: { inputTokens: phase.inputTokens, outputTokens: phase.outputTokens },
+      wallClockMs: phase.wallClockMs,
+      contractPaths: uniqueTaskFingerprints.map(
+        (fingerprint) => `contracts/${phase.contractRunId}/${fingerprint}.json`,
+      ),
+      rawResponsePaths: phase.rawResponsePaths,
+    });
+  }
 
+  const wallClockMs = Date.now() - startedMs;
   const manifest = EvaluationRunManifestSchema.parse({
     schemaVersion: '1.0.0',
     runId,
     createdAt: startedAt,
     system: 'stateproof',
-    stage: 'gate-3a-stateproof-development',
+    stage: `gate-3b-stateproof-${options.split}-${warm ? 'warm' : 'cold'}`,
     mode: 'live',
-    gitCommitSha: gitCommitSha(),
+    gitCommitSha: source.commitSha,
+    sourceTreeClean: source.clean,
+    assertionSchemaVersion: ASSERTION_SCHEMA_VERSION,
+    sourceContractRunId: warm ? phase.contractRunId : null,
     runtimeVersion: `node-${process.versions.node}`,
     packageLockHash: packageLockHash(),
     datasetName: HARD_BENCHMARK_NAME,
@@ -290,27 +336,29 @@ export async function runStateProof(options: StateProofRunOptions): Promise<Stat
     datasetHash: null,
     splits: [options.split],
     caseIds,
-    modelProvider: options.client.provider,
-    modelId: options.client.modelId,
-    modelConfiguration: options.client.configuration,
+    modelProvider: warm ? null : phase.modelProvider,
+    modelId: warm ? null : phase.modelId,
+    modelConfiguration: warm ? {} : phase.modelConfiguration,
     maxRetries: 1,
-    timeoutPolicy: String(options.client.configuration['timeoutMs'] ?? 'provider default'),
-    promptFilePaths: [CONTRACT_PROMPT_REPO_PATH],
-    promptHashes: { [CONTRACT_PROMPT_REPO_PATH]: prompt.hash },
+    timeoutPolicy: warm
+      ? 'no model call is made in warm mode'
+      : String(phase.modelConfiguration['timeoutMs'] ?? 'provider default'),
+    promptFilePaths: [phase.promptRepoPath],
+    promptHashes: { [phase.promptRepoPath]: phase.promptHash },
     startedAt,
     finishedAt: new Date().toISOString(),
-    wallClockMs: Date.now() - startedMs,
+    wallClockMs,
     modelUsage:
-      compilationCalls === 0
+      phase.compilationCalls === 0
         ? null
         : {
-            inputTokens: contractInputTokens,
-            outputTokens: contractOutputTokens,
-            calls: compilationCalls,
-            retries: repairCalls,
+            inputTokens: phase.inputTokens,
+            outputTokens: phase.outputTokens,
+            calls: phase.compilationCalls,
+            retries: phase.repairCalls,
             estimatedCostUsd: null,
           },
-    rawResponsePaths,
+    rawResponsePaths: phase.rawResponsePaths,
     trajectoryPaths: caseIds.map(
       (caseId) => `benchmarks/${HARD_BENCHMARK_NAME}/cases/${caseId}/trajectory.jsonl`,
     ),
@@ -319,7 +367,9 @@ export async function runStateProof(options: StateProofRunOptions): Promise<Stat
     notes: [
       'Predictions were written before any gold file was read.',
       'Verification is deterministic: zero model calls during the run phase.',
-      `Contract compilation artifacts: run-manifests/${contractRunId}.json and contracts/${contractRunId}/.`,
+      warm
+        ? `Warm run: every contract was loaded and integrity-checked from ${phase.contractRunId}; no model call and no credential were used.`
+        : `Contract compilation artifacts: run-manifests/${phase.contractRunId}.json and contracts/${phase.contractRunId}/.`,
       `Deterministic verification time: ${verificationMs} ms across ${caseIds.length} case(s).`,
     ],
   });
@@ -327,11 +377,190 @@ export async function runStateProof(options: StateProofRunOptions): Promise<Stat
 
   return {
     runId,
+    mode: warm ? 'warm' : 'cold',
     paths,
     predictionFile,
     manifest,
     compilation,
     verificationMs,
+    wallClockMs,
     perCaseVerificationMs,
+    sourceContracts: phase.sourceContracts,
+    source,
+  };
+}
+
+interface PhaseOneResult {
+  readonly contractRunId: string;
+  readonly plans: CasePlan[];
+  readonly artifacts: CompiledContractArtifactV2[];
+  readonly compilationCalls: number;
+  readonly repairCalls: number;
+  readonly cacheHits: number;
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly wallClockMs: number;
+  readonly rawResponsePaths: string[];
+  readonly promptRepoPath: string;
+  readonly promptHash: string;
+  readonly modelProvider: string;
+  readonly modelId: string;
+  readonly modelConfiguration: Readonly<Record<string, string | number | boolean | null>>;
+  readonly sourceContracts: SourceContractReference | null;
+}
+
+/** Compile the unique task contracts, paying for each exactly once. */
+async function planCold(
+  options: ColdRunOptions,
+  caseIds: readonly string[],
+  casesDir: string,
+  source: SourceTreeStatus,
+): Promise<PhaseOneResult> {
+  const promptPath = options.promptPath ?? CONTRACT_PROMPT_PATH;
+  const prompt = loadContractPrompt(promptPath);
+  const contractRunId = options.contractRunId ?? `${options.runId ?? 'RUN'}-contracts`;
+
+  const cache = new Map<string, CompiledContractArtifactV2>();
+  const startedMs = Date.now();
+  let compilationCalls = 0;
+  let repairCalls = 0;
+  let cacheHits = 0;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  const rawResponsePaths: string[] = [];
+  const plans: CasePlan[] = [];
+
+  for (const caseId of caseIds) {
+    const agentVisible = loadAgentVisibleCase(caseId, { casesDir });
+    const result = await compileContractForCase({
+      client: options.client,
+      agentVisible,
+      artifactsDir: options.artifactsDir,
+      contractRunId,
+      promptPath,
+      cache,
+      source,
+      ...(options.onProgress === undefined
+        ? {}
+        : { onProgress: (message: string) => options.onProgress?.(`${caseId}: ${message}`) }),
+    });
+
+    if (result.cacheHit) {
+      cacheHits += 1;
+    } else {
+      compilationCalls += result.attempts.length;
+      repairCalls += Math.max(0, result.attempts.length - 1);
+      inputTokens += result.artifact.tokenUsage?.inputTokens ?? 0;
+      outputTokens += result.artifact.tokenUsage?.outputTokens ?? 0;
+      rawResponsePaths.push(...result.artifact.rawResponsePaths);
+    }
+    // Honest per-case metadata: the first case that needed a contract paid for
+    // it, and every later case with the same fingerprint did not.
+    plans.push({ caseId, artifact: result.artifact, cacheHit: result.cacheHit });
+  }
+
+  return {
+    contractRunId,
+    plans,
+    artifacts: [...cache.values()],
+    compilationCalls,
+    repairCalls,
+    cacheHits,
+    inputTokens,
+    outputTokens,
+    wallClockMs: Date.now() - startedMs,
+    rawResponsePaths,
+    promptRepoPath: contractPromptRepoPath(promptPath),
+    promptHash: prompt.hash,
+    modelProvider: options.client.provider,
+    modelId: options.client.modelId,
+    modelConfiguration: options.client.configuration,
+    sourceContracts: null,
+  };
+}
+
+/**
+ * Load the persisted bundle and match every case to it. No model client exists
+ * in this path, so a miss cannot be repaired by compiling: it fails closed.
+ */
+function planWarm(
+  options: WarmRunOptions,
+  caseIds: readonly string[],
+  casesDir: string,
+): PhaseOneResult {
+  const startedMs = Date.now();
+  let bundle;
+  try {
+    bundle = loadContractBundle(options.artifactsDir, options.contractsFrom);
+  } catch (error) {
+    if (error instanceof ContractBundleError) throw error;
+    throw error;
+  }
+
+  const plans: CasePlan[] = [];
+  const problems: string[] = [];
+
+  for (const caseId of caseIds) {
+    const agentVisible = loadAgentVisibleCase(caseId, { casesDir });
+    // Recomputed from the task in front of us, never read from the artifact.
+    const fingerprint = computeTaskFingerprint({
+      taskText: agentVisible.task.instruction,
+      toolRegistry: agentVisible.toolRegistry,
+      promptHash: bundle.manifest.promptHash,
+      modelProvider: bundle.manifest.modelProvider,
+      modelId: bundle.manifest.modelId,
+      modelConfiguration: bundle.manifest.modelConfiguration,
+    });
+
+    const artifact = bundle.artifacts.get(fingerprint.fingerprint);
+    if (artifact === undefined) {
+      problems.push(
+        `${caseId}: no persisted contract for task fingerprint ${fingerprint.fingerprint.slice(0, 12)}`,
+      );
+      continue;
+    }
+
+    const provenance = verifyContractProvenance(artifact, {
+      taskFingerprint: fingerprint.fingerprint,
+      toolRegistryHash: fingerprint.toolRegistryHash,
+      domainSchemaHash: fingerprint.domainSchemaHash,
+      promptHash: bundle.manifest.promptHash,
+      modelProvider: bundle.manifest.modelProvider,
+      modelId: bundle.manifest.modelId,
+      modelConfiguration: bundle.manifest.modelConfiguration,
+    });
+    if (provenance.length > 0) {
+      problems.push(`${caseId}: ${provenance.join('; ')}`);
+      continue;
+    }
+
+    options.onProgress?.(
+      `${caseId}: persisted contract ${fingerprint.fingerprint.slice(0, 12)} (0 model calls)`,
+    );
+    plans.push({ caseId, artifact, cacheHit: true });
+  }
+
+  if (problems.length > 0) throw new WarmContractMissError(problems);
+
+  const used = new Map<string, CompiledContractArtifactV2>();
+  for (const plan of plans) used.set(plan.artifact.taskFingerprint, plan.artifact);
+
+  return {
+    contractRunId: options.contractsFrom,
+    plans,
+    artifacts: [...used.values()],
+    compilationCalls: 0,
+    repairCalls: 0,
+    cacheHits: plans.length,
+    inputTokens: 0,
+    outputTokens: 0,
+    wallClockMs: Date.now() - startedMs,
+    rawResponsePaths: [],
+    promptRepoPath: bundle.manifest.promptPath,
+    promptHash: bundle.manifest.promptHash,
+    modelProvider: bundle.manifest.modelProvider,
+    modelId: bundle.manifest.modelId,
+    modelConfiguration: bundle.manifest.modelConfiguration,
+    sourceContracts: bundle.reference,
   };
 }

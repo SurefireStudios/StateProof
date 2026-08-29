@@ -1,13 +1,14 @@
 import {
   type AgentVisibleCase,
+  type AnyCompiledContract,
   type AssertionOutcome,
-  type CompiledContract,
   type EvaluationContext,
   type RequirementAssessment,
   type RequirementKey,
   assertionEvidenceRefs,
   evaluateAssertion,
   hashJson,
+  normalizeRequirements,
   toJsonValue,
 } from '@stateproof/core';
 import { z } from 'zod';
@@ -66,7 +67,7 @@ export function evaluationContextFor(agentVisible: AgentVisibleCase): Evaluation
 }
 
 export interface ExecuteOptions {
-  readonly contract: CompiledContract;
+  readonly contract: AnyCompiledContract;
   readonly contractHash: string;
   readonly agentVisible: AgentVisibleCase;
   /** Injectable so a determinism test can hold the duration constant. */
@@ -77,35 +78,51 @@ export interface ExecuteOptions {
  * One requirement is a conjunction of its assertions: any violated assertion
  * disproves it, and a single unresolvable one withholds a pass. Missing
  * evidence never becomes PASS.
+ *
+ * A requirement that declared `partial` coverage is held to a stricter rule: it
+ * may still FAIL on an implemented assertion, but satisfying every implemented
+ * assertion only earns NEEDS_REVIEW. Otherwise a clause the contract openly
+ * admits it cannot express would be reported as verified.
  */
 export function executeContract(options: ExecuteOptions): StateProofPrediction {
   const clock = options.now ?? ((): number => Date.now());
   const startedMs = clock();
   const context = evaluationContextFor(options.agentVisible);
 
-  const assessments: RequirementAssessment[] = options.contract.requirements.map((requirement) => {
-    const results = requirement.assertions.map((assertion) => ({
-      assertion,
-      result: evaluateAssertion(assertion, context),
-    }));
+  const assessments: RequirementAssessment[] = normalizeRequirements(options.contract).map(
+    (requirement) => {
+      const results = requirement.assertions.map((assertion) => ({
+        assertion,
+        result: evaluateAssertion(assertion, context),
+      }));
 
-    const outcome: AssertionOutcome = results.some((entry) => entry.result.outcome === 'violated')
-      ? 'violated'
-      : results.some((entry) => entry.result.outcome === 'indeterminate')
-        ? 'indeterminate'
-        : 'satisfied';
+      const outcome: AssertionOutcome = results.some((entry) => entry.result.outcome === 'violated')
+        ? 'violated'
+        : results.some((entry) => entry.result.outcome === 'indeterminate')
+          ? 'indeterminate'
+          : 'satisfied';
 
-    const refs = [
-      ...new Set(results.flatMap((entry) => assertionEvidenceRefs(entry.assertion, context))),
-    ].sort();
+      const refs = [
+        ...new Set(results.flatMap((entry) => assertionEvidenceRefs(entry.assertion, context))),
+      ].sort();
 
-    return {
-      requirementKey: requirement.requirementKey as RequirementKey,
-      status: statusFor(outcome),
-      reason: `${requirement.description} — ${results.map((entry) => entry.result.message).join(' | ')}`,
-      evidenceRefs: refs,
-    };
-  });
+      const partial = requirement.verificationCoverage === 'partial';
+      const status = partial && outcome !== 'violated' ? 'NEEDS_REVIEW' : statusFor(outcome);
+      const coverageNote =
+        partial && outcome !== 'violated'
+          ? ` | coverage is partial, so this cannot pass: ${requirement.limitations.join('; ')}`
+          : '';
+
+      return {
+        requirementKey: requirement.requirementKey as RequirementKey,
+        status,
+        reason:
+          `${requirement.description} — ` +
+          `${results.map((entry) => entry.result.message).join(' | ')}${coverageNote}`,
+        evidenceRefs: refs,
+      };
+    },
+  );
 
   const verdict = assessments.some((assessment) => assessment.status === 'FAIL')
     ? 'FAIL'

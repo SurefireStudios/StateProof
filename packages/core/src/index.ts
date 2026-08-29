@@ -25,4 +25,5 @@ export * from './verify/state-diff';
 export * from './verify/assertions';
 export * from './verify/evidence-refs';
 export * from './verify/contract-literals';
+export * from './verify/contract-semantics';
 export * from './verify/verifier';

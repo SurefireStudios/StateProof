@@ -10,6 +10,16 @@ import type { ModelClient, ModelRequest, RawAttempt } from './types';
  * inspectable rather than invisible.
  */
 
+export const SEMANTIC_REPAIR_INSTRUCTION = [
+  'Your previous response matched the JSON schema but is not a usable contract.',
+  '',
+  'Problems found:',
+  '{{VALIDATION_ERRORS}}',
+  '',
+  'Return a corrected JSON object only. Fix exactly these problems, keep everything',
+  'else as it was, and do not add markdown, explanations, or fields outside the schema.',
+].join('\n');
+
 export const REPAIR_INSTRUCTION = [
   'Your previous response did not match the required JSON schema.',
   '',
@@ -27,6 +37,13 @@ export interface StructuredRequestOptions<T> {
   readonly schema: z.ZodType<T, z.ZodTypeDef, unknown>;
   /** Extra repair attempts after the first response. Fixed at 1 for the benchmark. */
   readonly maxRepairAttempts?: number;
+  /**
+   * Checks a schema-valid response is actually usable, returning one message
+   * per problem. It shares the repair budget with schema failures: a response
+   * that parses but says something impossible is not a better outcome than one
+   * that does not parse, so it gets the same single correction and no more.
+   */
+  readonly semanticValidate?: (value: T) => readonly string[];
 }
 
 export interface StructuredResult<T> {
@@ -72,10 +89,22 @@ export async function requestStructured<T>(
 
     let value: T | null = null;
     let validationError: string | null = null;
+    let failureKind: 'schema' | 'semantic' = 'schema';
     try {
       value = options.schema.parse(extractJson(response.text));
     } catch (error) {
       validationError = describeError(error);
+    }
+
+    if (value !== null && options.semanticValidate !== undefined) {
+      const problems = options.semanticValidate(value);
+      if (problems.length > 0) {
+        failureKind = 'semantic';
+        // Recorded on the attempt itself, so the raw artifact shows exactly
+        // what was wrong rather than just that something was.
+        validationError = `semantic validation failed: ${problems.join('; ')}`;
+        value = null;
+      }
     }
 
     attempts.push({
@@ -96,12 +125,14 @@ export async function requestStructured<T>(
     parseErrors.push(validationError ?? 'unknown validation failure');
     if (attempt === maxRepairAttempts + 1) break;
 
+    const instruction =
+      failureKind === 'semantic' ? SEMANTIC_REPAIR_INSTRUCTION : REPAIR_INSTRUCTION;
     messages = [
       ...messages,
       { role: 'assistant', content: response.text },
       {
         role: 'user',
-        content: REPAIR_INSTRUCTION.replace('{{VALIDATION_ERRORS}}', validationError ?? ''),
+        content: instruction.replace('{{VALIDATION_ERRORS}}', validationError ?? ''),
       },
     ];
   }

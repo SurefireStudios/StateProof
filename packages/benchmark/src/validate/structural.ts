@@ -228,7 +228,9 @@ export function validateStructure(
   for (const requirement of goldContract.requirements) {
     for (const assertion of requirement.assertions) {
     const collections: string[] =
-      assertion.kind === 'no_new_records' || assertion.kind === 'no_unrelated_mutations'
+      assertion.kind === 'no_new_records' ||
+      assertion.kind === 'no_unrelated_mutations' ||
+      assertion.kind === 'mutations_limited_to'
         ? [assertion.collection]
         : assertion.kind === 'event_order'
           ? []

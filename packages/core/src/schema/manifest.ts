@@ -33,6 +33,17 @@ export const EvaluationRunManifestSchema = z
     mode: z.enum(['live', 'replay']),
 
     gitCommitSha: z.string().regex(/^[0-9a-f]{7,40}$/).nullable(),
+    /**
+     * Whether the tracked source tree matched that commit when the run
+     * started. Absent on manifests written before the clean-source rule
+     * existed, which is exactly why it is optional rather than defaulted:
+     * a historical run must not be able to claim a property nobody checked.
+     */
+    sourceTreeClean: z.boolean().optional(),
+    /** Assertion vocabulary the contracts in this run were compiled against. */
+    assertionSchemaVersion: NonEmptyStringSchema.optional(),
+    /** Set when the run verified from a persisted contract bundle. */
+    sourceContractRunId: NonEmptyStringSchema.nullable().optional(),
     runtimeVersion: NonEmptyStringSchema,
     packageLockHash: Sha256Schema.nullable(),
 

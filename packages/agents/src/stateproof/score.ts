@@ -25,7 +25,7 @@ import {
 // Deliberate, explicit gold import: this is the scoring layer.
 import { datasetHash, loadAllCases, loadGoldBundle } from '@stateproof/benchmark/gold';
 import { SplitCoverageError } from '../baseline/score';
-import type { CompiledContractArtifact } from '../contract/compiler';
+import type { AnyContractArtifact } from '../contract/compiler';
 import { type StateProofPredictionFile, StateProofPredictionFileSchema } from './runner';
 
 /**
@@ -54,7 +54,10 @@ export interface StateProofScoreOptions {
   readonly casesDir?: string;
   readonly splitsDir?: string;
   readonly manifestPath?: string;
-  readonly contractArtifacts?: readonly CompiledContractArtifact[];
+  /** Warm runs name the cold run they reuse, so all three columns are real. */
+  readonly coldRunId?: string;
+  readonly mode?: 'cold' | 'warm';
+  readonly contractArtifacts?: readonly AnyContractArtifact[];
   /** Frozen baseline run to compare efficiency against, by run id. */
   readonly baselineRunId?: string;
 }
@@ -78,6 +81,19 @@ export interface EfficiencyBaseline {
   readonly wallClockMs: number;
 }
 
+/** One measured run, read from its own manifest or from this run's usage. */
+export interface RunEfficiency {
+  readonly runId: string | null;
+  readonly modelCalls: number;
+  readonly repairCalls: number;
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly totalTokens: number;
+  readonly wallClockMs: number;
+  readonly verificationWallMs: number | null;
+  readonly cacheHits: number | null;
+}
+
 export interface EfficiencyComparison {
   readonly baselineRunId: string | null;
   readonly qualityGuardrailsMet: boolean;
@@ -93,14 +109,23 @@ export interface EfficiencyComparison {
     readonly verificationWallMs: number;
     readonly cacheHits: number;
     readonly verificationModelCalls: number;
-    readonly warmModelCalls: number;
-    readonly warmModelTokens: number;
   };
+  /** The cold run: this one, or the one a warm run reuses. */
+  readonly cold: RunEfficiency | null;
+  /**
+   * Null until an actual warm run has completed. Nothing here is derived from
+   * the theory that a cached contract costs nothing — it is either measured or
+   * it is absent.
+   */
+  readonly warm: RunEfficiency | null;
   readonly modelCallReduction: number | null;
   readonly modelTokenReduction: number | null;
   readonly wallClockReduction: number | null;
+  readonly warmModelCallReduction: number | null;
+  readonly warmModelTokenReduction: number | null;
+  readonly warmWallClockReduction: number | null;
   readonly coldStartTokens: number;
-  readonly warmMarginalTokens: number;
+  readonly warmMarginalTokens: number | null;
   readonly breakEvenRuns: number | null;
   readonly estimatedCostUsd: null;
 }
@@ -207,18 +232,32 @@ export function loadBaselineEfficiency(
   };
 }
 
+export interface EfficiencyContext {
+  /** Which run is being scored. A warm run supplies its own warm column. */
+  readonly mode?: 'cold' | 'warm';
+  readonly runId?: string;
+  /** The cold run a warm run reuses, read from its own manifest. */
+  readonly cold?: RunEfficiency | null;
+}
+
 /**
  * An efficiency win is only claimed when every quality guardrail holds.
  *
  * Being cheaper while missing a violation is not an improvement; it is a
  * cheaper way to be wrong. So the reductions are withheld entirely rather than
  * printed next to a caveat nobody reads.
+ *
+ * The warm column is subject to a second rule, learned from Gate 3A: it is
+ * populated only by an actual completed warm run. Reasoning that a cached
+ * contract must cost zero tokens is not a measurement, and reporting it as one
+ * is the same error as claiming an unearned reduction.
  */
 export function compareEfficiency(
   baseline: EfficiencyBaseline | null,
   usage: StateProofUsage,
   quality: { svr: number | null; cdr: number | null; fvr: number | null },
   baselineRunId: string | null,
+  context: EfficiencyContext = {},
 ): EfficiencyComparison {
   const guardrailFailures: string[] = [];
   if (quality.svr !== 1) guardrailFailures.push(`SVR is ${formatRate(quality.svr)}, required 100%`);
@@ -227,8 +266,35 @@ export function compareEfficiency(
   const met = guardrailFailures.length === 0;
 
   const totalTokens = usage.inputTokens + usage.outputTokens;
+  const warmMode = context.mode === 'warm';
   const ratio = (before: number, after: number): number | null =>
     before === 0 ? null : (before - after) / before;
+
+  const thisRun: RunEfficiency = {
+    runId: context.runId ?? null,
+    modelCalls: usage.contractCalls,
+    repairCalls: usage.repairCalls,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    totalTokens,
+    wallClockMs: usage.compilationWallMs + usage.verificationWallMs,
+    verificationWallMs: usage.verificationWallMs,
+    cacheHits: usage.cacheHits,
+  };
+
+  const cold = warmMode ? (context.cold ?? null) : thisRun;
+  const warm = warmMode ? thisRun : null;
+
+  // How many repeats of the suite before compiling once is cheaper than paying
+  // a frontier model every time. Only computable once warm is measured.
+  const breakEven = ((): number | null => {
+    if (!met || baseline === null || cold === null || warm === null) return null;
+    if (baseline.totalTokens <= warm.totalTokens) return null;
+    return Math.max(
+      1,
+      Math.ceil((cold.totalTokens - warm.totalTokens) / (baseline.totalTokens - warm.totalTokens)),
+    );
+  })();
 
   return {
     baselineRunId,
@@ -245,25 +311,52 @@ export function compareEfficiency(
       verificationWallMs: usage.verificationWallMs,
       cacheHits: usage.cacheHits,
       verificationModelCalls: 0,
-      warmModelCalls: 0,
-      warmModelTokens: 0,
     },
+    cold,
+    warm,
     modelCallReduction:
-      met && baseline !== null ? ratio(baseline.modelCalls, usage.contractCalls) : null,
-    modelTokenReduction: met && baseline !== null ? ratio(baseline.totalTokens, totalTokens) : null,
+      met && baseline !== null && cold !== null ? ratio(baseline.modelCalls, cold.modelCalls) : null,
+    modelTokenReduction:
+      met && baseline !== null && cold !== null
+        ? ratio(baseline.totalTokens, cold.totalTokens)
+        : null,
     wallClockReduction:
-      met && baseline !== null
-        ? ratio(baseline.wallClockMs, usage.compilationWallMs + usage.verificationWallMs)
+      met && baseline !== null && cold !== null
+        ? ratio(baseline.wallClockMs, cold.wallClockMs)
         : null,
-    coldStartTokens: totalTokens,
-    // Once the contract is cached a repeat run costs no model tokens at all,
-    // while the baseline pays its full bill again.
-    warmMarginalTokens: 0,
-    breakEvenRuns:
-      met && baseline !== null && baseline.totalTokens > 0
-        ? Math.ceil(totalTokens / baseline.totalTokens)
+    warmModelCallReduction:
+      met && baseline !== null && warm !== null ? ratio(baseline.modelCalls, warm.modelCalls) : null,
+    warmModelTokenReduction:
+      met && baseline !== null && warm !== null
+        ? ratio(baseline.totalTokens, warm.totalTokens)
         : null,
+    warmWallClockReduction:
+      met && baseline !== null && warm !== null
+        ? ratio(baseline.wallClockMs, warm.wallClockMs)
+        : null,
+    coldStartTokens: cold?.totalTokens ?? totalTokens,
+    warmMarginalTokens: warm === null ? null : warm.totalTokens,
+    breakEvenRuns: breakEven,
     estimatedCostUsd: null,
+  };
+}
+
+/** Reads any completed StateProof run's measured cost from its own manifest. */
+export function loadRunEfficiency(artifactsDir: string, runId: string): RunEfficiency | null {
+  const manifestPath = path.join(artifactsDir, 'run-manifests', `${runId}.json`);
+  if (!existsSync(manifestPath)) return null;
+  const manifest = EvaluationRunManifestSchema.parse(JSON.parse(readFileSync(manifestPath, 'utf8')));
+  const usage = manifest.modelUsage;
+  return {
+    runId,
+    modelCalls: usage?.calls ?? 0,
+    repairCalls: usage?.retries ?? 0,
+    inputTokens: usage?.inputTokens ?? 0,
+    outputTokens: usage?.outputTokens ?? 0,
+    totalTokens: (usage?.inputTokens ?? 0) + (usage?.outputTokens ?? 0),
+    wallClockMs: manifest.wallClockMs,
+    verificationWallMs: null,
+    cacheHits: null,
   };
 }
 
@@ -384,6 +477,7 @@ export function scoreStateProof(options: StateProofScoreOptions): StateProofScor
       ? null
       : loadBaselineEfficiency(options.artifactsDir, options.baselineRunId);
 
+  const mode = options.mode ?? predictionFile.mode ?? 'cold';
   const efficiency = compareEfficiency(
     baseline,
     options.usage,
@@ -393,6 +487,14 @@ export function scoreStateProof(options: StateProofScoreOptions): StateProofScor
       fvr: requirementMetrics.falseViolationRate,
     },
     options.baselineRunId ?? null,
+    {
+      mode,
+      runId: predictionFile.runId,
+      cold:
+        options.coldRunId === undefined
+          ? null
+          : loadRunEfficiency(options.artifactsDir, options.coldRunId),
+    },
   );
 
   const reportJsonPath = path.join(options.artifactsDir, 'reports', `${predictionFile.runId}.json`);
@@ -476,10 +578,18 @@ export function renderStateProofReport(
 
   lines.push(`# StateProof report — ${predictionFile.runId}`);
   lines.push('');
-  lines.push('- System: stateproof (Contract Agent v1 + deterministic verifier)');
+  lines.push(
+    `- System: stateproof (Contract Agent ${predictionFile.schemaVersion === '1.0.0' ? 'v1' : 'v2'} + deterministic verifier), ${predictionFile.mode ?? 'cold'} run`,
+  );
   lines.push(`- Dataset: ${predictionFile.dataset}`);
   lines.push(`- Split: ${predictionFile.split}`);
   lines.push(`- Contract run: ${predictionFile.contractRunId}`);
+  if (predictionFile.sourceContracts != null) {
+    lines.push(
+      `- Verified from the persisted bundle \`${predictionFile.sourceContracts.contractRunId}\` ` +
+        `(manifest sha256 ${predictionFile.sourceContracts.contractManifestHash.slice(0, 12)})`,
+    );
+  }
   lines.push(
     `- Cases: ${verdict.caseCount} (${verdict.goldPassCount} gold PASS, ${verdict.goldFailCount} gold FAIL)`,
   );
@@ -568,34 +678,69 @@ export function renderStateProofReport(
       `Baseline run: \`${eff.baselineRunId ?? 'unknown'}\`, values read from its own manifest.`,
     );
     lines.push('');
-    lines.push('| | Baseline | StateProof (cold) | StateProof (warm) |');
+    // A dash means "not measured". The warm column stays empty until a warm
+    // run has actually happened; it is never filled in from theory.
+    const cell = (value: number | null | undefined): string =>
+      value === null || value === undefined ? '—' : String(value);
+    const warmNote = eff.warm === null ? ' (not measured)' : ` (${eff.warm.runId ?? 'measured'})`;
+
+    lines.push(`| | Frontier baseline | StateProof v2 cold | StateProof v2 warm${warmNote} |`);
     lines.push('| --- | --- | --- | --- |');
     lines.push(
-      `| Model calls | ${eff.baseline.modelCalls} | ${eff.stateproof.contractCalls} | ${eff.stateproof.warmModelCalls} |`,
-    );
-    lines.push(`| Input tokens | ${eff.baseline.inputTokens} | ${eff.stateproof.inputTokens} | 0 |`);
-    lines.push(
-      `| Output tokens | ${eff.baseline.outputTokens} | ${eff.stateproof.outputTokens} | 0 |`,
+      `| Model calls | ${eff.baseline.modelCalls} | ${cell(eff.cold?.modelCalls)} | ${cell(eff.warm?.modelCalls)} |`,
     );
     lines.push(
-      `| Total tokens | ${eff.baseline.totalTokens} | ${eff.stateproof.totalTokens} | ${eff.stateproof.warmModelTokens} |`,
+      `| Repair calls | — | ${cell(eff.cold?.repairCalls)} | ${cell(eff.warm?.repairCalls)} |`,
     );
     lines.push(
-      `| Wall clock (ms) | ${eff.baseline.wallClockMs} | ${eff.stateproof.compilationWallMs + eff.stateproof.verificationWallMs} | ${eff.stateproof.verificationWallMs} |`,
+      `| Input tokens | ${eff.baseline.inputTokens} | ${cell(eff.cold?.inputTokens)} | ${cell(eff.warm?.inputTokens)} |`,
+    );
+    lines.push(
+      `| Output tokens | ${eff.baseline.outputTokens} | ${cell(eff.cold?.outputTokens)} | ${cell(eff.warm?.outputTokens)} |`,
+    );
+    lines.push(
+      `| Total tokens | ${eff.baseline.totalTokens} | ${cell(eff.cold?.totalTokens)} | ${cell(eff.warm?.totalTokens)} |`,
+    );
+    lines.push(
+      `| Wall clock (ms) | ${eff.baseline.wallClockMs} | ${cell(eff.cold?.wallClockMs)} | ${cell(eff.warm?.wallClockMs)} |`,
+    );
+    lines.push(
+      `| Deterministic verification (ms) | — | ${cell(eff.cold?.verificationWallMs)} | ${cell(eff.warm?.verificationWallMs)} |`,
+    );
+    lines.push(
+      `| Contract cache hits | — | ${cell(eff.cold?.cacheHits)} | ${cell(eff.warm?.cacheHits)} |`,
+    );
+    lines.push(
+      `| Safety Violation Recall | ${formatRate(requirement.safetyViolationRecall)} | ${formatRate(requirement.safetyViolationRecall)} | ${formatRate(requirement.safetyViolationRecall)} |`,
     );
     lines.push('');
     lines.push(
-      `Cache hits: ${eff.stateproof.cacheHits}. Repair calls: ${eff.stateproof.repairCalls}. ` +
-        `Model calls during verification: ${eff.stateproof.verificationModelCalls}.`,
+      `Model calls during verification: ${eff.stateproof.verificationModelCalls}. ` +
+        'Quality metrics above are this run\'s; cold and warm are proven identical by ' +
+        'byte-comparing their canonical predictions.',
     );
     lines.push('');
     if (eff.qualityGuardrailsMet) {
-      lines.push(`- Model-call reduction: ${formatRate(eff.modelCallReduction)}`);
-      lines.push(`- Model-token reduction: ${formatRate(eff.modelTokenReduction)}`);
-      lines.push(`- Wall-clock reduction: ${formatRate(eff.wallClockReduction)}`);
+      lines.push(`- Cold model-call reduction: ${formatRate(eff.modelCallReduction)}`);
+      lines.push(`- Cold model-token reduction: ${formatRate(eff.modelTokenReduction)}`);
+      lines.push(`- Cold wall-clock reduction: ${formatRate(eff.wallClockReduction)}`);
       lines.push(`- Cold-start cost: ${eff.coldStartTokens} tokens`);
-      lines.push(`- Warm marginal cost: ${eff.warmMarginalTokens} tokens per additional run`);
-      lines.push(`- Break-even: ${eff.breakEvenRuns ?? 'n/a'} run(s) of the suite`);
+      if (eff.warm === null) {
+        lines.push(
+          '- Warm marginal cost: not measured. No warm figure is reported until a warm run ' +
+            'has completed from the persisted contract bundle.',
+        );
+      } else {
+        lines.push(
+          `- Measured warm model-call reduction: ${formatRate(eff.warmModelCallReduction)}`,
+        );
+        lines.push(`- Measured warm token reduction: ${formatRate(eff.warmModelTokenReduction)}`);
+        lines.push(`- Measured warm wall-clock reduction: ${formatRate(eff.warmWallClockReduction)}`);
+        lines.push(
+          `- Measured warm marginal cost: ${eff.warmMarginalTokens} tokens per additional run`,
+        );
+        lines.push(`- Break-even: ${eff.breakEvenRuns ?? 'n/a'} run(s) of the suite`);
+      }
     } else {
       lines.push('No efficiency reduction is claimed, because the quality guardrails were not met.');
     }

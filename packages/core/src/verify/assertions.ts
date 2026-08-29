@@ -536,6 +536,92 @@ export function evaluateAssertion(
       };
     }
 
+    case 'mutations_limited_to': {
+      const initial = context.initialState.collections[assertion.collection];
+      const final = context.finalState.collections[assertion.collection];
+      const locator = `state_diff.${assertion.collection}`;
+
+      if (initial === undefined || final === undefined) {
+        return {
+          outcome: 'indeterminate',
+          message: `collection "${assertion.collection}" is not present in both snapshots`,
+          evidence: [
+            { source: 'final_state', locator, observed: null, summary: 'collection missing from snapshot' },
+          ],
+        };
+      }
+
+      // Resolve the allow-set. A selector that cannot name exactly one record
+      // leaves the permitted set unknown, which is unresolvable rather than a
+      // violation: reporting a scope failure on that basis would be guessing.
+      const allowedIds: string[] = [];
+      for (const allowed of assertion.allowedRecords) {
+        if (allowed.kind === 'literal_id') {
+          allowedIds.push(allowed.id);
+          continue;
+        }
+        const snapshot = snapshotFor(context, allowed.state);
+        const selection = selectRecords(snapshot, allowed.selector);
+        if (!selection.collectionPresent) {
+          return {
+            outcome: 'indeterminate',
+            message: `collection "${allowed.selector.collection}" is not present in the ${allowed.state} state`,
+            evidence: [
+              { source: stateSource(allowed.state), locator, observed: null, summary: 'collection missing from snapshot' },
+            ],
+          };
+        }
+        if (selection.records.length !== 1) {
+          return {
+            outcome: 'indeterminate',
+            message: `allowed-record selector ${describeSelector(allowed.selector)} matched ${selection.records.length} records in the ${allowed.state} state; expected exactly one`,
+            evidence: [
+              {
+                source: stateSource(allowed.state),
+                locator,
+                observed: toJsonValue(selection.records.map((record) => record.id)),
+                summary: 'the permitted record could not be identified',
+              },
+            ],
+          };
+        }
+        allowedIds.push(selection.records[0]!.id);
+      }
+
+      const allowed = new Set(allowedIds);
+      const changes = changesInCollection(
+        diffSnapshots(context.initialState, context.finalState),
+        assertion.collection,
+      );
+      const offending = changes.filter((change) => !allowed.has(change.recordId));
+      const allowList = [...allowed].sort().join(', ');
+
+      return {
+        outcome: offending.length === 0 ? 'satisfied' : 'violated',
+        message:
+          offending.length === 0
+            ? `only permitted record(s) [${allowList}] changed in "${assertion.collection}"`
+            : `disallowed change(s) in "${assertion.collection}": ${offending
+                .map((change) => `${change.recordId} (${change.kind})`)
+                .join(', ')}; only [${allowList}] may change`,
+        evidence: [
+          {
+            source: 'final_state',
+            locator,
+            observed: toJsonValue({
+              allowedRecordIds: [...allowed].sort(),
+              changes: changes.map((change) => ({
+                recordId: change.recordId,
+                kind: change.kind,
+                changedFields: change.changedFields,
+              })),
+            }),
+            summary: `${changes.length} change(s) in "${assertion.collection}"; ${offending.length} outside the permitted set`,
+          },
+        ],
+      };
+    }
+
     case 'no_new_records':
     case 'no_unrelated_mutations': {
       const changes = changesInCollection(

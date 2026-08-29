@@ -89,6 +89,31 @@ export function assertionEvidenceRefs(
       return stable(refs.length > 0 ? refs : ['trajectory']);
     }
 
+    case 'mutations_limited_to': {
+      const refs = [`state_diff:${assertion.collection}`];
+      for (const allowed of assertion.allowedRecords) {
+        if (allowed.kind === 'literal_id') {
+          refs.push(stateRef('final', assertion.collection, allowed.id));
+          continue;
+        }
+        const selection = selectRecords(
+          snapshotFor(context, allowed.state),
+          allowed.selector,
+        );
+        for (const record of selection.records) {
+          refs.push(stateRef(allowed.state, assertion.collection, record.id));
+        }
+      }
+      // Offending records are cited too, so a violation points at what changed.
+      for (const change of changesInCollection(
+        diffSnapshots(context.initialState, context.finalState),
+        assertion.collection,
+      )) {
+        refs.push(stateRef('final', assertion.collection, change.recordId));
+      }
+      return stable(refs);
+    }
+
     case 'no_new_records':
     case 'no_unrelated_mutations': {
       const changes = changesInCollection(
