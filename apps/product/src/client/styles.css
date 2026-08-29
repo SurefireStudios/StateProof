@@ -318,8 +318,68 @@ section:last-child { margin-bottom: 0; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* ── landing hero ────────────────────────────────────────────────────────── */
-.hero { max-width: 66ch; }
-.hero .lede { margin-top: 14px; }
+/*
+ * Centred and near the full container width. The measure is held by the text
+ * itself rather than by the section, so the headline can be wide while the
+ * paragraph under it stays readable.
+ */
+.hero {
+  text-align: center;
+  padding: clamp(12px, 3vw, 40px) 0 0;
+}
+.hero h1 {
+  max-width: 24ch;
+  margin: 0 auto;
+  font-size: clamp(30px, 1rem + 2.4vw, 46px);
+}
+.hero .lede {
+  max-width: 62ch;
+  margin: 18px auto 0;
+  font-size: clamp(16px, 0.9rem + 0.3vw, 18px);
+}
+.hero .actions { justify-content: center; }
+.hero-cta { margin-top: clamp(22px, 2.5vw, 32px); }
+
+/* The remaining entry points: present, one click away, and quiet. */
+.hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2px 4px;
+  margin-top: 18px;
+  font-size: 14px;
+  color: var(--line-strong);
+}
+.hero-links a {
+  color: var(--ink-dim);
+  padding: 5px 10px;
+  border-radius: var(--r-sm);
+  transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.hero-links a:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+  text-decoration: none;
+}
+
+/* The hosted-demo disclosure: a band, not a left-accented callout, because a
+   left accent on centred text points at nothing. */
+.disclosure {
+  /* Slightly wider than the lede above it, so it settles into two lines rather
+     than stacking into a tall block under a centred headline. */
+  max-width: 660px;
+  margin: clamp(24px, 3vw, 34px) auto 0;
+  padding: 12px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: var(--hairline);
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
 
 /*
  * The worked example, and the whole argument of the product in one panel: the
@@ -1075,6 +1135,9 @@ footer p:first-child { color: var(--ink-dim); }
 @media (max-width: 480px) {
   .actions { flex-direction: column; align-items: stretch; }
   .actions > * { width: 100%; }
+  .hero-links { gap: 0; }
+  .hero-links a { padding: 6px 8px; }
+  .disclosure { padding: 12px 16px; }
   .steps li { padding-left: 34px; }
 }
 

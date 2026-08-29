@@ -474,6 +474,39 @@ export function proofPanel(hero: HeroProof): HTMLElement {
   );
 }
 
+/**
+ * The rest of the entry points, in one centred line.
+ *
+ * Every one the deployment requires is still here and still one click away;
+ * they are quieter than the two primary actions, not fewer.
+ */
+function secondaryLinks(app: AppInfo | null): HTMLElement {
+  const links: HTMLElement[] = [
+    el('a', { href: '#/benchmark' }, 'View the benchmark'),
+    el('a', { href: '#/import' }, 'Import your own run'),
+  ];
+  if (app?.dashboardAvailable === true) {
+    links.push(el('a', { href: '/evidence/' }, 'Explore the evidence dashboard'));
+  }
+  if (app?.repositoryUrl != null) {
+    links.push(
+      el(
+        'a',
+        { href: `${app.repositoryUrl}/blob/main/REPRODUCTION.md`, rel: 'noreferrer noopener' },
+        'Reproduction guide',
+      ),
+      el('a', { href: app.repositoryUrl, rel: 'noreferrer noopener' }, 'GitHub repository'),
+    );
+  }
+
+  const children: Array<HTMLElement | null> = [];
+  links.forEach((link, index) => {
+    if (index > 0) children.push(el('span', { 'aria-hidden': 'true' }, '·'));
+    children.push(link);
+  });
+  return el('nav', { class: 'hero-links', 'aria-label': 'More ways in' }, ...children);
+}
+
 function statCard(label: string, value: string, caption: string): HTMLElement {
   return el(
     'div',
@@ -499,43 +532,19 @@ export function homeView(
         { class: 'lede' },
         'StateProof compiles success criteria once, then verifies every agent run against actual state and event evidence—without asking another model to judge the same workflow again.',
       ),
+      // Two things to press, then everything else as one quiet line. Seven
+      // equal-weight buttons is a wall, not a choice.
       el(
         'div',
-        { class: 'actions mt-3' },
+        { class: 'actions hero-cta' },
         el('a', { class: 'btn', href: '#/demo' }, 'Run the verification demo'),
         el('a', { class: 'btn ghost', href: '#/import?sample' }, 'Try the sample import'),
-        el('a', { class: 'btn ghost', href: '#/import' }, 'Import your own run'),
-        el('a', { class: 'btn ghost', href: '#/benchmark' }, 'View the benchmark'),
-        app?.dashboardAvailable === true
-          ? el('a', { class: 'btn ghost', href: '/evidence/' }, 'Explore the evidence dashboard')
-          : null,
-        app?.repositoryUrl === null || app === null
-          ? null
-          : el(
-              'a',
-              {
-                class: 'btn ghost',
-                href: `${app.repositoryUrl}/blob/main/REPRODUCTION.md`,
-                rel: 'noreferrer noopener',
-              },
-              'Reproduction guide',
-            ),
-        app?.repositoryUrl === null || app === null
-          ? null
-          : el(
-              'a',
-              { class: 'btn ghost', href: app.repositoryUrl, rel: 'noreferrer noopener' },
-              'GitHub repository',
-            ),
       ),
+      secondaryLinks(app),
       el(
-        'div',
-        { class: 'callout mt-3' },
-        el(
-          'p',
-          { class: 'small' },
-          'The public demo uses frozen task contracts and deterministic verification. Live contract compilation is intentionally disabled; no model API key is present on the server.',
-        ),
+        'p',
+        { class: 'disclosure' },
+        'The public demo uses frozen task contracts and deterministic verification. Live contract compilation is intentionally disabled; no model API key is present on the server.',
       ),
     ),
     hero === null
