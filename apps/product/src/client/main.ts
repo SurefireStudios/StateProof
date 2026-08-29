@@ -140,10 +140,9 @@ async function renderRun(runId: string): Promise<void> {
 
 function fileField(name: string): HTMLElement {
   return el(
-    'p',
-    {},
-    el('label', { for: `file-${name}`, class: 'small muted' }, name),
-    el('br'),
+    'div',
+    { class: 'field' },
+    el('label', { for: `file-${name}` }, name),
     el('input', { type: 'file', id: `file-${name}`, 'data-file': name }),
   );
 }
@@ -218,7 +217,7 @@ async function renderImport(): Promise<void> {
               }
             })();
           });
-          output.appendChild(el('p', {}, verifyButton));
+          output.appendChild(el('div', { class: 'actions mt-3' }, verifyButton));
         } else if (result.contractStatus === 'compile-available') {
           const compileButton = el(
             'button',
@@ -231,8 +230,12 @@ async function renderImport(): Promise<void> {
               output.appendChild(
                 el(
                   'p',
-                  { class: 'pill v-model', 'data-glyph': '◆' },
-                  'Model-assisted compilation in progress',
+                  { class: 'mt-2' },
+                  el(
+                    'span',
+                    { class: 'pill v-model', 'data-glyph': '◆' },
+                    'Model-assisted compilation in progress',
+                  ),
                 ),
               );
               try {
@@ -246,12 +249,12 @@ async function renderImport(): Promise<void> {
               }
             })();
           });
-          output.appendChild(el('p', {}, compileButton));
+          output.appendChild(el('div', { class: 'actions mt-3' }, compileButton));
         } else {
           output.appendChild(
             el(
-              'p',
-              {},
+              'div',
+              { class: 'actions mt-3' },
               el('a', { class: 'btn ghost', href: '#/demo' }, 'Try the built-in demo instead'),
             ),
           );
@@ -284,7 +287,7 @@ async function renderImport(): Promise<void> {
         { class: 'callout warn' },
         el(
           'p',
-          { style: 'margin:0' },
+          {},
           'Upload synthetic or approved data only. Files are held in memory for this session and never written to disk. The only domain currently supported is refund operations: orders, refunds, emails and support cases.',
         ),
       ),
@@ -297,7 +300,7 @@ async function renderImport(): Promise<void> {
         { class: 'card' },
         el('h3', {}, 'Option A — run package'),
         el('p', { class: 'small muted' }, 'A .zip containing task.json, tool-registry.json, initial-state.json, trajectory.jsonl, final-state.json, final-response.txt and optionally compiled-contract.json.'),
-        el('p', {}, zipInput),
+        el('div', { class: 'field mt-2' }, zipInput),
       ),
       el(
         'div',
@@ -312,7 +315,7 @@ async function renderImport(): Promise<void> {
         fileField('compiled-contract.json'),
       ),
     ),
-    el('section', {}, el('p', {}, submit), output),
+    el('section', {}, el('div', { class: 'actions' }, submit), el('div', { class: 'mt-3' }, output)),
     el(
       'section',
       {},

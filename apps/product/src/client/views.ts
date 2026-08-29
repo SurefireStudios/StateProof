@@ -6,6 +6,11 @@ import { append, clear, el, frag, highlight, ms, pill } from './dom';
  * imported task instruction or agent response cannot become markup.
  */
 
+/** The status edge on a requirement card; the pill still carries the word. */
+function statusEdge(status: string): string {
+  return status === 'PASS' ? 'r-pass' : status === 'FAIL' ? 'r-fail' : 'r-review';
+}
+
 export function requirementCard(requirement: RunView['requirements'][number]): HTMLElement {
   const evidence =
     requirement.evidence.length === 0
@@ -37,7 +42,7 @@ export function requirementCard(requirement: RunView['requirements'][number]): H
 
   return el(
     'article',
-    { class: 'req reveal' },
+    { class: `req reveal ${statusEdge(requirement.status)}` },
     el(
       'div',
       { class: 'req-head' },
@@ -53,7 +58,7 @@ export function requirementCard(requirement: RunView['requirements'][number]): H
       { class: 'req-body' },
       requirement.description === ''
         ? null
-        : el('p', { class: 'small', style: 'margin:0 0 8px' }, requirement.description),
+        : el('p', { class: 'small req-desc' }, requirement.description),
       el('p', { class: 'req-reason' }, requirement.reason),
       ...requirement.limitations.map((limitation) =>
         el('p', { class: 'small faint' }, `Not checked: ${limitation}`),
@@ -66,7 +71,7 @@ export function requirementCard(requirement: RunView['requirements'][number]): H
 export function timelineList(events: RunView['timeline']): HTMLElement {
   return el(
     'ol',
-    { class: 'timeline card', id: 'timeline', style: 'padding:0' },
+    { class: 'timeline card', id: 'timeline' },
     ...events.map((event) =>
       el(
         'li',
@@ -115,7 +120,7 @@ export function diffList(diff: RunView['diff']): HTMLElement {
             { class: 'diff-row', id: `rec-${collection.collection}-${change.recordId}` },
             el(
               'div',
-              { class: 'diff-head', style: 'padding:0 0 6px' },
+              { class: 'diff-row-head' },
               el('span', { class: `tag ${change.kind}` }, change.kind),
               el('span', { class: 'mono' }, change.recordId),
               change.cited ? el('span', { class: 'faint small' }, 'cited') : null,
@@ -186,9 +191,9 @@ export function runInspector(run: RunView): DocumentFragment {
       {},
       el(
         'div',
-        { class: 'req-head', style: 'padding:0 0 12px' },
+        { class: 'run-title' },
         pill(run.verdict, { solid: true }),
-        el('h1', { style: 'margin:0' }, run.label),
+        el('h1', {}, run.label),
       ),
       el(
         'dl',
@@ -211,10 +216,9 @@ export function runInspector(run: RunView): DocumentFragment {
         el('dd', {}, `${String(run.modelCalls)} / ${String(run.modelTokens)}`),
       ),
       el(
-        'p',
-        { style: 'margin-top:12px' },
+        'div',
+        { class: 'actions mt-3' },
         el('a', { class: 'btn', href: `${exportBase}?format=json` }, 'Export evidence (JSON)'),
-        ' ',
         el('a', { class: 'btn ghost', href: `${exportBase}?format=md` }, 'Export evidence (Markdown)'),
       ),
     ),
@@ -225,7 +229,7 @@ export function runInspector(run: RunView): DocumentFragment {
       'section',
       {},
       el('h2', {}, 'Original task'),
-      el('div', { class: 'card' }, el('p', { style: 'margin:0' }, run.task)),
+      el('div', { class: 'card' }, el('p', {}, run.task)),
     ),
 
     el(
@@ -295,7 +299,7 @@ export function runInspector(run: RunView): DocumentFragment {
         ? null
         : el(
             'div',
-            { class: 'callout warn', style: 'margin-top:12px' },
+            { class: 'callout warn mt-2' },
             el('h3', {}, 'Ambiguities the contract declared'),
             el('ul', {}, ...run.contract.ambiguities.map((item) => el('li', { class: 'small' }, item))),
           ),
@@ -313,7 +317,7 @@ export function homeView(benchmark: BenchmarkView | null): DocumentFragment {
   return frag(
     el(
       'section',
-      { class: 'grid grid-2' },
+      { class: 'grid grid-2 hero' },
       el(
         'div',
         {},
@@ -324,15 +328,14 @@ export function homeView(benchmark: BenchmarkView | null): DocumentFragment {
           'StateProof compiles an agent task into a reusable executable contract, then verifies every run against real state and trajectory evidence — without paying another frontier model to reinterpret the same task each time.',
         ),
         el(
-          'p',
-          {},
+          'div',
+          { class: 'actions mt-3' },
           el('a', { class: 'btn', href: '#/demo' }, 'Run the verification demo'),
-          ' ',
           el('a', { class: 'btn ghost', href: '#/import' }, 'Import an agent run'),
         ),
         el(
           'p',
-          { class: 'faint small' },
+          { class: 'faint small mt-2' },
           'The demo needs no API key and makes no model call.',
         ),
       ),
@@ -345,10 +348,10 @@ export function homeView(benchmark: BenchmarkView | null): DocumentFragment {
           { class: 'small muted' },
           'State and process are the evidence. A confident summary and a clean tool log can both be present while the work is wrong — a no-op, the wrong amount, an approval recorded after the money moved.',
         ),
-        el('h3', { style: 'margin-top:14px' }, 'How it works'),
+        el('h3', { class: 'mt-3' }, 'How it works'),
         el(
           'ol',
-          { class: 'steps', style: 'margin-top:8px' },
+          { class: 'steps' },
           el('li', {}, el('strong', {}, 'Compile the success contract.'), ' Once per task, before any run is seen.'),
           el('li', {}, el('strong', {}, 'Inspect trajectory and state.'), ' Deterministic code, no model in the loop.'),
           el('li', {}, el('strong', {}, 'Produce an evidence-backed verdict.'), ' Every citation points at a real record or event.'),
@@ -362,7 +365,7 @@ export function homeView(benchmark: BenchmarkView | null): DocumentFragment {
           el(
             'div',
             { class: 'callout warn' },
-            el('p', { style: 'margin:0' }, 'Benchmark results are unavailable: run `pnpm submission:finalize`.'),
+            el('p', {}, 'Benchmark results are unavailable: run `pnpm submission:finalize`.'),
           ),
         )
       : el(
@@ -400,10 +403,10 @@ export function homeView(benchmark: BenchmarkView | null): DocumentFragment {
           ),
           el(
             'div',
-            { class: 'callout', style: 'margin-top:14px' },
-            el('p', { style: 'margin:0' }, benchmark.scopeNote),
+            { class: 'callout mt-3' },
+            el('p', {}, benchmark.scopeNote),
           ),
-          el('p', {}, el('a', { href: '#/benchmark' }, 'See the full comparison →')),
+          el('p', { class: 'mt-3' }, el('a', { href: '#/benchmark' }, 'See the full comparison →')),
         ),
   );
 }
@@ -426,13 +429,13 @@ export function demoIntro(summary: DemoSummary, onVerify: () => void): DocumentF
     el(
       'section',
       { class: 'grid grid-2' },
-      el('div', { class: 'card' }, el('h3', {}, 'Original task'), el('p', { style: 'margin:0' }, summary.task)),
+      el('div', { class: 'card' }, el('h3', {}, 'Original task'), el('p', {}, summary.task)),
       el(
         'div',
         { class: 'card' },
         el('h3', {}, "The agent's final claim"),
-        el('p', { style: 'margin:0' }, summary.agentClaim),
-        el('p', { class: 'faint small', style: 'margin-top:8px' }, 'This is the artefact a human would normally read.'),
+        el('p', {}, summary.agentClaim),
+        el('p', { class: 'faint small mt-1' }, 'This is the artefact a human would normally read.'),
       ),
     ),
     el(
@@ -446,8 +449,8 @@ export function demoIntro(summary: DemoSummary, onVerify: () => void): DocumentF
         el('div', { class: 'card' }, el('h3', {}, 'State'), el('p', { class: 'stat' }, String(summary.changedRecordCount)), el('p', { class: 'small faint' }, `changed records across ${String(summary.collectionCount)} collections`)),
         el('div', { class: 'card' }, el('h3', {}, 'Contract'), el('p', { class: 'stat' }, String(summary.requirementCount)), el('p', { class: 'small faint' }, 'requirements, compiled before this run was seen')),
       ),
-      el('p', { style: 'margin-top:16px' }, button),
-      el('p', { class: 'faint small' }, `Case ${summary.caseId}. ${summary.whyThisCase}`),
+      el('div', { class: 'actions mt-3' }, button),
+      el('p', { class: 'faint small mt-2' }, `Case ${summary.caseId}. ${summary.whyThisCase}`),
     ),
   );
 }
@@ -491,8 +494,8 @@ export function importSummary(result: ImportResult): HTMLElement {
         el('dt', {}, 'Contract'),
         el('dd', {}, result.contractStatus),
       ),
-      ...result.warnings.map((warning) => el('p', { class: 'small', style: 'color:var(--review)' }, warning)),
-      el('p', { class: 'muted' }, result.nextAction),
+      ...result.warnings.map((warning) => el('p', { class: 'small warn-text' }, warning)),
+      el('p', { class: 'muted mt-2' }, result.nextAction),
     ),
   );
 }
@@ -507,7 +510,7 @@ export function benchmarkPage(benchmark: BenchmarkView): DocumentFragment {
       el('h3', {}, `${split.label} — ${String(split.caseCount)} cases`),
       el(
         'div',
-        { class: 'table-wrap', style: 'margin-bottom:18px' },
+        { class: 'table-wrap mb-3' },
         el(
           'table',
           {},
@@ -592,7 +595,7 @@ export function benchmarkPage(benchmark: BenchmarkView): DocumentFragment {
       ),
       el(
         'ul',
-        { style: 'margin-top:12px' },
+        { class: 'mt-2' },
         ...benchmark.reductions.map((reduction) =>
           el('li', { class: 'small' }, `${reduction.label}: ${reduction.value}`),
         ),
@@ -609,8 +612,8 @@ export function benchmarkPage(benchmark: BenchmarkView): DocumentFragment {
           el(
             'li',
             {},
-            el('h3', { style: 'margin-bottom:2px' }, entry.title),
-            el('p', { class: 'small muted', style: 'margin:0' }, entry.outcome),
+            el('h3', {}, entry.title),
+            el('p', { class: 'small muted' }, entry.outcome),
           ),
         ),
       ),
@@ -623,7 +626,7 @@ export function benchmarkPage(benchmark: BenchmarkView): DocumentFragment {
         { class: 'callout' },
         el(
           'p',
-          { style: 'margin:0' },
+          {},
           'For raw artifacts — manifests, predictions, raw model responses and compiled contracts — build the static evidence dashboard with ',
           el('code', {}, 'pnpm dashboard:build'),
           '. This product is the interactive surface; that one is the evidence trail.',

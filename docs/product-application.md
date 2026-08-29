@@ -123,7 +123,7 @@ it.
 | Entry count, entry size and total expansion limits | same |
 | Upload size limit (8 MB) and body limit (12 MB) | `src/server/importer.ts`, `src/server/index.ts` |
 | Content-Security-Policy, `nosniff`, `no-referrer` | `src/server/index.ts` |
-| No inline script or style | the build emits external files only |
+| No inline script or style, `style` attributes included | the build emits external files only; a test fails if a client file sets one, because the CSP drops it silently |
 | Structural DOM rendering — never `innerHTML` | `src/client/dom.ts` |
 | No persistence: runs and imports live in memory with a TTL | `src/server/runs.ts`, `src/server/importer.ts` |
 | No filesystem access from the browser | the client only calls the JSON API |

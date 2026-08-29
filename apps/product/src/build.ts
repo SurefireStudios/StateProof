@@ -24,12 +24,14 @@ const SHELL = `<!doctype html>
 <body>
 <a class="visually-hidden" href="#app">Skip to content</a>
 <header class="topbar">
-  <a class="brand" href="#/">
-    <span class="brand-mark" aria-hidden="true"></span>
-    <span>StateProof</span>
-    <span class="brand-tag">The agent said it was done. Prove it.</span>
-  </a>
-  <nav class="main" id="nav" aria-label="Primary"></nav>
+  <div class="topbar-inner">
+    <a class="brand" href="#/">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>StateProof</span>
+      <span class="brand-tag">The agent said it was done. Prove it.</span>
+    </a>
+    <nav class="main" id="nav" aria-label="Primary"></nav>
+  </div>
 </header>
 <main id="app" tabindex="-1"></main>
 <footer>

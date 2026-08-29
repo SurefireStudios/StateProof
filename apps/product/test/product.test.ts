@@ -507,6 +507,17 @@ describe('the production build', () => {
     expect(shell).toContain('The agent said it was done. Prove it.');
   });
 
+  it('sets no style attribute from the client, which the CSP would drop', () => {
+    // `style-src 'self'` blocks inline style attributes, including ones set
+    // through setAttribute. Spacing that only exists in markup never renders,
+    // and the browser fails silently — so keep every rule in the stylesheet.
+    for (const file of ['views.ts', 'main.ts', 'dom.ts']) {
+      const text = readFileSync(path.join(PRODUCT_SRC, 'client', file), 'utf8');
+      expect(text, file).not.toMatch(/\bstyle:\s*['"`]/);
+      expect(text, file).not.toMatch(/setAttribute\(\s*['"`]style['"`]/);
+    }
+  });
+
   it('ships no credential in the bundle', () => {
     const bundle = readFileSync(path.join(REPO_ROOT, 'apps', 'product', 'dist', 'client.js'), 'utf8');
     expect(bundle).not.toMatch(/sk-ant-/);
