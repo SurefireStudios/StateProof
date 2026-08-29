@@ -4,6 +4,22 @@
 > verifies every run against real state and trajectory evidence—without paying
 > another frontier model to reinterpret the same task each time.
 
+## Live
+
+| | |
+| --- | --- |
+| Product | <https://stateproof-production.up.railway.app/> |
+| Demo | <https://stateproof-production.up.railway.app/demo> |
+| Import | <https://stateproof-production.up.railway.app/import> |
+| Benchmark | <https://stateproof-production.up.railway.app/benchmark> |
+| Evidence dashboard | <https://stateproof-production.up.railway.app/evidence/> |
+| Run inspector | <https://stateproof-production.up.railway.app/evidence/inspector.html> |
+| Agent trajectories | <https://stateproof-production.up.railway.app/evidence/trajectories.html> |
+| Health | <https://stateproof-production.up.railway.app/healthz> |
+
+Deterministic throughout: no model API key is configured on that server, and no
+route calls a model.
+
 ---
 
 ## 1. Who has the problem

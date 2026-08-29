@@ -677,11 +677,20 @@ describe('links out of the product', () => {
 
   it('hosts the evidence dashboard instead of reimplementing it', () => {
     const server = readFileSync(path.join(PRODUCT_SRC, 'server', 'index.ts'), 'utf8');
-    expect(server).toContain("'/dashboard/'");
+    expect(server).toContain("'/evidence/'");
     expect(server).toContain("path.join(REPO_ROOT, 'apps', 'dashboard', 'dist')");
-    // Serving it must not mean copying it.
+
+    // Serving it must not mean copying it. Linking to a dashboard page is the
+    // point; importing its generator, or rebuilding its model, would be the
+    // duplication this guards against.
     const views = readFileSync(path.join(PRODUCT_SRC, 'client', 'views.ts'), 'utf8');
-    expect(views).not.toContain('inspector.html');
+    for (const forbidden of ['buildModel', 'renderInspector', 'renderBenchmark', 'DashboardModel']) {
+      expect(views, forbidden).not.toContain(forbidden);
+    }
+    const productSources = sourceFiles(PRODUCT_SRC).filter((file) => file.endsWith('.ts'));
+    for (const file of productSources) {
+      expect(readFileSync(file, 'utf8'), file).not.toContain('apps/dashboard/src');
+    }
   });
 });
 

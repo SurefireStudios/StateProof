@@ -76,9 +76,10 @@ function finalViews(model: DashboardModel): string {
 <section>
   <h2>Locked and combined results</h2>
   <div class="callout warn">
-    <p style="margin:0">The four locked challenge cases have <strong>not been run</strong>.
-    Nothing is shown here rather than showing a placeholder, because a table that
-    renders before the measurement exists is the failure this project is about.</p>
+    <p style="margin:0"><strong>No final evaluation document is present in this build</strong>, so
+    the locked and combined tables have nothing to read. Nothing is shown here rather than a
+    placeholder, because a table that renders before the measurement exists is the failure this
+    project is about.</p>
   </div>
 </section>`;
   }

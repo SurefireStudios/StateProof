@@ -889,9 +889,14 @@ export function benchmarkPage(benchmark: BenchmarkView): DocumentFragment {
         el(
           'p',
           {},
-          'For raw artifacts — manifests, predictions, raw model responses and compiled contracts — build the static evidence dashboard with ',
-          el('code', {}, 'pnpm dashboard:build'),
-          '. This product is the interactive surface; that one is the evidence trail.',
+          'This product is the interactive surface; the evidence dashboard is the trail behind it — manifests, predictions, raw model responses and compiled contracts.',
+        ),
+        el(
+          'div',
+          { class: 'actions mt-3' },
+          el('a', { class: 'btn ghost', href: '/evidence/' }, 'Evidence dashboard'),
+          el('a', { class: 'btn ghost', href: '/evidence/inspector.html' }, 'Run inspector'),
+          el('a', { class: 'btn ghost', href: '/evidence/trajectories.html' }, 'Agent trajectories'),
         ),
       ),
     ),

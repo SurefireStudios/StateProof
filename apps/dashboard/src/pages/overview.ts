@@ -101,8 +101,8 @@ ${
       ? `
 <section>
   <div class="callout warn">
-    <p style="margin:0"><strong>The locked split has not been run.</strong> Everything above is a
-    development result, and is labelled as one.</p>
+    <p style="margin:0"><strong>No final evaluation document is present in this build.</strong>
+    Everything above is a development result, and is labelled as one.</p>
   </div>
 </section>`
       : `
@@ -171,10 +171,17 @@ ${
 
 <section>
   <h2>Scope, stated plainly</h2>
-  <p class="muted">These are <strong>development-split</strong> results in a synthetic
-  refund-operations domain. The four locked challenge cases have deliberately not been run, so
-  nothing here is tuned against them. Cost in USD is not claimed, because no pricing rule is
-  implemented. See <a href="architecture.html#limitations">limitations</a>.</p>
+  <p class="muted">${
+    model.final === null
+      ? `These are <strong>development-split</strong> results in a synthetic refund-operations
+  domain. The final evaluation document is not present in this build, so no locked or combined
+  figure is shown.`
+      : `These results cover a synthetic refund-operations domain. Eight cases were used during
+  development; four held-out cases were evaluated exactly once after the source freeze and were
+  never used for tuning.`
+  } This is a twelve-case evaluation and <strong>does not establish universal
+  generalization</strong>. Cost in USD is an estimate against a dated published price list, not an
+  invoice. See <a href="architecture.html#limitations">limitations</a>.</p>
 </section>
 `;
 
