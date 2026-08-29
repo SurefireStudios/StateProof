@@ -39,6 +39,9 @@
       ],
       "@stateproof/agents": [
         "./packages/agents/src/index.ts"
+      ],
+      "@stateproof/submission": [
+        "./packages/submission/src/index.ts"
       ]
     }
   }

@@ -1,0 +1,19 @@
+{
+  "name": "dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsx src/build.ts",
+    "dev": "tsx src/serve.ts"
+  },
+  "dependencies": {
+    "@stateproof/agents": "workspace:*",
+    "@stateproof/benchmark": "workspace:*",
+    "@stateproof/core": "workspace:*",
+    "@stateproof/submission": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "4.19.2"
+  }
+}

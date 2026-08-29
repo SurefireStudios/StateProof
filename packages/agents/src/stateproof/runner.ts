@@ -114,6 +114,14 @@ export interface WarmRunOptions extends CommonRunOptions {
   readonly mode: 'warm';
   /** The contract run id whose persisted bundle this run verifies from. */
   readonly contractsFrom: string;
+  /**
+   * Where to read the bundle from, when that is not where output goes.
+   *
+   * A replay verifies the committed contracts but must not litter the
+   * repository with a new run's artifacts every time someone reproduces the
+   * result, so it reads here and writes to a scratch directory.
+   */
+  readonly contractsArtifactsDir?: string;
 }
 
 export type StateProofRunOptions = ColdRunOptions | WarmRunOptions;
@@ -157,6 +165,21 @@ function packageLockHash(): string | null {
 
 function relative(root: string, target: string): string {
   return path.relative(root, target).split(path.sep).join('/');
+}
+
+/**
+ * The stage a run belongs to.
+ *
+ * This was left at `gate-3b-` through Gate 3C, which mislabelled that run's
+ * manifest. The historical artifact is kept exactly as written — rewriting a
+ * recorded run to look tidier is precisely the habit this project exists to
+ * catch — so the constant is fixed forward and the old label is documented as
+ * cosmetic in docs/limitations.md.
+ */
+export const STATEPROOF_STAGE_PREFIX = 'gate-3c-stateproof';
+
+export function stateProofStage(split: Split, mode: 'cold' | 'warm'): string {
+  return `${STATEPROOF_STAGE_PREFIX}-${split}-${mode}`;
 }
 
 export function makeStateProofRunId(split: Split, mode: 'cold' | 'warm' = 'cold'): string {
@@ -326,7 +349,7 @@ export async function runStateProof(options: StateProofRunOptions): Promise<Stat
     runId,
     createdAt: startedAt,
     system: 'stateproof',
-    stage: `gate-3b-stateproof-${options.split}-${warm ? 'warm' : 'cold'}`,
+    stage: stateProofStage(options.split, warm ? 'warm' : 'cold'),
     mode: 'live',
     gitCommitSha: source.commitSha,
     sourceTreeClean: source.clean,
@@ -495,9 +518,10 @@ function planWarm(
   casesDir: string,
 ): PhaseOneResult {
   const startedMs = Date.now();
+  const contractsDir = options.contractsArtifactsDir ?? options.artifactsDir;
   let bundle;
   try {
-    bundle = loadContractBundle(options.artifactsDir, options.contractsFrom);
+    bundle = loadContractBundle(contractsDir, options.contractsFrom);
   } catch (error) {
     if (error instanceof ContractBundleError) throw error;
     throw error;

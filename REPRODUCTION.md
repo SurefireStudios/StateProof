@@ -1,159 +1,118 @@
 # Reproduction
 
-Everything below runs offline. No API key is required, read, or accepted at
-this stage of the project.
+Everything in this document runs **without an API credential**. Neither
+`STATEPROOF_ANTHROPIC_API_KEY` nor `ANTHROPIC_API_KEY` is read, required, or
+accepted by any command below.
 
 ## Requirements
 
-- Node.js `>=20.10.0` (built and verified on 20.10.0)
-- pnpm `>=8.12.0` (built and verified on 8.12.0)
+- Node.js `>=20.10.0`
+- pnpm `>=8.12.0`
 
-## Working commands
+## The one command
 
 ```bash
 pnpm install
+pnpm reproduce
 ```
+
+`pnpm reproduce` performs sixteen checks and prints `RESULT: PASSED` only if all
+of them hold:
+
+1. Core-12 fixtures validate (schema + semantic + gold consistency).
+2. Hard-12 fixtures validate.
+3. The pinned registry `submission/reproduction-manifest.json` parses and every
+   referenced file exists.
+4. Every pinned prompt hash, contract hash and canonical prediction hash is
+   re-derived and compared.
+5. No locked case is registered or replayed.
+6. The committed v3 contract bundle loads with full integrity verification.
+7. The eight hard-development cases are re-verified from that bundle.
+8. Zero model calls; `modelUsage` is null.
+9. Zero model tokens.
+10. No raw model-response file is written.
+11. All eight cases report `cacheHit: true`.
+12. Canonical predictions are byte-identical to the pinned warm run.
+13. Contract hashes match the pinned run, case by case.
+14. SVR, FVR, CDR and BVA match the pinned report exactly.
+15. Every evidence reference resolves (80/80).
+16. No locked case reaches the prediction phase, and only development cases are
+    scored.
+
+Expected tail:
+
+```text
+  model calls        0 (baseline needed 8)
+  model tokens       0 (baseline needed 84616)
+  SVR / FVR / CDR    100.0% / 0.0% / 100.0%
+  BVA                100.0%
+
+RESULT: PASSED (16 checks)
+```
+
+It fails on a tampered contract, a missing artifact, a hash mismatch, a changed
+prediction, an unresolved evidence reference or any locked-case access.
+
+## Faster variant
+
+```bash
+pnpm reproduce:check
+```
+
+Validates the benchmarks, the registry, every artifact hash and run provenance,
+without re-running verification.
+
+## Everything else that runs offline
 
 ```bash
 pnpm typecheck
-```
-
-Strict TypeScript across `packages/core` and `packages/benchmark`, including
-test files. Exits non-zero on any type error.
-
-```bash
 pnpm test
-```
-
-Runs the whole Vitest suite: schema validation, the assertion vocabulary,
-state diffing, verdict roll-up, canonical serialization, sample-case
-semantics, gold isolation, and deterministic loading.
-
-```bash
 pnpm benchmark:validate
+pnpm benchmark:validate-hard
+pnpm dashboard:build
+pnpm dev                      # http://localhost:4173/
+pnpm compare:development "Frontier baseline=RUN-baseline-hard-development-live-20260828T233139Z" \
+                         "StateProof v3 cold=RUN-stateproof-hard-development-cold-20260829T022133Z" \
+                         "StateProof v3 warm=RUN-stateproof-hard-development-warm-20260829T022344Z"
+pnpm check:provenance RUN-stateproof-hard-development-cold-20260829T022133Z
 ```
 
-Loads every case in `benchmarks/phantombench-12/cases`, validates each fixture
-file against its schema, checks structural consistency, replays the gold
-contract through the deterministic verifier, and compares the result with the
-gold verdict and case metadata. Prints a dataset hash and a per-requirement
-breakdown, and exits non-zero on any error.
+`pnpm check:provenance` re-derives a run's prompt hash from the commit its
+manifest records. It passes on the v2 and v3 runs and **fails on the Gate 3A
+run**, which is the documented provenance defect described in
+[`docs/limitations.md`](docs/limitations.md).
 
-Expected output for the current dataset ends with:
+## Commands that do require a credential
 
-```text
-12 case(s) validated, 0 error(s)
-RESULT: PASSED
-```
-
-The dataset hash is derived from fixture content. It changes whenever a
-fixture changes, which is the point: any future metric can be tied back to the
-exact dataset that produced it.
-
-```bash
-pnpm fixtures:generate
-```
-
-Regenerates the eleven generated fixtures from `scripts/fixtures/` and rewrites
-the split manifests. `PB-A03` is frozen and is never rewritten. Running it on an
-unchanged tree is a no-op in content terms; `pnpm benchmark:validate` then
-re-derives every final state independently.
-
-## Requires model credentials
-
-Credentials go in a git-ignored `.env` at the repository root:
-
-```text
-STATEPROOF_ANTHROPIC_API_KEY=...
-```
-
-**Deliberately not `ANTHROPIC_API_KEY`.** That variable belongs to a Claude
-Code session's own authentication; StateProof never reads it, and never writes
-to it.
+These are how the recorded results were produced. Nothing in this repository
+needs them re-run.
 
 ```bash
 pnpm benchmark:smoke-model
+pnpm benchmark:baseline
+pnpm benchmark:baseline-hard
+pnpm benchmark:stateproof-hard -- --split development \
+  --prompt prompts/contract-agent/v3.md \
+  --baseline-run RUN-baseline-hard-development-live-20260828T233139Z
 ```
 
-One tiny structured request against the configured provider and model. It
-reads no benchmark case and writes nothing, so an invalid API configuration
-surfaces in seconds instead of eight cases into a real run.
+They read `STATEPROOF_ANTHROPIC_API_KEY` from `.env` — deliberately **not**
+`ANTHROPIC_API_KEY`, which belongs to your own tooling and is never read. A live
+cold run also refuses to start unless the tracked working tree matches HEAD, so
+every result stays re-derivable from a commit.
 
-```bash
-pnpm benchmark:baseline -- --split development
-```
+Expected variability: a live run calls a frontier model, so token counts and
+wall-clock time vary between runs, and a differently-worded contract is possible.
+The warm path has no such variability — it is deterministic by construction, and
+the repeat check in `pnpm reproduce` is what demonstrates that.
 
-Runs the fair baseline over the eight development cases, writes prediction
-artifacts, then scores them against gold in a separate phase.
+## What the recorded runs cost
 
-**Neither command has been run.** No credentials are configured in this
-environment, so both exit with status 2 and this message, having written
-nothing:
+| Run | Model calls | Tokens | Wall clock |
+| --- | --- | --- | --- |
+| Frontier baseline (Hard-12 development) | 8 | 84,616 | 115.1 s |
+| StateProof v3 cold | 3 | 29,889 | 53.6 s |
+| StateProof v3 warm | 0 | 0 | 0.386 s |
 
-```text
-No model credentials are configured, so no live run can be made.
-
-Set STATEPROOF_ANTHROPIC_API_KEY in a local .env at the repository root (see
-.env.example). .env is git-ignored and is loaded automatically.
-
-StateProof deliberately does not read ANTHROPIC_API_KEY: that variable
-belongs to your Claude Code session's own authentication.
-
-Nothing has been written. A baseline run is never simulated: a report with
-no real model behind it would be worse than no report.
-```
-
-To run them: put `STATEPROOF_ANTHROPIC_API_KEY` in `.env` and re-run. Provider
-`anthropic`, model `claude-opus-5`, effort `high`, max tokens 16000, 120s
-timeout, one schema repair retry. `STATEPROOF_MODEL_ID`,
-`STATEPROOF_MODEL_EFFORT`, `STATEPROOF_MODEL_MAX_TOKENS` and
-`STATEPROOF_MODEL_TIMEOUT_MS` override those defaults and are recorded at their
-actual values in the run manifest. Expect eight model calls plus at most one repair each; runtime is
-dominated by the provider and the payloads are large (full trajectory plus both
-state snapshots per case). Cost is recorded from real usage in the run
-manifest; nothing is estimated in advance.
-
-Artifacts land under `artifacts/`:
-
-| Path | Contents |
-| --- | --- |
-| `artifacts/model-responses/<runId>/` | Every attempt: prompt, raw response, usage, validation error |
-| `artifacts/predictions/<runId>.json` | Prediction-phase output, written before any gold file is read |
-| `artifacts/run-manifests/<runId>.json` | Model, config, prompt hashes, dataset hash, commit SHA, timing, usage |
-| `artifacts/reports/<runId>.{json,md}` | Metrics, confusion matrix, per-case results |
-
-The locked split is refused unless `STATEPROOF_ALLOW_LOCKED_RUN=1` is set. Do
-not set it before the freeze point described in `docs/evaluation-plan.md`.
-
-## Not implemented yet
-
-These are part of the intended final command contract and are **deliberately
-absent** rather than stubbed, so that no command can report a success it did
-not achieve:
-
-| Command                     | Purpose                                            |
-| --------------------------- | -------------------------------------------------- |
-| `pnpm benchmark:stateproof` | Run Contract Agent → Evidence Agent → verifier.     |
-| `pnpm benchmark:report`     | Generate metrics and the human-readable report.     |
-| `pnpm reproduce`            | Re-score from committed captured responses, no key. |
-| `pnpm run:live`             | Live provider run; will document variability, runtime and cost. |
-| `pnpm dev`                  | Judge-facing web app.                               |
-
-Running any of them today fails with an "unknown script" error from pnpm. That
-is the intended behaviour for now.
-
-When `pnpm run:live` exists it will document, in this file: the required
-environment variable, the provider and model id, approximate runtime,
-approximate cost, and expected run-to-run variability. `pnpm reproduce` will
-work from committed captured responses with no key at all, and is the
-canonical reproducible artifact.
-
-## Determinism
-
-Fixture loading, canonical serialization, hashing, and the deterministic
-verifier contain no timestamps, no randomness, and no clock reads. Verifier
-output is a pure function of the fixture — `pnpm benchmark:validate` re-runs
-the verification internally and fails the case if the two runs differ.
-
-Running `pnpm benchmark:validate` twice on an unchanged working tree produces
-byte-identical output apart from the reported wall-clock duration.
+USD cost is not stated: no pricing rule is implemented, and inventing one would
+be a fabricated number in a project about not fabricating numbers.

@@ -2,8 +2,8 @@
 
 ## Summary
 
-**None.** Every source file, schema, fixture and test in this repository was
-written during the competition window. The only files not written as
+**None.** Every source file, schema, fixture, prompt, test, dashboard page and
+artifact in this repository was produced during the competition window. The only files not written as
 implementation are the supplied specification documents listed below.
 
 ## Starting state

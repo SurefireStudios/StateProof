@@ -13,10 +13,11 @@ export default defineConfig({
       '@stateproof/benchmark': resolveFromRoot('./packages/benchmark/src/index.ts'),
       '@stateproof/model-provider': resolveFromRoot('./packages/model-provider/src/index.ts'),
       '@stateproof/agents': resolveFromRoot('./packages/agents/src/index.ts'),
+      '@stateproof/submission': resolveFromRoot('./packages/submission/src/index.ts'),
     },
   },
   test: {
-    include: ['packages/*/test/**/*.test.ts'],
+    include: ['packages/*/test/**/*.test.ts', 'apps/*/test/**/*.test.ts'],
     environment: 'node',
     reporters: ['default'],
   },

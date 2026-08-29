@@ -37,3 +37,4 @@ Thumbs.db
 # CLAUDE.md is deliberately NOT ignored: it is the repository instruction file.
 0[0-9]_*.md
 CLAUDE_*.md
+apps/dashboard/dist/

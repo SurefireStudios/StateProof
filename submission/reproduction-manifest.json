@@ -1,0 +1,240 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedFor": "gate-4a",
+  "generatedAt": "2026-08-29T03:28:53.529Z",
+  "sourceCommits": {
+    "gate3cSource": "42135267c23841b7c8bb960c01749f58bb53481a",
+    "gate3cResult": "57b8c59"
+  },
+  "datasets": [
+    {
+      "name": "phantombench-12",
+      "casesDir": "benchmarks/phantombench-12/cases",
+      "splitsDir": "benchmarks/phantombench-12/splits",
+      "caseCount": 12
+    },
+    {
+      "name": "phantombench-hard-12",
+      "casesDir": "benchmarks/phantombench-hard-12/cases",
+      "splitsDir": "benchmarks/phantombench-hard-12/splits",
+      "caseCount": 12
+    }
+  ],
+  "prompts": [
+    {
+      "id": "baseline-evaluator-v1",
+      "label": "Baseline evaluator v1",
+      "path": "prompts/baseline-evaluator/v1.md",
+      "sha256": "c2bcb3f7adb43e6c8c3c5ba0efb223373ac31500107860c4cd57e203f6646d62"
+    },
+    {
+      "id": "baseline-evaluator-v2",
+      "label": "Baseline evaluator v2",
+      "path": "prompts/baseline-evaluator/v2.md",
+      "sha256": "d5a03c05b36d9b6886298b4d2228a79e04d2726152bee3df9844d2923a0695e4"
+    },
+    {
+      "id": "contract-agent-v1",
+      "label": "Contract Agent v1",
+      "path": "prompts/contract-agent/v1.md",
+      "sha256": "fea2ee3fa5d9d5886435b7d448e7c5ce645abec8bff00e0b8797ab41b3c1d1e1"
+    },
+    {
+      "id": "contract-agent-v2",
+      "label": "Contract Agent v2",
+      "path": "prompts/contract-agent/v2.md",
+      "sha256": "880e3e23b6c3557b1ed11b60922c061e29d46f43e8c61f15849510c4357aec8d"
+    },
+    {
+      "id": "contract-agent-v3",
+      "label": "Contract Agent v3",
+      "path": "prompts/contract-agent/v3.md",
+      "sha256": "b3b93c18b63f2794056c7e419c6f78974fa7e95eaf62d0fa2a4b9e7620db6534"
+    }
+  ],
+  "runs": [
+    {
+      "id": "RUN-baseline-development-live-20260828T222134Z",
+      "label": "Core-12 diagnostic baseline",
+      "role": "baseline-core",
+      "system": "baseline",
+      "dataset": "phantombench-12",
+      "split": "development",
+      "manifestPath": "artifacts/run-manifests/RUN-baseline-development-live-20260828T222134Z.json",
+      "predictionPath": "artifacts/predictions/RUN-baseline-development-live-20260828T222134Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-baseline-development-live-20260828T222134Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-baseline-development-live-20260828T222134Z.md",
+      "canonicalPredictionSha256": "fe0414685189019dbade76bd2e54d37a2d04449bc2764a635096ebe98134b886",
+      "contractRunId": null,
+      "promptId": "baseline-evaluator-v1",
+      "provenance": "verified"
+    },
+    {
+      "id": "RUN-baseline-hard-development-live-20260828T233139Z",
+      "label": "Frontier baseline (Hard-12)",
+      "role": "baseline-hard",
+      "system": "baseline",
+      "dataset": "phantombench-hard-12",
+      "split": "development",
+      "manifestPath": "artifacts/run-manifests/RUN-baseline-hard-development-live-20260828T233139Z.json",
+      "predictionPath": "artifacts/predictions/RUN-baseline-hard-development-live-20260828T233139Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-baseline-hard-development-live-20260828T233139Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-baseline-hard-development-live-20260828T233139Z.md",
+      "canonicalPredictionSha256": "442419e5c27334beb6161b17bfc696b08d658009ad3771b42e4f1a5655731880",
+      "contractRunId": null,
+      "promptId": "baseline-evaluator-v2",
+      "provenance": "verified"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-live-20260829T004039Z",
+      "label": "StateProof v1 cold",
+      "role": "stateproof-v1-cold",
+      "system": "stateproof",
+      "dataset": "phantombench-hard-12",
+      "split": "development",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-live-20260829T004039Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-live-20260829T004039Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-live-20260829T004039Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-live-20260829T004039Z.md",
+      "canonicalPredictionSha256": "e98c0da07dca72cd6eaea7eab1e5a56be241df3bce10c75ec84718206ebd4b85",
+      "contractRunId": null,
+      "promptId": "contract-agent-v1",
+      "provenance": "known-defect"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-cold-20260829T013429Z",
+      "label": "StateProof v2 cold",
+      "role": "stateproof-v2-cold",
+      "system": "stateproof",
+      "dataset": "phantombench-hard-12",
+      "split": "development",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-cold-20260829T013429Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-cold-20260829T013429Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-cold-20260829T013429Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-cold-20260829T013429Z.md",
+      "canonicalPredictionSha256": "791f62311d44f8e1c4dd16f2238b03f56ec453e787934005aa0b6f447156e824",
+      "contractRunId": null,
+      "promptId": "contract-agent-v2",
+      "provenance": "verified"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-cold-20260829T022133Z",
+      "label": "StateProof v3 cold",
+      "role": "stateproof-v3-cold",
+      "system": "stateproof",
+      "dataset": "phantombench-hard-12",
+      "split": "development",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-cold-20260829T022133Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-cold-20260829T022133Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-cold-20260829T022133Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-cold-20260829T022133Z.md",
+      "canonicalPredictionSha256": "3d8ef516fa5d6d6bd673fbb87ae2ce49b2af9eaac10850c2f6bf679444ca0651",
+      "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+      "promptId": "contract-agent-v3",
+      "provenance": "verified"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-warm-20260829T022344Z",
+      "label": "StateProof v3 warm (measured)",
+      "role": "stateproof-v3-warm",
+      "system": "stateproof",
+      "dataset": "phantombench-hard-12",
+      "split": "development",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-warm-20260829T022344Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-warm-20260829T022344Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022344Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022344Z.md",
+      "canonicalPredictionSha256": "3d8ef516fa5d6d6bd673fbb87ae2ce49b2af9eaac10850c2f6bf679444ca0651",
+      "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+      "promptId": "contract-agent-v3",
+      "provenance": "verified"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-warm-20260829T022354Z",
+      "label": "StateProof v3 warm repeat 1",
+      "role": "stateproof-v3-warm-repeat",
+      "system": "stateproof",
+      "dataset": "phantombench-hard-12",
+      "split": "development",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-warm-20260829T022354Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-warm-20260829T022354Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022354Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022354Z.md",
+      "canonicalPredictionSha256": "3d8ef516fa5d6d6bd673fbb87ae2ce49b2af9eaac10850c2f6bf679444ca0651",
+      "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+      "promptId": "contract-agent-v3",
+      "provenance": "verified"
+    },
+    {
+      "id": "RUN-stateproof-hard-development-warm-20260829T022355Z",
+      "label": "StateProof v3 warm repeat 2",
+      "role": "stateproof-v3-warm-repeat",
+      "system": "stateproof",
+      "dataset": "phantombench-hard-12",
+      "split": "development",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-warm-20260829T022355Z.json",
+      "predictionPath": "artifacts/predictions/RUN-stateproof-hard-development-warm-20260829T022355Z.json",
+      "reportJsonPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022355Z.json",
+      "reportMarkdownPath": "artifacts/reports/RUN-stateproof-hard-development-warm-20260829T022355Z.md",
+      "canonicalPredictionSha256": "3d8ef516fa5d6d6bd673fbb87ae2ce49b2af9eaac10850c2f6bf679444ca0651",
+      "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+      "promptId": "contract-agent-v3",
+      "provenance": "verified"
+    }
+  ],
+  "contractBundles": [
+    {
+      "contractRunId": "RUN-stateproof-hard-development-cold-20260829T022133Z-contracts",
+      "manifestPath": "artifacts/run-manifests/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts.json",
+      "promptId": "contract-agent-v3",
+      "assertionSchemaVersion": "2.1.0",
+      "contracts": [
+        {
+          "taskFingerprint": "518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7",
+          "contractHash": "45f5df4dca8ba843de9e601747f3b130ad50ccc516a3742ce3decd10f0e9ad54",
+          "path": "artifacts/contracts/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7.json",
+          "rawResponsePaths": [
+            "artifacts/model-responses/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/518d723749cdd846802792e4bbad4ecb0a5807ac29049dddadddab75a28677c7-attempt-1.json"
+          ]
+        },
+        {
+          "taskFingerprint": "92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793",
+          "contractHash": "661d1b5385b57de366b98a5e4a8378587e83c8e51235b309f1dd1a3d8ae93f43",
+          "path": "artifacts/contracts/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793.json",
+          "rawResponsePaths": [
+            "artifacts/model-responses/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/92af8e5268a49564f9071b70bd3d8b8065d90b5ba1b7ef3b05094fb877320793-attempt-1.json"
+          ]
+        },
+        {
+          "taskFingerprint": "9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858",
+          "contractHash": "3ba65540a8dcad356ded2af6ebde5c42564fc42c141ef886bfec7577e9960629",
+          "path": "artifacts/contracts/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858.json",
+          "rawResponsePaths": [
+            "artifacts/model-responses/RUN-stateproof-hard-development-cold-20260829T022133Z-contracts/9aebb0fc036f4f68b3bc1853ebd8d8fe03aa60299a3167701b385b06e26a0858-attempt-1.json"
+          ]
+        }
+      ]
+    }
+  ],
+  "replayTargetRunId": "RUN-stateproof-hard-development-warm-20260829T022344Z",
+  "replayCaseIds": [
+    "PBH-A01",
+    "PBH-A02",
+    "PBH-A03",
+    "PBH-B01",
+    "PBH-B03",
+    "PBH-B04",
+    "PBH-C01",
+    "PBH-C03"
+  ],
+  "lockedCaseIds": [
+    "PBH-A04",
+    "PBH-B02",
+    "PBH-C02",
+    "PBH-C04",
+    "PB-A04",
+    "PB-B02",
+    "PB-C02",
+    "PB-C04"
+  ]
+}

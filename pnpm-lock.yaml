@@ -21,6 +21,25 @@ importers:
         specifier: 1.6.0
         version: 1.6.0(@types/node@20.14.10)
 
+  apps/dashboard:
+    dependencies:
+      '@stateproof/agents':
+        specifier: workspace:*
+        version: link:../../packages/agents
+      '@stateproof/benchmark':
+        specifier: workspace:*
+        version: link:../../packages/benchmark
+      '@stateproof/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@stateproof/submission':
+        specifier: workspace:*
+        version: link:../../packages/submission
+    devDependencies:
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+
   packages/agents:
     dependencies:
       '@stateproof/benchmark':
@@ -62,6 +81,15 @@ importers:
       dotenv:
         specifier: 16.4.7
         version: 16.4.7
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
+
+  packages/submission:
+    dependencies:
+      '@stateproof/core':
+        specifier: workspace:*
+        version: link:../core
       zod:
         specifier: 3.25.76
         version: 3.25.76
