@@ -825,3 +825,65 @@ describe('the demo case is the one that makes the point', () => {
     expect(run.requirements.filter((requirement) => requirement.status === 'FAIL').length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('the production image', () => {
+  // Docker is not installed on the machine this was written on, so the image
+  // is never actually built here — Railway's build is its first. These tests
+  // cover the failure modes that would otherwise surface as a red deploy: a
+  // COPY of something that does not exist, and a workspace manifest missing
+  // from the install layer. Both fail the build on line one.
+  const DOCKERFILE = readFileSync(path.join(REPO_ROOT, 'Dockerfile'), 'utf8');
+
+  it('copies only paths that exist', () => {
+    const missing: string[] = [];
+    for (const line of DOCKERFILE.split('\n')) {
+      if (!line.startsWith('COPY ') || line.includes('--from=build')) continue;
+      const parts = line.replace(/^COPY\s+/, '').trim().split(/\s+/);
+      for (const source of parts.slice(0, -1)) {
+        if (source === '.' || source.startsWith('--')) continue;
+        if (!existsSync(path.join(REPO_ROOT, source))) missing.push(source);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it('installs every workspace manifest, so the lockfile resolves', () => {
+    const workspaces = ['apps', 'packages'].flatMap((group) => {
+      const root = path.join(REPO_ROOT, group);
+      if (!existsSync(root)) return [];
+      return readdirSync(root, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => `${group}/${entry.name}`)
+        .filter((relative) => existsSync(path.join(REPO_ROOT, relative, 'package.json')));
+    });
+
+    for (const workspace of workspaces) {
+      expect(DOCKERFILE, `${workspace} must be in the install layer`).toContain(
+        `COPY ${workspace}/package.json`,
+      );
+    }
+    // And nothing that is not a workspace.
+    for (const match of DOCKERFILE.matchAll(/^COPY ((?:apps|packages)\/[^/]+)\/package\.json/gm)) {
+      expect(workspaces, `${match[1] ?? ''} is copied but is not a workspace`).toContain(match[1]);
+    }
+  });
+
+  it('ships everything the server reads at runtime', () => {
+    // Proven by booting the server against exactly this file set; the test
+    // keeps the list honest if a new read is added.
+    for (const directory of ['benchmarks', 'artifacts', 'submission', 'prompts', 'samples']) {
+      expect(DOCKERFILE, directory).toContain(`/app/${directory}`);
+    }
+    for (const built of ['apps/product/dist-server', 'apps/product/dist', 'apps/dashboard/dist']) {
+      expect(DOCKERFILE, built).toContain(`/app/${built}`);
+    }
+    expect(DOCKERFILE).toContain('STATEPROOF_ROOT=/app');
+  });
+
+  it('keeps every environment file out of the build context', () => {
+    const ignore = readFileSync(path.join(REPO_ROOT, '.dockerignore'), 'utf8');
+    for (const pattern of ['.env', '.env.*', '*.env', 'node_modules']) {
+      expect(ignore, pattern).toContain(pattern);
+    }
+  });
+});

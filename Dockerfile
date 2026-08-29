@@ -23,7 +23,6 @@ COPY packages/agents/package.json packages/agents/
 COPY packages/benchmark/package.json packages/benchmark/
 COPY packages/core/package.json packages/core/
 COPY packages/model-provider/package.json packages/model-provider/
-COPY packages/sandbox/package.json packages/sandbox/
 COPY packages/submission/package.json packages/submission/
 RUN pnpm install --frozen-lockfile
 
