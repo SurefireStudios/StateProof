@@ -7,6 +7,7 @@ export * from './schema/state';
 export * from './schema/trace';
 export * from './schema/contract';
 export * from './schema/requirement-keys';
+export * from './schema/compiled-contract';
 export * from './schema/evidence';
 export * from './schema/verdict';
 export * from './schema/case';
@@ -22,4 +23,6 @@ export * from './score/requirement-metrics';
 
 export * from './verify/state-diff';
 export * from './verify/assertions';
+export * from './verify/evidence-refs';
+export * from './verify/contract-literals';
 export * from './verify/verifier';

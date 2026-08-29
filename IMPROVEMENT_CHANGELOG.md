@@ -184,6 +184,67 @@ justified it. Entries are added only after the supporting run artifact exists.
 
 ---
 
+---
+
+### 2026-08-29 — StateProof v1: Contract Agent + deterministic verifier (first run)
+
+- **Hypothesis:** compiling a task's success criteria once and verifying every
+  run with deterministic code would hold quality while cutting model cost,
+  because the same task and the same evidence are otherwise reinterpreted by a
+  frontier model on every single run.
+- **What changed:** Contract Agent v1 (frozen prompt, hash
+  `fea2ee3fa5d9d5886435b7d448e7c5ce645abec8bff00e0b8797ab41b3c1d1e1`), a
+  contract cache keyed on task + tools + domain schema + assertion schema
+  version + prompt hash + model config, and a deterministic evidence executor
+  that calls no model and reads no gold.
+- **Why it changed:** baseline accuracy saturated in Gate 2.7, so the remaining
+  measurable target is cost, determinism and replayability.
+- **Run id (before):** `RUN-baseline-hard-development-live-20260828T233139Z`
+- **Run id (after):** `RUN-stateproof-hard-development-live-20260829T004039Z`
+- **Contract artifacts:** `artifacts/contracts/RUN-stateproof-hard-development-live-20260829T004039Z-contracts/`
+- **Manifests:** `artifacts/run-manifests/RUN-stateproof-hard-development-live-20260829T004039Z.json`
+  and `…-contracts.json`
+- **Report:** `artifacts/reports/RUN-stateproof-hard-development-live-20260829T004039Z.md` and `.json`
+- **Commit:** `ee8ac5cd03d9d03ba4772f889c5239d2d8524c3b`
+- **Cases evaluated:** hard development split, 8 cases (4 valid / 4 invalid)
+- **SVR:** 100% → **83.3%** (10/12)
+- **CDR:** 100% → **50.0%** (2/4)
+- **FVR:** 0% → **4.3%** (1/23)
+- **BVA:** 100% → 100% (8/8) · **VAR** 100% · **IRR** 100% · unsafe 0%
+- **Assessment completeness:** 100% (35/35) · **Evidence-reference validity:**
+  100% (94/94)
+- **Runtime / cost effect:** 8 model calls → 5 (3 contracts, 2 repair retries);
+  84,616 tokens → 41,881; 115.1s → 103.7s. Warm run: **0 calls, 0 tokens,
+  107 ms** of deterministic verification for the whole suite.
+- **Decision:** keep as the first experiment. **No efficiency win is claimed**,
+  because the quality guardrails were not met — `compareEfficiency` withholds
+  every reduction figure when SVR, CDR or FVR falls short, and the report says
+  so explicitly. Per gate rule the Contract Agent prompt was not tuned after
+  the result was seen.
+- **Learning:** **the workflow works; the assertion vocabulary is the
+  bottleneck.** Every overall verdict was still correct, and every one of 94
+  evidence references resolved to a real event or record. What was lost is
+  diagnostic completeness, in three identified defects:
+
+  1. **Unsupported assertion (PBH-B04, missed `scope_integrity`).**
+     `no_unrelated_mutations` requires a literal allow-list of ids, but the task
+     never names the target support case — it identifies it by order. The agent
+     could not express "do not modify unrelated support cases" and surfaced it
+     as an ambiguity rather than dropping it silently.
+  2. **Ambiguous task interpretation (PBH-C03, missed `support_note_outcome`).**
+     The contract matched the note's exact required text but not a separate
+     `relatedRefundId` field. The required text already contains "RF-8801", so
+     demanding a structured field too is an extra inference. Gold requires both
+     on one note; both readings are defensible from the task alone.
+  3. **Over-reaching requirement (PBH-C03, false `scope_integrity` failure).**
+     The contract added a scope clause over `refunds`, so the prohibited new
+     refund was counted twice — once correctly as `no_new_refund` and once as a
+     scope violation. The task mentions only orders and support cases.
+
+  Two of the three share one root cause: the DSL cannot express *"only records
+  identified relationally may change."* That is the next iteration, and it is
+  deliberately not done inside this gate.
+
 ## Entry template
 
 Fields follow the evidence rules in `05_EVALUATION_AND_SCORING_SPEC.md`.

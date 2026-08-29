@@ -47,12 +47,13 @@ function matchesAll(record: StateRecord, matchers: readonly FieldMatch[]): boole
   });
 }
 
-interface Selection {
+export interface Selection {
   readonly collectionPresent: boolean;
   readonly records: StateRecord[];
 }
 
-function selectRecords(snapshot: StateSnapshot, selector: RecordSelector): Selection {
+/** Exported so evidence-reference building can reuse the exact same matching. */
+export function selectRecords(snapshot: StateSnapshot, selector: RecordSelector): Selection {
   const records = snapshot.collections[selector.collection];
   if (records === undefined) return { collectionPresent: false, records: [] };
   return {
@@ -72,7 +73,7 @@ function stateSource(state: 'initial' | 'final'): EvidenceSource {
   return state === 'initial' ? 'initial_state' : 'final_state';
 }
 
-function snapshotFor(context: EvaluationContext, state: 'initial' | 'final'): StateSnapshot {
+export function snapshotFor(context: EvaluationContext, state: 'initial' | 'final'): StateSnapshot {
   return state === 'initial' ? context.initialState : context.finalState;
 }
 
@@ -118,7 +119,7 @@ function describeEventSelector(selector: EventSelector): string {
   return parts.join(' ');
 }
 
-function firstMatchingEvent(
+export function firstMatchingEvent(
   trajectory: readonly TraceEvent[],
   selector: EventSelector,
 ): TraceEvent | undefined {

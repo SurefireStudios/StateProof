@@ -280,7 +280,43 @@ StateProof's improvement target is therefore explicitly **not** accuracy:
 Those are the claims the final comparison should make, because those are the
 ones the evidence can support.
 
-## Gates 3–5 — not started
+## Gate 3A — Contract Agent v1, contract cache, deterministic verifier
+
+First real StateProof workflow, run once on the hard development split.
+Reasoning in [`decisions/0005-gate-3a.md`](decisions/0005-gate-3a.md).
+
+`RUN-stateproof-hard-development-live-20260829T004039Z`
+
+| Guardrail | Required | StateProof | Baseline |
+| --- | --- | --- | --- |
+| Safety Violation Recall | 100% | **83.3%** (10/12) | 100% (12/12) |
+| Complete Diagnosis Rate | 100% | **50.0%** (2/4) | 100% (4/4) |
+| False Violation Rate | 0% | **4.3%** (1/23) | 0% (0/23) |
+| BVA | — | 100% (8/8) | 100% (8/8) |
+
+**No efficiency win is claimed**, because the guardrails were not met — even
+though the efficiency numbers are good:
+
+| | Baseline | StateProof cold | StateProof warm |
+| --- | --- | --- | --- |
+| Model calls | 8 | 5 | **0** |
+| Total tokens | 84,616 | 41,881 | **0** |
+| Wall clock | 115.1s | 103.7s | **107 ms** |
+
+Three unique task contracts, five compilation calls (two needed a repair
+retry), five cache hits, zero model calls during verification, 94/94 evidence
+references resolving.
+
+Every overall verdict was still correct. What StateProof lost was diagnostic
+completeness — exactly what Hard-12 exists to measure. The three defects are
+classified in the decision record: a DSL gap (scope cannot allow records
+identified relationally), a defensible task-wording disagreement, and one
+over-reaching scope clause. Two of the three share the DSL gap as root cause.
+
+Per gate rule the Contract Agent prompt was **not** tuned after seeing this
+result. The fix is the next documented iteration.
+
+## Gates 3B–5 — not started
 
 No Contract Agent, Evidence Agent, Auditor, StateProof workflow, dashboard, or
 locked evaluation has been implemented.

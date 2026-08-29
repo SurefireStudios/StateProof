@@ -17,6 +17,7 @@
     "benchmark:smoke-model": "tsx packages/agents/src/cli/smoke-model.ts",
     "benchmark:baseline": "tsx packages/agents/src/cli/baseline.ts",
     "benchmark:baseline-hard": "tsx packages/agents/src/cli/baseline-hard.ts",
+    "benchmark:stateproof-hard": "tsx packages/agents/src/cli/stateproof-hard.ts",
     "fixtures:generate": "tsx scripts/generate-fixtures.ts",
     "fixtures:generate-hard": "tsx scripts/generate-hard-fixtures.ts"
   },

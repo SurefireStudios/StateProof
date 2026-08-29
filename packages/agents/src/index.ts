@@ -5,3 +5,7 @@ export * from './baseline/runner';
 export * from './baseline/hard-runner';
 export * from './baseline/score';
 export * from './baseline/hard-score';
+export * from './contract/compiler';
+export * from './verify/executor';
+export * from './stateproof/runner';
+export * from './stateproof/score';

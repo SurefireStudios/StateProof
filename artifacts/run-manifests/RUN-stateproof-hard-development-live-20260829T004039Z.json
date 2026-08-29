@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "RUN-stateproof-hard-development-live-20260829T004039Z",
+  "createdAt": "2026-08-29T00:40:39.794Z",
+  "system": "stateproof",
+  "stage": "gate-3a-stateproof-development",
+  "mode": "live",
+  "gitCommitSha": "ee8ac5cd03d9d03ba4772f889c5239d2d8524c3b",
+  "runtimeVersion": "node-20.10.0",
+  "packageLockHash": "673e1485a8b9793ba55fdcce3a210e5bcad0a7cd6d6b2111d90adbd5c46dce94",
+  "datasetName": "phantombench-hard-12",
+  "agentVisibleDatasetHash": "988495bd2bb56dc4340067b85d5cbe0bf6ca8342d82f06cde8f7e52d7f9e61f6",
+  "datasetHash": "6e603b631734552f188b589ec2b2df65bba858ee0a8758b411f16c6db5b9e4b2",
+  "splits": [
+    "development"
+  ],
+  "caseIds": [
+    "PBH-A01",
+    "PBH-A02",
+    "PBH-A03",
+    "PBH-B01",
+    "PBH-B03",
+    "PBH-B04",
+    "PBH-C01",
+    "PBH-C03"
+  ],
+  "modelProvider": "anthropic",
+  "modelId": "claude-opus-5",
+  "modelConfiguration": {
+    "maxTokens": 16000,
+    "effort": "high",
+    "temperature": null,
+    "timeoutMs": 120000,
+    "transportMaxRetries": 2
+  },
+  "maxRetries": 1,
+  "timeoutPolicy": "120000",
+  "promptFilePaths": [
+    "prompts/contract-agent/v1.md"
+  ],
+  "promptHashes": {
+    "prompts/contract-agent/v1.md": "fea2ee3fa5d9d5886435b7d448e7c5ce645abec8bff00e0b8797ab41b3c1d1e1"
+  },
+  "startedAt": "2026-08-29T00:40:39.794Z",
+  "finishedAt": "2026-08-29T00:42:23.502Z",
+  "wallClockMs": 103709,
+  "modelUsage": {
+    "inputTokens": 30912,
+    "outputTokens": 10969,
+    "calls": 5,
+    "retries": 2,
+    "estimatedCostUsd": null
+  },
+  "rawResponsePaths": [
+    "model-responses/RUN-stateproof-hard-development-live-20260829T004039Z-contracts/84aba0309f424b722bd8e7017c87854946634642fe27c4ea10a44565d2f1e773-attempt-1.json",
+    "model-responses/RUN-stateproof-hard-development-live-20260829T004039Z-contracts/84aba0309f424b722bd8e7017c87854946634642fe27c4ea10a44565d2f1e773-attempt-2.json",
+    "model-responses/RUN-stateproof-hard-development-live-20260829T004039Z-contracts/db818f4177a073da3b50d6ba9eee6bff32c7611efab55c05ca9fe105d5a7c224-attempt-1.json",
+    "model-responses/RUN-stateproof-hard-development-live-20260829T004039Z-contracts/db818f4177a073da3b50d6ba9eee6bff32c7611efab55c05ca9fe105d5a7c224-attempt-2.json",
+    "model-responses/RUN-stateproof-hard-development-live-20260829T004039Z-contracts/820b69d1ce22ba004a73d1630d3b838f49ba601859396ba3178e329ab6f196dc-attempt-1.json"
+  ],
+  "trajectoryPaths": [
+    "benchmarks/phantombench-hard-12/cases/PBH-A01/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-A02/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-A03/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B01/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B03/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-B04/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-C01/trajectory.jsonl",
+    "benchmarks/phantombench-hard-12/cases/PBH-C03/trajectory.jsonl"
+  ],
+  "predictionPath": "predictions/RUN-stateproof-hard-development-live-20260829T004039Z.json",
+  "reportPath": "reports/RUN-stateproof-hard-development-live-20260829T004039Z.md",
+  "notes": [
+    "Predictions were written before any gold file was read.",
+    "Verification is deterministic: zero model calls during the run phase.",
+    "Contract compilation artifacts: run-manifests/RUN-stateproof-hard-development-live-20260829T004039Z-contracts.json and contracts/RUN-stateproof-hard-development-live-20260829T004039Z-contracts/.",
+    "Deterministic verification time: 107 ms across 8 case(s)."
+  ]
+}

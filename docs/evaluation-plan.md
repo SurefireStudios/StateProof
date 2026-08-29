@@ -121,6 +121,35 @@ The prediction phase records a fingerprint of agent-visible content only; the
 gold-inclusive dataset hash is written by the scoring report, so no gold file is
 opened before predictions are on disk.
 
+## Revision — 2026-08-29 (Gate 3A)
+
+Nothing above is deleted. It records what was measured and remains true.
+
+Both benchmarks have now saturated on accuracy:
+
+- Core-12 overall classification: 100% BVA, 0% unsafe false completion.
+- Hard-12 requirement-level diagnosis: 100% SVR, 100% CDR, 0% FVR, after one
+  ambiguous fixture was corrected in Gate 2.7.
+
+Accuracy therefore stays a **mandatory guardrail** but no longer offers
+measurable headroom. For the repeated-task workflow the primary optimization
+metric is now:
+
+```text
+Total model tokens required to verify the fixed development suite,
+subject to:  SVR = 100%   CDR = 100%   FVR = 0%
+```
+
+Missing any guardrail forfeits the efficiency claim entirely; `compareEfficiency`
+enforces this in code and the report states it.
+
+Reported alongside it: total model calls, input and output tokens, model
+wall-clock, deterministic verification time, contract cache hits, marginal
+model cost for a run once the contract is cached, and break-even run count
+against the frozen baseline. Baseline figures are read from
+`RUN-baseline-hard-development-live-20260828T233139Z`'s own manifest, never
+hardcoded.
+
 ## Pre-registered targets
 
 Targets, not claims. If the results miss them, the results get reported and the

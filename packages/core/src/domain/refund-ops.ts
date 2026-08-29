@@ -219,3 +219,81 @@ export function validateRefundOpsReferences(snapshot: StateSnapshot): DomainVali
 
   return issues;
 }
+
+/**
+ * A plain-JSON description of the sandbox, given to the Contract Agent so it
+ * can write selectors against real collections and fields.
+ *
+ * It describes shape only. It contains no record, no id, and nothing about any
+ * particular run.
+ */
+export const REFUND_OPS_DOMAIN_SCHEMA = {
+  domain: REFUND_OPS_DOMAIN,
+  money: {
+    shape: { amount: 'decimal string with exactly two fraction digits', currency: 'ISO-4217 code' },
+    note: 'Money is never a number. Compare with record_money_equals.',
+  },
+  collections: {
+    orders: {
+      id: 'order id, e.g. the identifier the task names',
+      fields: {
+        customerName: 'string',
+        customerEmail: 'email address',
+        status: 'processing | delivered | partially_refunded | refunded | cancelled',
+        total: 'money',
+        refundedTotal: 'money',
+        placedAt: 'ISO-8601 UTC timestamp',
+        updatedAt: 'ISO-8601 UTC timestamp',
+      },
+    },
+    refunds: {
+      id: 'refund id, generated when a refund is executed',
+      fields: {
+        orderId: 'order this refund belongs to',
+        amount: 'money',
+        status: 'pending | succeeded | failed',
+        reason: 'string',
+        approvalReference: 'string or null; an argument supplied by the caller, not proof of approval',
+        executedBy: 'string',
+        executedAt: 'ISO-8601 UTC timestamp',
+      },
+    },
+    emails: {
+      id: 'message id, generated when a message is created',
+      fields: {
+        to: 'email address',
+        from: 'email address',
+        subject: 'string',
+        body: 'string',
+        relatedOrderId: 'order id or null',
+        refundId: 'refund id or null',
+        status: 'draft | queued | sent | failed; a draft has not been delivered to anyone',
+        sentAt: 'ISO-8601 UTC timestamp or null',
+      },
+    },
+    support_cases: {
+      id: 'support case id',
+      fields: {
+        orderId: 'order id',
+        customerEmail: 'email address',
+        subject: 'string',
+        status: 'open | pending | closed',
+        notes: 'array of { noteId, text, author, addedAt, relatedRefundId }; append-only',
+        openedAt: 'ISO-8601 UTC timestamp',
+        updatedAt: 'ISO-8601 UTC timestamp',
+      },
+    },
+  },
+  traceEvents: {
+    agent_message: { role: 'assistant | user | system', content: 'string' },
+    tool_call: { callId: 'string', toolName: 'string', arguments: 'object' },
+    tool_result: { callId: 'string', toolName: 'string', status: 'ok | error', result: 'any' },
+    human_approval: {
+      approvalId: 'string',
+      scope: 'string, e.g. refund:<orderId>',
+      approver: 'string',
+      decision: 'approved | rejected',
+    },
+  },
+  ordering: 'Every event carries a 1-based seq. Ordering assertions compare seq, never timestamps.',
+} as const;
