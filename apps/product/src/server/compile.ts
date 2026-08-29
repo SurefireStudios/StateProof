@@ -1,11 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import {
-  AnthropicModelClient,
-  CREDENTIAL_ENV_VAR,
-  hasAnthropicCredentials,
-} from '@stateproof/model-provider';
+import { CREDENTIAL_ENV_VAR, hasAnthropicCredentials } from '@stateproof/model-provider';
 import {
   CONTRACT_PROMPT_PATH,
   compileContractForCase,
@@ -13,6 +9,7 @@ import {
   loadContractPrompt,
 } from '@stateproof/agents';
 import type { RunView } from '../shared/types';
+import { LIVE_COMPILATION_ENV, loadConfig } from './config';
 import type { ImportedRun } from './importer';
 import { buildRunView, storeRun } from './runs';
 
@@ -38,6 +35,21 @@ export interface CompileStatus {
 
 export function compileStatus(): CompileStatus {
   const promptPath = contractPromptRepoPath(CONTRACT_PROMPT_PATH);
+
+  // The public deployment runs with this off. It is checked before the
+  // credential so that a host which somehow has a key still cannot spend it.
+  if (!loadConfig().liveCompilationEnabled) {
+    return {
+      available: false,
+      reason:
+        'Live contract compilation is disabled on this server. The public demo uses frozen ' +
+        'task contracts and deterministic verification, and no model API key is present. ' +
+        `Set ${LIVE_COMPILATION_ENV}=true on your own instance to enable it.`,
+      promptPath,
+      credentialVariable: CREDENTIAL_ENV_VAR,
+    };
+  }
+
   // Only ever this variable. ANTHROPIC_API_KEY belongs to the operator's own
   // tooling and is never read, here or anywhere in the repository.
   if (!hasAnthropicCredentials()) {
@@ -71,6 +83,10 @@ export async function compileForImport(repoRoot: string, imported: ImportedRun):
 
   const prompt = loadContractPrompt(CONTRACT_PROMPT_PATH);
   const scratch = mkdtempSync(path.join(tmpdir(), 'stateproof-product-compile-'));
+  // Imported here, not at module load: with compilation disabled the provider
+  // is never constructed, and on the public deployment it is never even
+  // evaluated.
+  const { AnthropicModelClient } = await import('@stateproof/model-provider');
   const client = new AnthropicModelClient();
 
   try {

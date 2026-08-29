@@ -435,7 +435,35 @@ describe('custom contract compilation', () => {
     const status = compileStatus();
     expect(status.credentialVariable).toBe('STATEPROOF_ANTHROPIC_API_KEY');
     expect(JSON.stringify(status)).not.toMatch(/sk-ant-/);
-    if (!status.available) expect(status.reason).toContain('STATEPROOF_ANTHROPIC_API_KEY');
+    // Whichever switch is off, the reason has to name it: "disabled" with no
+    // account of what would enable it is a dead end for whoever reads it.
+    if (!status.available) {
+      expect(status.reason).toMatch(
+        /STATEPROOF_ANTHROPIC_API_KEY|STATEPROOF_ENABLE_LIVE_COMPILATION/,
+      );
+    }
+  });
+
+  it('stays off by default, before a credential is even considered', () => {
+    // This is what the public deployment runs. The flag is checked first on
+    // purpose: a host that somehow has a key still must not spend it.
+    const savedFlag = process.env['STATEPROOF_ENABLE_LIVE_COMPILATION'];
+    const savedKey = process.env['STATEPROOF_ANTHROPIC_API_KEY'];
+    delete process.env['STATEPROOF_ENABLE_LIVE_COMPILATION'];
+    process.env['STATEPROOF_ANTHROPIC_API_KEY'] = 'not-a-real-key-and-never-read';
+    try {
+      const status = compileStatus();
+      expect(status.available).toBe(false);
+      expect(status.reason).toContain('STATEPROOF_ENABLE_LIVE_COMPILATION');
+      expect(JSON.stringify(status)).not.toContain('not-a-real-key-and-never-read');
+      // Everything a judge actually uses keeps working.
+      expect(verifyDemo(REPO_ROOT).modelCalls).toBe(0);
+    } finally {
+      if (savedFlag === undefined) delete process.env['STATEPROOF_ENABLE_LIVE_COMPILATION'];
+      else process.env['STATEPROOF_ENABLE_LIVE_COMPILATION'] = savedFlag;
+      if (savedKey === undefined) delete process.env['STATEPROOF_ANTHROPIC_API_KEY'];
+      else process.env['STATEPROOF_ANTHROPIC_API_KEY'] = savedKey;
+    }
   });
 
   it('is disabled cleanly when no server key is configured', () => {

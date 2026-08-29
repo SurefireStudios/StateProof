@@ -36,7 +36,7 @@ not someone who wants a score.
 5. **Import your own run** and validate it against the supported domain. A
    sample package is one click away on that screen.
 6. **Read the benchmark**, including the locked and combined results.
-7. **Open the evidence dashboard** at `/dashboard/`, served by the same process,
+7. **Open the evidence dashboard** at `/evidence/`, served by the same process,
    for the raw artifacts behind every number.
 
 ## Domain limitation, stated plainly
@@ -161,7 +161,7 @@ it.
 
 ### One deliberate exception
 
-The evidence dashboard is a separate application hosted at `/dashboard/`, and its
+The evidence dashboard is a separate application hosted at `/evidence/`, and its
 generator writes `style` attributes. Rather than relax the product's own policy,
 that path is served with its own header: identical except that it also allows
 `'unsafe-inline'` for styles. Scripts stay restricted to same-origin, and the
@@ -196,7 +196,7 @@ see what StateProof does to a run, use the product.
 ## Routes
 
 Pages: `/#/` · `/#/demo` · `/#/import` · `/#/runs/:id` · `/#/benchmark`, plus the
-hosted dashboard at `/dashboard/`.
+hosted dashboard at `/evidence/`.
 
 API: `GET /api/app` · `GET /api/hero` · `GET /api/demo` · `POST /api/verify/demo`
 · `POST /api/import` · `POST /api/verify` · `POST /api/contracts/compile` ·

@@ -1,4 +1,11 @@
-import type { BenchmarkView, DemoSummary, HeroProof, ImportResult, RunView } from '../shared/types';
+import type {
+  AppInfo,
+  BenchmarkView,
+  DemoSummary,
+  HeroProof,
+  ImportResult,
+  RunView,
+} from '../shared/types';
 import { append, clear, el, frag, highlight, ms, pill } from './dom';
 
 /**
@@ -477,7 +484,11 @@ function statCard(label: string, value: string, caption: string): HTMLElement {
   );
 }
 
-export function homeView(benchmark: BenchmarkView | null, hero: HeroProof | null): DocumentFragment {
+export function homeView(
+  benchmark: BenchmarkView | null,
+  hero: HeroProof | null,
+  app: AppInfo | null,
+): DocumentFragment {
   return frag(
     el(
       'section',
@@ -492,13 +503,39 @@ export function homeView(benchmark: BenchmarkView | null, hero: HeroProof | null
         'div',
         { class: 'actions mt-3' },
         el('a', { class: 'btn', href: '#/demo' }, 'Run the verification demo'),
-        el('a', { class: 'btn ghost', href: '#/import' }, 'Import an agent run'),
-        el('a', { class: 'btn ghost', href: '#/benchmark' }, 'Review the measured benchmark'),
+        el('a', { class: 'btn ghost', href: '#/import?sample' }, 'Try the sample import'),
+        el('a', { class: 'btn ghost', href: '#/import' }, 'Import your own run'),
+        el('a', { class: 'btn ghost', href: '#/benchmark' }, 'View the benchmark'),
+        app?.dashboardAvailable === true
+          ? el('a', { class: 'btn ghost', href: '/evidence/' }, 'Explore the evidence dashboard')
+          : null,
+        app?.repositoryUrl === null || app === null
+          ? null
+          : el(
+              'a',
+              {
+                class: 'btn ghost',
+                href: `${app.repositoryUrl}/blob/main/REPRODUCTION.md`,
+                rel: 'noreferrer noopener',
+              },
+              'Reproduction guide',
+            ),
+        app?.repositoryUrl === null || app === null
+          ? null
+          : el(
+              'a',
+              { class: 'btn ghost', href: app.repositoryUrl, rel: 'noreferrer noopener' },
+              'GitHub repository',
+            ),
       ),
       el(
-        'p',
-        { class: 'faint small mt-2' },
-        'All three need no API key and make no model call.',
+        'div',
+        { class: 'callout mt-3' },
+        el(
+          'p',
+          { class: 'small' },
+          'The public demo uses frozen task contracts and deterministic verification. Live contract compilation is intentionally disabled; no model API key is present on the server.',
+        ),
       ),
     ),
     hero === null

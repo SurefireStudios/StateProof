@@ -65,6 +65,12 @@ thing in the submission. Run it (§5); these are the screens you will see.
 
 ## 5. Interactive quick start
 
+```text
+Live demo:                       <placeholder until the owner supplies the URL>
+Local demo:                      pnpm product:dev
+Credential-free reproduction:    pnpm reproduce
+```
+
 ```bash
 pnpm install
 pnpm product:build
@@ -73,6 +79,11 @@ pnpm product:dev
 
 Open <http://localhost:4180/>, click **Run the verification demo**, then **Verify
 this run**. No API key, no model call, no network.
+
+The hosted deployment runs the same way: frozen task contracts, deterministic
+verification, and **no model API key on the server**. Live contract compilation
+is intentionally disabled there. See
+[`docs/live-deployment.md`](docs/live-deployment.md).
 
 Full walkthrough: [`docs/judge-quick-start.md`](docs/judge-quick-start.md).
 

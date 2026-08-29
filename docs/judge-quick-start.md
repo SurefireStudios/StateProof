@@ -11,6 +11,12 @@ call, and both credential variables are removed from the environment by
 
 ## The fastest path — the interactive product
 
+```text
+Live demo:                       <placeholder until the owner supplies the URL>
+Local demo:                      pnpm product:dev
+Credential-free reproduction:    pnpm reproduce
+```
+
 ```bash
 pnpm install
 pnpm product:build
@@ -26,7 +32,7 @@ Open **<http://localhost:4180/>**.
 | `/#/import` | Upload a run package; a sample is one click away |
 | `/#/runs/<id>` | The run inspector, after a verification |
 | `/#/benchmark` | Development, locked and combined results |
-| `/dashboard/` | The static evidence dashboard, served by the same server |
+| `/evidence/` | The static evidence dashboard, served by the same server |
 
 Three minutes, in order:
 

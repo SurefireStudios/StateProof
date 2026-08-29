@@ -63,6 +63,11 @@ export function getRun(runId: string, nowMs = Date.now()): RunView | null {
   return runs.get(runId)?.view ?? null;
 }
 
+/** How many runs are held in memory. Used only by tests and health checks. */
+export function runCount(): number {
+  return runs.size;
+}
+
 export function clearRuns(): void {
   runs.clear();
 }

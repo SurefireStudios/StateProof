@@ -1,7 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { HARD_CASES_DIR, loadAgentVisibleCase } from '@stateproof/benchmark';
 import { z } from 'zod';
 import {
@@ -15,6 +14,7 @@ import { DEMO_CASE_ID, demoContext, demoSummary, heroProof, verifyDemo } from '.
 import { buildEvidencePack, renderEvidenceMarkdown } from './evidence';
 import { ImportError, getImport, importRun } from './importer';
 import { buildRunView, getRun, readContractArtifact, storeRun } from './runs';
+import { loadConfig } from './config';
 
 /**
  * The product server.
@@ -26,13 +26,17 @@ import { buildRunView, getRun, readContractArtifact, storeRun } from './runs';
  * filesystem path, or gold data.
  */
 
-const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
+const CONFIG = loadConfig();
+const REPO_ROOT = CONFIG.root;
 const DIST_DIR = path.join(REPO_ROOT, 'apps', 'product', 'dist');
 /** The static evidence dashboard, served rather than reimplemented. */
 const DASHBOARD_DIR = path.join(REPO_ROOT, 'apps', 'dashboard', 'dist');
 const SAMPLE_PACKAGE = path.join(REPO_ROOT, 'samples', 'stateproof-sample-run.zip');
-const PORT = Number.parseInt(process.env['PORT'] ?? '4180', 10);
-const MAX_BODY_BYTES = 12 * 1024 * 1024;
+const PORT = CONFIG.port;
+const MAX_BODY_BYTES = CONFIG.maxBodyBytes;
+
+/** Paths the client owns. A judge sharing one of these must land on it. */
+const CLIENT_ROUTES = new Set(['/', '/demo', '/import', '/benchmark']);
 
 /** Non-secret, committed metadata the client uses to build its links. */
 function appInfo(): {
@@ -142,10 +146,105 @@ const STATIC_TYPES: Record<string, string> = {
   '.svg': 'image/svg+xml; charset=utf-8',
 };
 
+// --- public-service limits ---------------------------------------------------
+//
+// This runs on a public origin with no authentication, so the expensive routes
+// need bounds that do not depend on anyone behaving. All of it is per-process
+// and in-memory: there is no store to poison and nothing survives a restart.
+
+const WINDOW_MS = 60_000;
+const buckets = new Map<string, number[]>();
+let inFlight = 0;
+
+/**
+ * The client address, for rate limiting only.
+ *
+ * Never logged, never stored beyond the current minute, and never written to an
+ * artifact. Behind Railway's proxy the socket address is the proxy's, so the
+ * first `x-forwarded-for` hop is used when present.
+ */
+function clientKey(request: IncomingMessage): string {
+  const forwarded = request.headers['x-forwarded-for'];
+  const first = Array.isArray(forwarded) ? forwarded[0] : forwarded?.split(',')[0];
+  return (first ?? request.socket.remoteAddress ?? 'unknown').trim();
+}
+
+function rateLimited(request: IncomingMessage, nowMs = Date.now()): boolean {
+  const key = clientKey(request);
+  const hits = (buckets.get(key) ?? []).filter((at) => at > nowMs - WINDOW_MS);
+  if (hits.length >= CONFIG.rateLimitPerMinute) {
+    buckets.set(key, hits);
+    return true;
+  }
+  hits.push(nowMs);
+  buckets.set(key, hits);
+  // Unbounded key growth is its own denial of service.
+  if (buckets.size > 5_000) {
+    for (const [candidate, times] of buckets) {
+      if (times.every((at) => at <= nowMs - WINDOW_MS)) buckets.delete(candidate);
+    }
+  }
+  return false;
+}
+
+/**
+ * A browser on another origin cannot read these responses anyway — there is no
+ * CORS header — but refusing the request outright means the work is never done.
+ */
+function crossOrigin(request: IncomingMessage): boolean {
+  const origin = request.headers.origin;
+  if (origin === undefined) return false;
+  const host = request.headers.host;
+  if (host === undefined) return true;
+  try {
+    return new URL(origin).host !== host;
+  } catch {
+    return true;
+  }
+}
+
+const EXPENSIVE = new Set([
+  '/api/import',
+  '/api/import/sample',
+  '/api/verify',
+  '/api/verify/demo',
+  '/api/contracts/compile',
+]);
+
 async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
   const url = new URL(request.url ?? '/', `http://localhost:${PORT}`);
   const method = request.method ?? 'GET';
   const route = url.pathname;
+
+  /**
+   * Readiness, and nothing else. It names what the service will and will not
+   * do — no versions of dependencies, no paths, no environment, no counts that
+   * would leak usage.
+   */
+  if (route === '/healthz' && (method === 'GET' || method === 'HEAD')) {
+    sendJson(response, 200, {
+      status: 'ok',
+      service: 'stateproof',
+      mode: 'deterministic',
+      liveCompilation: CONFIG.liveCompilationEnabled,
+    });
+    return;
+  }
+
+  if (EXPENSIVE.has(route)) {
+    if (crossOrigin(request)) {
+      sendError(response, 403, 'This endpoint accepts same-origin requests only.');
+      return;
+    }
+    if (rateLimited(request)) {
+      sendError(response, 429, 'Too many requests. This is a small public demo; try again shortly.');
+      return;
+    }
+    if (inFlight >= CONFIG.maxConcurrentJobs) {
+      sendError(response, 503, 'The demo is busy verifying other runs. Try again in a moment.');
+      return;
+    }
+  }
 
   // --- API ----------------------------------------------------------------
   if (route === '/api/demo' && method === 'GET') {
@@ -168,6 +267,37 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
     send(response, 200, 'application/zip', readFileSync(SAMPLE_PACKAGE), {
       'content-disposition': 'attachment; filename="stateproof-sample-run.zip"',
     });
+    return;
+  }
+
+  /**
+   * The sample import, without the download-and-re-upload round trip.
+   *
+   * It reads the committed package off disk and pushes it through exactly the
+   * same importer a browser upload goes through — same schema validation, same
+   * archive limits, same domain check. It stops at validation, like every other
+   * import: verifying is still a separate, deliberate click.
+   */
+  if (route === '/api/import/sample' && method === 'POST') {
+    if (!existsSync(SAMPLE_PACKAGE)) {
+      sendError(response, 404, 'The sample run package is not present on this server.', [
+        { field: 'samples', message: 'Run `pnpm sample:build` to generate it.' },
+      ]);
+      return;
+    }
+    try {
+      const { result } = importRun(
+        { zipBase64: readFileSync(SAMPLE_PACKAGE).toString('base64') },
+        REPO_ROOT,
+      );
+      sendJson(response, 200, result);
+    } catch (error) {
+      if (error instanceof ImportError) {
+        sendError(response, 422, 'The sample package did not validate.', error.problems);
+        return;
+      }
+      sendError(response, 500, 'The sample import failed unexpectedly.');
+    }
     return;
   }
 
@@ -368,13 +498,22 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
   }
 
   // --- the static evidence dashboard, hosted rather than reimplemented -----
-  if (route === '/dashboard' && method === 'GET') {
-    response.writeHead(302, { location: '/dashboard/' });
+  // `/dashboard` was the earlier path; it redirects so older links keep working.
+  if (
+    (route === '/evidence' || route === '/dashboard' || route === '/dashboard/') &&
+    method === 'GET'
+  ) {
+    response.writeHead(302, { location: '/evidence/' });
     response.end();
     return;
   }
   if (route.startsWith('/dashboard/') && method === 'GET') {
-    const relative = route.slice('/dashboard/'.length);
+    response.writeHead(302, { location: `/evidence/${route.slice('/dashboard/'.length)}` });
+    response.end();
+    return;
+  }
+  if (route.startsWith('/evidence/') && method === 'GET') {
+    const relative = route.slice('/evidence/'.length);
     const page = relative === '' ? 'index.html' : relative;
     const candidate = path.join(DASHBOARD_DIR, page);
     if (!candidate.startsWith(DASHBOARD_DIR) || !existsSync(candidate) || candidate.endsWith(path.sep)) {
@@ -397,43 +536,101 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
   }
 
   // --- static -------------------------------------------------------------
-  const asset = route === '/' ? 'index.html' : route.replace(/^\/+/, '');
-  const candidate = path.join(DIST_DIR, asset);
-  if (candidate.startsWith(DIST_DIR) && existsSync(candidate) && !candidate.endsWith(path.sep)) {
-    send(response, 200, STATIC_TYPES[path.extname(candidate)] ?? 'text/plain; charset=utf-8', readFileSync(candidate));
-    return;
+  if (method === 'GET' || method === 'HEAD') {
+    const asset = route === '/' ? 'index.html' : route.replace(/^\/+/, '');
+    const candidate = path.join(DIST_DIR, asset);
+    if (candidate.startsWith(DIST_DIR) && existsSync(candidate) && !candidate.endsWith(path.sep)) {
+      send(
+        response,
+        200,
+        STATIC_TYPES[path.extname(candidate)] ?? 'text/plain; charset=utf-8',
+        readFileSync(candidate),
+      );
+      return;
+    }
+
+    // The routes the client owns resolve to the shell, so a shared link lands
+    // where it claims to. Anything else is a real 404 — serving the shell for
+    // an unknown path hides a typo behind a 200.
+    if (CLIENT_ROUTES.has(route) || /^\/runs\/[A-Za-z0-9_-]+$/.test(route)) {
+      const shell = path.join(DIST_DIR, 'index.html');
+      if (existsSync(shell)) {
+        send(response, 200, 'text/html; charset=utf-8', readFileSync(shell));
+        return;
+      }
+      send(response, 503, 'text/plain; charset=utf-8', 'The product has not been built.\n');
+      return;
+    }
   }
 
-  // Client-side routes all resolve to the shell.
-  const shell = path.join(DIST_DIR, 'index.html');
-  if (existsSync(shell)) {
-    send(response, 200, 'text/html; charset=utf-8', readFileSync(shell));
+  if (route.startsWith('/api/')) {
+    sendError(response, 404, 'No such endpoint.');
     return;
   }
-
-  send(response, 404, 'text/plain; charset=utf-8', 'Run `pnpm product:build` first.\n');
+  send(response, 404, 'text/plain; charset=utf-8', 'Not found.\n');
 }
 
-export function startServer(port: number = PORT): ReturnType<typeof createServer> {
+export function startServer(
+  port: number = PORT,
+  host: string = CONFIG.host,
+): ReturnType<typeof createServer> {
   const server = createServer((request, response) => {
-    void handle(request, response).catch(() => {
-      sendError(response, 500, 'Something went wrong handling that request.');
-    });
+    const pathname = (request.url ?? '/').split('?')[0] ?? '/';
+    const expensive = EXPENSIVE.has(pathname);
+    if (expensive) inFlight += 1;
+    void handle(request, response)
+      .catch(() => {
+        // Deliberately opaque. A stack trace on a public origin is a map of the
+        // filesystem; the operator has the logs.
+        if (!response.headersSent) {
+          sendError(response, 500, 'Something went wrong handling that request.');
+        } else {
+          response.end();
+        }
+      })
+      .finally(() => {
+        if (expensive) inFlight -= 1;
+      });
   });
-  server.listen(port, () => {
-    process.stdout.write(`StateProof product: http://localhost:${port}/\n`);
-    process.stdout.write(`demo case: ${DEMO_CASE_ID} (verified offline, zero model calls)\n`);
-    const status = compileStatus();
+
+  server.listen(port, host, () => {
+    // No environment dump, no absolute paths: only what an operator needs to
+    // see that the right thing started.
+    process.stdout.write(`stateproof listening on ${host}:${String(port)}\n`);
+    process.stdout.write(`mode: deterministic verification, demo case ${DEMO_CASE_ID}\n`);
     process.stdout.write(
-      `custom contract compilation: ${status.available ? 'available' : `unavailable — ${status.reason}`}\n`,
+      `live contract compilation: ${CONFIG.liveCompilationEnabled ? 'enabled' : 'disabled'}\n`,
     );
   });
+
+  /**
+   * Railway sends SIGTERM on every redeploy. Closing the listener and letting
+   * in-flight requests finish is the difference between a clean rollover and a
+   * handful of judges seeing a connection reset.
+   */
+  let closing = false;
+  const shutdown = (signal: string): void => {
+    if (closing) return;
+    closing = true;
+    process.stdout.write(`${signal} received; draining\n`);
+    server.close(() => {
+      process.stdout.write('closed\n');
+      process.exit(0);
+    });
+    // A request that will not finish must not hold the deploy open forever.
+    setTimeout(() => process.exit(0), 10_000).unref();
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+
   return server;
 }
 
 // Exported for tests; started when run directly.
 export { demoContext, loadAgentVisibleCase, HARD_CASES_DIR, readContractArtifact };
 
-const invokedDirectly =
-  process.argv[1] !== undefined && process.argv[1].replace(/\\/g, '/').endsWith('server/index.ts');
+// True under `tsx src/server/index.ts` and under `node dist-server/index.js`,
+// false when a test imports this module.
+const entry = (process.argv[1] ?? '').replace(/\\/g, '/');
+const invokedDirectly = entry.endsWith('server/index.ts') || entry.endsWith('dist-server/index.js');
 if (invokedDirectly) startServer();

@@ -1,0 +1,30 @@
+# Never copied into the build context. `.env` and its copies lead the list on
+# purpose: the image must not be able to contain a credential even by accident.
+.env
+.env.*
+!.env.example
+.env*Copy*
+*.env
+
+.git
+.gitattributes
+node_modules
+**/node_modules
+.pnpm-store
+
+# Build output is produced inside the image, never carried in.
+apps/*/dist
+apps/*/dist-server
+release
+coverage
+tmp
+*.log
+*.tsbuildinfo
+
+# Local-only
+.claude
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+Surefire-Icon.svg

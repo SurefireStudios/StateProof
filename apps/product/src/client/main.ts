@@ -134,7 +134,7 @@ function main(): HTMLElement {
 function externalLinks(app: AppInfo | null): Array<{ href: string; label: string }> {
   if (app === null) return [];
   const links: Array<{ href: string; label: string }> = [];
-  if (app.dashboardAvailable) links.push({ href: '/dashboard/', label: 'Evidence dashboard' });
+  if (app.dashboardAvailable) links.push({ href: '/evidence/', label: 'Evidence dashboard' });
   if (app.repositoryUrl !== null) {
     links.push({
       href: `${app.repositoryUrl}/blob/main/REPRODUCTION.md`,
@@ -149,8 +149,10 @@ function renderNav(active: string, app: AppInfo | null): void {
   const nav = document.getElementById('nav');
   if (nav === null) return;
   clear(nav);
+  // `#/import?sample` is still the import route as far as the nav is concerned.
+  const base = active.split('?')[0] ?? active;
   for (const route of ROUTES) {
-    const isActive = active === route.href || (active === '' && route.href === '#/');
+    const isActive = base === route.href || (base === '' && route.href === '#/');
     nav.appendChild(
       el('a', { href: route.href, ...(isActive ? { 'aria-current': 'page' } : {}) }, route.label),
     );
@@ -184,11 +186,12 @@ function show(children: Parameters<typeof frag>): void {
 async function renderHome(): Promise<void> {
   // Both are committed artifacts and either can be missing without the page
   // losing its point, so neither failure blocks the other.
-  const [benchmark, hero] = await Promise.all([
+  const [benchmark, hero, app] = await Promise.all([
     api<BenchmarkView>('/api/benchmark', BenchmarkViewSchema).catch(() => null),
     api<HeroProof>('/api/hero', HeroProofSchema).catch(() => null),
+    loadAppInfo(),
   ]);
-  show([homeView(benchmark, hero)]);
+  show([homeView(benchmark, hero, app)]);
 }
 
 async function renderDemo(): Promise<void> {
@@ -256,7 +259,7 @@ async function readFileInput(input: HTMLInputElement): Promise<string | undefine
   return await file.text();
 }
 
-async function renderImport(): Promise<void> {
+async function renderImport(sample = false): Promise<void> {
   await loadAppInfo();
   const status = await api('/api/compile-status', CompileStatusSchema).catch(() => ({
     available: false,
@@ -265,6 +268,106 @@ async function renderImport(): Promise<void> {
 
   const output = el('div', { id: 'import-output' });
   const submit = el('button', { type: 'button' }, 'Validate run package');
+
+  /**
+   * Renders whatever the importer returned, and offers the next step it allows.
+   * Shared by the upload path and the preloaded sample so there is exactly one
+   * place where an import result turns into a verdict.
+   */
+  const present = (result: ImportResult): void => {
+    output.appendChild(importSummary(result));
+
+    if (
+      result.contractStatus === 'uploaded-contract' ||
+      result.contractStatus === 'matched-frozen-contract'
+    ) {
+      const usesFrozen = result.contractStatus === 'matched-frozen-contract';
+      const verifyButton = el(
+        'button',
+        { type: 'button' },
+        usesFrozen ? 'Verify against the matching frozen contract' : 'Verify this run',
+      );
+      verifyButton.addEventListener('click', () => {
+        void (async () => {
+          verifyButton.setAttribute('disabled', '');
+          try {
+            const run = await api<RunView>('/api/verify', RunViewSchema, {
+              method: 'POST',
+              body: JSON.stringify({
+                importId: result.importId,
+                contractSource: usesFrozen ? 'frozen' : 'uploaded',
+              }),
+            });
+            window.location.hash = `#/runs/${run.runId}`;
+          } catch (error) {
+            output.appendChild(errorPanel('Verification failed.', detailsOf(error)));
+          }
+        })();
+      });
+      output.appendChild(el('div', { class: 'actions mt-3' }, verifyButton));
+      return;
+    }
+
+    if (result.contractStatus === 'compile-available') {
+      const compileButton = el(
+        'button',
+        { type: 'button', class: 'ghost' },
+        'Compile a contract (one model call)',
+      );
+      compileButton.addEventListener('click', () => {
+        void (async () => {
+          compileButton.setAttribute('disabled', '');
+          output.appendChild(
+            el(
+              'p',
+              { class: 'mt-2' },
+              el(
+                'span',
+                { class: 'pill v-model', 'data-glyph': '◆' },
+                'Model-assisted compilation in progress',
+              ),
+            ),
+          );
+          try {
+            const run = await api<RunView>('/api/contracts/compile', RunViewSchema, {
+              method: 'POST',
+              body: JSON.stringify({ importId: result.importId }),
+            });
+            window.location.hash = `#/runs/${run.runId}`;
+          } catch (error) {
+            output.appendChild(errorPanel('Compilation failed.', detailsOf(error)));
+          }
+        })();
+      });
+      output.appendChild(el('div', { class: 'actions mt-3' }, compileButton));
+      return;
+    }
+
+    output.appendChild(
+      el(
+        'div',
+        { class: 'actions mt-3' },
+        el('a', { class: 'btn ghost', href: '#/demo' }, 'Try the built-in demo instead'),
+      ),
+    );
+  };
+
+  /** The committed sample, imported server-side through the same validator. */
+  const loadSample = async (): Promise<void> => {
+    clear(output);
+    output.appendChild(el('p', { class: 'muted' }, 'Validating the sample run package…'));
+    try {
+      const result = await api<ImportResult>('/api/import/sample', ImportResultSchema, {
+        method: 'POST',
+        body: '{}',
+      });
+      clear(output);
+      present(result);
+    } catch (error) {
+      clear(output);
+      output.appendChild(errorPanel('The sample import failed.', detailsOf(error)));
+    }
+  };
 
   const zipInput = el('input', { type: 'file', id: 'zip-input', accept: '.zip' });
 
@@ -293,77 +396,7 @@ async function renderImport(): Promise<void> {
           method: 'POST',
           body: JSON.stringify(body),
         });
-        output.appendChild(importSummary(result));
-
-        if (
-          result.contractStatus === 'uploaded-contract' ||
-          result.contractStatus === 'matched-frozen-contract'
-        ) {
-          const usesFrozen = result.contractStatus === 'matched-frozen-contract';
-          const verifyButton = el(
-            'button',
-            { type: 'button' },
-            usesFrozen ? 'Verify against the matching frozen contract' : 'Verify this run',
-          );
-          verifyButton.addEventListener('click', () => {
-            void (async () => {
-              verifyButton.setAttribute('disabled', '');
-              try {
-                const run = await api<RunView>('/api/verify', RunViewSchema, {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    importId: result.importId,
-                    contractSource: usesFrozen ? 'frozen' : 'uploaded',
-                  }),
-                });
-                window.location.hash = `#/runs/${run.runId}`;
-              } catch (error) {
-                output.appendChild(errorPanel('Verification failed.', detailsOf(error)));
-              }
-            })();
-          });
-          output.appendChild(el('div', { class: 'actions mt-3' }, verifyButton));
-        } else if (result.contractStatus === 'compile-available') {
-          const compileButton = el(
-            'button',
-            { type: 'button', class: 'ghost' },
-            'Compile a contract (one model call)',
-          );
-          compileButton.addEventListener('click', () => {
-            void (async () => {
-              compileButton.setAttribute('disabled', '');
-              output.appendChild(
-                el(
-                  'p',
-                  { class: 'mt-2' },
-                  el(
-                    'span',
-                    { class: 'pill v-model', 'data-glyph': '◆' },
-                    'Model-assisted compilation in progress',
-                  ),
-                ),
-              );
-              try {
-                const run = await api<RunView>('/api/contracts/compile', RunViewSchema, {
-                  method: 'POST',
-                  body: JSON.stringify({ importId: result.importId }),
-                });
-                window.location.hash = `#/runs/${run.runId}`;
-              } catch (error) {
-                output.appendChild(errorPanel('Compilation failed.', detailsOf(error)));
-              }
-            })();
-          });
-          output.appendChild(el('div', { class: 'actions mt-3' }, compileButton));
-        } else {
-          output.appendChild(
-            el(
-              'div',
-              { class: 'actions mt-3' },
-              el('a', { class: 'btn ghost', href: '#/demo' }, 'Try the built-in demo instead'),
-            ),
-          );
-        }
+        present(result);
       } catch (error) {
         output.appendChild(
           errorPanel(
@@ -377,6 +410,16 @@ async function renderImport(): Promise<void> {
     })();
   });
 
+  const sampleButton = el(
+    'button',
+    { type: 'button', class: 'ghost' },
+    'Import the sample package',
+  );
+  sampleButton.addEventListener('click', () => {
+    sampleButton.setAttribute('disabled', '');
+    void loadSample().finally(() => sampleButton.removeAttribute('disabled'));
+  });
+
   show([
     el(
       'section',
@@ -387,6 +430,18 @@ async function renderImport(): Promise<void> {
         { class: 'lede' },
         'Upload a run package and StateProof will validate it against the refund-operations domain. Validation is not verification: you choose when to verify.',
       ),
+      appInfo?.samplePackageAvailable === true
+        ? el(
+            'div',
+            { class: 'callout mt-3' },
+            el(
+              'p',
+              {},
+              'No package to hand? The committed sample goes through the same validator, the same archive limits and the same domain check as an upload.',
+            ),
+            el('div', { class: 'actions mt-2' }, sampleButton),
+          )
+        : null,
       el(
         'div',
         { class: 'callout warn' },
@@ -453,6 +508,13 @@ async function renderImport(): Promise<void> {
       ),
     ),
   ]);
+
+  // Arrived from the home page's "Try sample import": run it straight away,
+  // through exactly the path the button above uses.
+  if (sample && appInfo?.samplePackageAvailable === true) {
+    sampleButton.setAttribute('disabled', '');
+    void loadSample().finally(() => sampleButton.removeAttribute('disabled'));
+  }
 }
 
 async function renderBenchmark(): Promise<void> {
@@ -483,8 +545,30 @@ function safely(render: () => Promise<void>): void {
   });
 }
 
+/**
+ * The route to render.
+ *
+ * Navigation inside the app is hash-based, but the deployment publishes real
+ * paths — `/demo`, `/import`, `/benchmark` — and the server serves the shell for
+ * each. A judge opening a shared link must land where the link says, so on a
+ * cold load with no hash the pathname decides.
+ */
+const PATH_ROUTES: Record<string, string> = {
+  '/demo': '#/demo',
+  '/import': '#/import',
+  '/benchmark': '#/benchmark',
+};
+
+function currentRoute(): string {
+  if (window.location.hash !== '') return window.location.hash;
+  const byPath = PATH_ROUTES[window.location.pathname];
+  if (byPath !== undefined) return byPath;
+  const run = /^\/runs\/([A-Za-z0-9_-]+)$/.exec(window.location.pathname);
+  return run === null ? '#/' : `#/runs/${run[1] ?? ''}`;
+}
+
 function route(): void {
-  const hash = window.location.hash === '' ? '#/' : window.location.hash;
+  const hash = currentRoute();
   renderNav(hash.startsWith('#/runs/') ? '#/demo' : hash, appInfo);
   void loadAppInfo().then((info) => {
     renderNav(hash.startsWith('#/runs/') ? '#/demo' : hash, info);
@@ -497,7 +581,10 @@ function route(): void {
     return;
   }
   if (hash === '#/demo') return safely(renderDemo);
-  if (hash === '#/import') return safely(renderImport);
+  if (hash.startsWith('#/import')) {
+    const wantsSample = hash.includes('sample');
+    return safely(() => renderImport(wantsSample));
+  }
   if (hash === '#/benchmark') return safely(renderBenchmark);
   safely(renderHome);
 }

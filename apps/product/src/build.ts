@@ -37,7 +37,7 @@ function colophon(): string {
     repository === null
       ? null
       : `<a href="${repository}/blob/main/REPRODUCTION.md" rel="noreferrer noopener">Reproduction guide</a>`,
-    `<a href="/dashboard/">Evidence dashboard</a>`,
+    `<a href="/evidence/">Evidence dashboard</a>`,
     repository === null
       ? null
       : `<a href="${repository}/blob/main/LICENSE" rel="noreferrer noopener">License</a>`,
