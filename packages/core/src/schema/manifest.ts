@@ -42,6 +42,8 @@ export const EvaluationRunManifestSchema = z
     sourceTreeClean: z.boolean().optional(),
     /** Assertion vocabulary the contracts in this run were compiled against. */
     assertionSchemaVersion: NonEmptyStringSchema.optional(),
+    /** The contract compilation this run's verdicts came from. Unique per run. */
+    contractRunId: NonEmptyStringSchema.optional(),
     /** Set when the run verified from a persisted contract bundle. */
     sourceContractRunId: NonEmptyStringSchema.nullable().optional(),
     runtimeVersion: NonEmptyStringSchema,

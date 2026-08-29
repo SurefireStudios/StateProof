@@ -92,6 +92,30 @@ export const AllowedRecordSchema = z.discriminatedUnion('kind', [
 export type AllowedRecord = z.infer<typeof AllowedRecordSchema>;
 
 /**
+ * One condition inside an existential match: either a literal value, or the id
+ * of a record another selector resolves to.
+ *
+ * The relational form is what lets a contract say "the receipt references the
+ * refund that was created" without knowing that refund's generated id.
+ */
+export const MatchConditionSchema = z.union([
+  FieldMatchSchema,
+  z
+    .object({
+      field: NonEmptyStringSchema,
+      equalsSelectedRecordId: z
+        .object({
+          state: SnapshotLabelSchema.default('final'),
+          selector: RecordSelectorSchema,
+        })
+        .strict(),
+    })
+    .strict(),
+]);
+
+export type MatchCondition = z.infer<typeof MatchConditionSchema>;
+
+/**
  * The deterministic assertion vocabulary. These cover exactly the check types
  * the core benchmark needs: equality, existence/absence, exact numeric value,
  * exact recipient, event ordering, prohibited record creation, and unrelated
@@ -174,6 +198,30 @@ export const AssertionSchema = z.discriminatedUnion('kind', [
       kind: z.literal('no_unrelated_mutations'),
       collection: NonEmptyStringSchema,
       allowedRecordIds: z.array(NonEmptyStringSchema),
+    })
+    .strict(),
+  z
+    .object({
+      /**
+       * Existence, when duplicates and distractors are expected.
+       *
+       * A selector-first assertion has to pick one candidate before it can
+       * check anything, so an unrelated record that happens to share one field
+       * makes the whole requirement unresolvable. That is what happened to
+       * every customer-message requirement in the previous iteration: a
+       * pre-existing email to the same recipient meant "did we send the
+       * receipt?" could not be answered at all.
+       *
+       * This asks the question the task actually asks: does at least one record
+       * satisfy every condition *at once*? Extra records are irrelevant, and
+       * two records each satisfying half of it are not a pass.
+       */
+      kind: z.literal('record_exists_matching'),
+      state: StateRefSchema,
+      collection: NonEmptyStringSchema,
+      where: z.array(MatchConditionSchema).min(1),
+      /** Raise only when the task explicitly requires more than one. */
+      minCount: z.number().int().positive().default(1),
     })
     .strict(),
   z

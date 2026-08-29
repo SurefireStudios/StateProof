@@ -9,6 +9,8 @@ import {
   type CompiledContractV2,
   CompiledContractV2Schema,
   REFUND_OPS_DOMAIN_SCHEMA,
+  REFUND_OPS_MESSAGE_POLICY,
+  REQUIREMENT_KEYS,
   type SemanticViolation,
   type ToolRegistry,
   canonicalJson,
@@ -52,10 +54,12 @@ import {
 
 export const CONTRACT_PROMPT_V1_REPO_PATH = 'prompts/contract-agent/v1.md';
 export const CONTRACT_PROMPT_V2_REPO_PATH = 'prompts/contract-agent/v2.md';
+export const CONTRACT_PROMPT_V3_REPO_PATH = 'prompts/contract-agent/v3.md';
 export const CONTRACT_PROMPT_V1_PATH = path.join(REPO_ROOT, 'prompts', 'contract-agent', 'v1.md');
-export const CONTRACT_PROMPT_PATH = path.join(REPO_ROOT, 'prompts', 'contract-agent', 'v2.md');
-/** Kept for artifacts written before v2 existed. */
-export const CONTRACT_PROMPT_REPO_PATH = CONTRACT_PROMPT_V2_REPO_PATH;
+export const CONTRACT_PROMPT_V2_PATH = path.join(REPO_ROOT, 'prompts', 'contract-agent', 'v2.md');
+export const CONTRACT_PROMPT_PATH = path.join(REPO_ROOT, 'prompts', 'contract-agent', 'v3.md');
+/** The current generation's repo-relative path. */
+export const CONTRACT_PROMPT_REPO_PATH = CONTRACT_PROMPT_V3_REPO_PATH;
 export const CONTRACT_MAX_REPAIR_ATTEMPTS = 1;
 
 export type ContractVersion = '1' | '2';
@@ -200,6 +204,39 @@ export function contractArtifactPath(
   return path.join(artifactsDir, 'contracts', contractRunId, `${fingerprint}.json`);
 }
 
+export function contractRunDirectory(artifactsDir: string, contractRunId: string): string {
+  return path.join(artifactsDir, 'contracts', contractRunId);
+}
+
+export class ContractRunCollisionError extends Error {
+  public constructor(contractRunId: string, directory: string) {
+    super(
+      [
+        `Refusing to compile into the existing contract run "${contractRunId}".`,
+        '',
+        `${directory} already holds contracts from an earlier run. Writing into it would`,
+        'silently mix two runs\' contracts under one id and destroy the link between a',
+        'verdict and the contract that produced it.',
+        '',
+      ].join('\n'),
+    );
+    this.name = 'ContractRunCollisionError';
+  }
+}
+
+/**
+ * A contract run id must name exactly one compilation.
+ *
+ * The previous gate derived it from a run id that had not been generated yet,
+ * so every run wrote into `contracts/RUN-contracts/`. Nothing was lost, because
+ * only one run existed — but a second would have overwritten the first, and the
+ * manifests would still have looked correct.
+ */
+export function assertContractRunIsNew(artifactsDir: string, contractRunId: string): void {
+  const directory = contractRunDirectory(artifactsDir, contractRunId);
+  if (existsSync(directory)) throw new ContractRunCollisionError(contractRunId, directory);
+}
+
 /**
  * Identifiers a contract may legitimately contain that are not entity ids:
  * collection names, field names, and the requirement vocabulary.
@@ -217,7 +254,13 @@ export function domainCollections(): Set<string> {
   return new Set(Object.keys(REFUND_OPS_DOMAIN_SCHEMA.collections));
 }
 
-/** Semantic validation as the compiler applies it: same inputs, every time. */
+/**
+ * Semantic validation as the compiler applies it: same inputs, every time.
+ *
+ * The message policy and the supported-key set are both read from the domain
+ * schema and the requirement vocabulary — the same material the Contract Agent
+ * is shown. Nothing here consults a case, a run, or a gold file.
+ */
 export function checkContractSemantics(
   contract: AnyCompiledContract,
   taskText: string,
@@ -226,6 +269,8 @@ export function checkContractSemantics(
     taskText,
     knownCollections: domainCollections(),
     allowedIdentifiers: schemaIdentifiers(),
+    messagePolicy: REFUND_OPS_MESSAGE_POLICY,
+    fullySupportedRequirementKeys: new Set<string>(REQUIREMENT_KEYS),
   });
 }
 

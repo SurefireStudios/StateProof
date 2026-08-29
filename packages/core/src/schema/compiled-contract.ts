@@ -14,8 +14,11 @@ import { RequirementKeySchema } from './requirement-keys';
  * knowing the other's requirement ids.
  */
 
-/** Bumped by DSL v2, which added `mutations_limited_to` and coverage fields. */
-export const ASSERTION_SCHEMA_VERSION = '2.0.0';
+/** Bumped by DSL v2.1, which added `record_exists_matching`. */
+export const ASSERTION_SCHEMA_VERSION = '2.1.0';
+
+/** What Gate 3B's contracts were compiled against. */
+export const ASSERTION_SCHEMA_VERSION_V2 = '2.0.0';
 
 /** What v1 contracts were compiled against. Kept so historical artifacts parse. */
 export const ASSERTION_SCHEMA_VERSION_V1 = '1.0.0';

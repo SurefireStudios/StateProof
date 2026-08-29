@@ -69,8 +69,10 @@ const literalScope: Assertion = {
 };
 
 describe('assertion schema v2', () => {
-  it('is version 2.0.0', () => {
-    expect(ASSERTION_SCHEMA_VERSION).toBe('2.0.0');
+  it('has moved past the version these assertions were introduced in', () => {
+    // 2.0.0 introduced mutations_limited_to; later minor versions add kinds
+    // without changing it, which is exactly what a minor bump should mean.
+    expect(ASSERTION_SCHEMA_VERSION.startsWith('2.')).toBe(true);
   });
 
   it('defaults a selected allowed record to the initial state', () => {

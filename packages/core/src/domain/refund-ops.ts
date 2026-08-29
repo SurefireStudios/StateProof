@@ -297,3 +297,19 @@ export const REFUND_OPS_DOMAIN_SCHEMA = {
   },
   ordering: 'Every event carries a 1-based seq. Ordering assertions compare seq, never timestamps.',
 } as const;
+
+/**
+ * Which message fields carry which meaning, for the output-record lint.
+ *
+ * Derived from the same schema the Contract Agent is shown, so checking a
+ * contract against it is a capability question ("did you use the
+ * discriminators this domain offers?") and never a gold-data question.
+ */
+export const REFUND_OPS_MESSAGE_POLICY = {
+  collection: 'emails',
+  recipientField: 'to',
+  statusField: 'status',
+  sentValue: 'sent',
+  orderField: 'relatedOrderId',
+  refundField: 'refundId',
+} as const;

@@ -1,5 +1,12 @@
 import type { Assertion } from '../schema/contract';
-import { type EvaluationContext, firstMatchingEvent, selectRecords, snapshotFor } from './assertions';
+import {
+  type EvaluationContext,
+  conditionHolds,
+  firstMatchingEvent,
+  resolveMatchConditions,
+  selectRecords,
+  snapshotFor,
+} from './assertions';
 import { changesInCollection, diffSnapshots } from './state-diff';
 
 /**
@@ -15,6 +22,9 @@ function stateRef(state: 'initial' | 'final', collection: string, recordId: stri
   const base = `state:${state}.${collection}.${recordId}`;
   return field === undefined ? base : `${base}.${field}`;
 }
+
+/** How many matching target records a single assertion will cite. */
+export const MAX_CITED_MATCHES = 5;
 
 /** Deduplicated, sorted, so the same evidence always serializes identically. */
 function stable(refs: readonly string[]): string[] {
@@ -38,6 +48,38 @@ export function assertionEvidenceRefs(
           stateRef(assertion.state, assertion.selector.collection, record.id),
         ),
       );
+    }
+
+    case 'record_exists_matching': {
+      const snapshot = snapshotFor(context, assertion.state);
+      const records = snapshot.collections[assertion.collection] ?? [];
+      const resolution = resolveMatchConditions(assertion.where, context);
+      const refs: string[] = [];
+
+      if (!resolution.ok) {
+        // Nothing to point at but the collection the relation could not resolve.
+        return stable([
+          `state:${assertion.state}.${assertion.collection}`,
+          `state:${resolution.state}.${resolution.collection}`,
+        ]);
+      }
+
+      for (const condition of resolution.conditions) {
+        if (condition.sourceRef === null) continue;
+        refs.push(
+          stateRef(condition.sourceRef.state, condition.sourceRef.collection, condition.sourceRef.recordId),
+        );
+      }
+
+      const matching = records.filter((record) =>
+        resolution.conditions.every((condition) => conditionHolds(record, condition)),
+      );
+      for (const record of matching.slice(0, MAX_CITED_MATCHES)) {
+        refs.push(stateRef(assertion.state, assertion.collection, record.id));
+      }
+      if (matching.length === 0) refs.push(`state:${assertion.state}.${assertion.collection}`);
+
+      return stable(refs);
     }
 
     case 'record_field_equals':

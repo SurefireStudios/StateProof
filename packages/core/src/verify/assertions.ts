@@ -5,6 +5,7 @@ import type {
   EventSelector,
   EvidenceSource,
   FieldMatch,
+  MatchCondition,
   RecordSelector,
 } from '../schema/contract';
 import type { StateRecord, StateSnapshot } from '../schema/state';
@@ -75,6 +76,88 @@ function stateSource(state: 'initial' | 'final'): EvidenceSource {
 
 export function snapshotFor(context: EvaluationContext, state: 'initial' | 'final'): StateSnapshot {
   return state === 'initial' ? context.initialState : context.finalState;
+}
+
+/** One `where` condition of an existential match, after any relation is resolved. */
+export interface ResolvedCondition {
+  readonly field: string;
+  readonly expected: JsonValue;
+  readonly describe: string;
+  /** The source record a relational condition resolved to, for citation. */
+  readonly sourceRef: { state: 'initial' | 'final'; collection: string; recordId: string } | null;
+}
+
+export type ConditionResolution =
+  | { readonly ok: true; readonly conditions: ResolvedCondition[] }
+  | {
+      readonly ok: false;
+      readonly reason: string;
+      readonly state: 'initial' | 'final';
+      readonly collection: string;
+      readonly matchedIds: string[];
+    };
+
+/**
+ * Resolves every condition to a concrete expected value.
+ *
+ * A relational condition names its target by *what it is*, not by its id, so it
+ * has to be resolved against the state before anything can be compared. If that
+ * lookup is ambiguous the whole assertion is unresolvable — the contract does
+ * not yet know what it is asking — which is a different outcome from asking and
+ * getting no.
+ */
+export function resolveMatchConditions(
+  conditions: readonly MatchCondition[],
+  context: EvaluationContext,
+): ConditionResolution {
+  const resolved: ResolvedCondition[] = [];
+
+  for (const condition of conditions) {
+    if ('equals' in condition) {
+      resolved.push({
+        field: condition.field,
+        expected: condition.equals,
+        describe: `${condition.field}=${canonicalJson(condition.equals)}`,
+        sourceRef: null,
+      });
+      continue;
+    }
+
+    const relation = condition.equalsSelectedRecordId;
+    const snapshot = snapshotFor(context, relation.state);
+    const selection = selectRecords(snapshot, relation.selector);
+    if (!selection.collectionPresent || selection.records.length !== 1) {
+      return {
+        ok: false,
+        reason:
+          `${condition.field} must equal the id of ${describeSelector(relation.selector)}, ` +
+          `which matched ${selection.records.length} record(s) in the ${relation.state} state; expected exactly one`,
+        state: relation.state,
+        collection: relation.selector.collection,
+        matchedIds: selection.records.map((record) => record.id),
+      };
+    }
+
+    const source = selection.records[0]!;
+    resolved.push({
+      field: condition.field,
+      expected: source.id,
+      describe: `${condition.field}=${source.id} (the ${describeSelector(relation.selector)})`,
+      sourceRef: {
+        state: relation.state,
+        collection: relation.selector.collection,
+        recordId: source.id,
+      },
+    });
+  }
+
+  return { ok: true, conditions: resolved };
+}
+
+export function conditionHolds(record: StateRecord, condition: ResolvedCondition): boolean {
+  const actual = readRecordValue(record, condition.field);
+  if (actual === undefined) return false;
+  return canonicalJson(actual) === canonicalJson(condition.expected);
 }
 
 export function eventMatches(event: TraceEvent, selector: EventSelector): boolean {
@@ -173,6 +256,82 @@ export function evaluateAssertion(
             locator,
             observed: toJsonValue(selection.records),
             summary: `${found} matching record(s) in ${assertion.state} state`,
+          },
+        ],
+      };
+    }
+
+    case 'record_exists_matching': {
+      const snapshot = snapshotFor(context, assertion.state);
+      const records = snapshot.collections[assertion.collection];
+      const locator = `${assertion.state}_state.${assertion.collection}`;
+
+      if (records === undefined) {
+        return {
+          outcome: 'indeterminate',
+          message: `collection "${assertion.collection}" is not present in the ${assertion.state} state`,
+          evidence: [
+            {
+              source: stateSource(assertion.state),
+              locator,
+              observed: null,
+              summary: 'collection missing from snapshot',
+            },
+          ],
+        };
+      }
+
+      const resolution = resolveMatchConditions(assertion.where, context);
+      if (!resolution.ok) {
+        return {
+          outcome: 'indeterminate',
+          message: resolution.reason,
+          evidence: [
+            {
+              source: stateSource(resolution.state),
+              locator: `${resolution.state}_state.${resolution.collection}`,
+              observed: toJsonValue(resolution.matchedIds),
+              summary: 'a relational condition could not be resolved to one record',
+            },
+          ],
+        };
+      }
+
+      // Every condition must hold on the *same* record: two records each
+      // satisfying half of the requirement is not the requirement.
+      const matching = records.filter((record) =>
+        resolution.conditions.every((condition) => conditionHolds(record, condition)),
+      );
+      const satisfied = matching.length >= assertion.minCount;
+      const perCondition = resolution.conditions.map((condition) => ({
+        condition: condition.describe,
+        matchingRecordIds: records
+          .filter((record) => conditionHolds(record, condition))
+          .map((record) => record.id),
+      }));
+
+      const failing = perCondition.filter((entry) => entry.matchingRecordIds.length === 0);
+      const detail = satisfied
+        ? `matched by ${matching.map((record) => record.id).join(', ')}`
+        : failing.length > 0
+          ? `no record satisfies ${failing.map((entry) => entry.condition).join(' or ')}`
+          : 'every condition holds somewhere, but no single record satisfies all of them';
+
+      return {
+        outcome: satisfied ? 'satisfied' : 'violated',
+        message:
+          `${matching.length} of ${records.length} record(s) in "${assertion.collection}" satisfy all of ` +
+          `[${resolution.conditions.map((condition) => condition.describe).join(' & ')}]; ` +
+          `expected at least ${assertion.minCount} — ${detail}`,
+        evidence: [
+          {
+            source: stateSource(assertion.state),
+            locator,
+            observed: toJsonValue({
+              matchingRecordIds: matching.map((record) => record.id),
+              perCondition,
+            }),
+            summary: `${matching.length} record(s) satisfy every condition at once`,
           },
         ],
       };

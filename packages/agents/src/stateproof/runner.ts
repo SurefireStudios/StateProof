@@ -29,6 +29,7 @@ import {
 } from '../contract/bundle';
 import {
   CONTRACT_PROMPT_PATH,
+  assertContractRunIsNew,
   compileContractForCase,
   computeTaskFingerprint,
   contractPromptRepoPath,
@@ -212,9 +213,11 @@ export async function runStateProof(options: StateProofRunOptions): Promise<Stat
     agentVisibleHashes.push(hashAgentVisibleCase(loadAgentVisibleCase(caseId, { casesDir })));
   }
 
+  // The run id exists before anything is compiled, so the contract run id it
+  // derives is unique per run rather than a constant.
   const phase = warm
     ? planWarm(options, caseIds, casesDir)
-    : await planCold(options, caseIds, casesDir, source);
+    : await planCold(options, caseIds, casesDir, source, runId);
 
   // --- phase 2: verify every run deterministically -------------------------
   const predictions: StateProofPredictionFile['predictions'] = [];
@@ -328,6 +331,7 @@ export async function runStateProof(options: StateProofRunOptions): Promise<Stat
     gitCommitSha: source.commitSha,
     sourceTreeClean: source.clean,
     assertionSchemaVersion: ASSERTION_SCHEMA_VERSION,
+    contractRunId: phase.contractRunId,
     sourceContractRunId: warm ? phase.contractRunId : null,
     runtimeVersion: `node-${process.versions.node}`,
     packageLockHash: packageLockHash(),
@@ -415,10 +419,12 @@ async function planCold(
   caseIds: readonly string[],
   casesDir: string,
   source: SourceTreeStatus,
+  runId: string,
 ): Promise<PhaseOneResult> {
   const promptPath = options.promptPath ?? CONTRACT_PROMPT_PATH;
   const prompt = loadContractPrompt(promptPath);
-  const contractRunId = options.contractRunId ?? `${options.runId ?? 'RUN'}-contracts`;
+  const contractRunId = options.contractRunId ?? `${runId}-contracts`;
+  assertContractRunIsNew(options.artifactsDir, contractRunId);
 
   const cache = new Map<string, CompiledContractArtifactV2>();
   const startedMs = Date.now();

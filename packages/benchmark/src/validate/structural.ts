@@ -230,7 +230,8 @@ export function validateStructure(
     const collections: string[] =
       assertion.kind === 'no_new_records' ||
       assertion.kind === 'no_unrelated_mutations' ||
-      assertion.kind === 'mutations_limited_to'
+      assertion.kind === 'mutations_limited_to' ||
+      assertion.kind === 'record_exists_matching'
         ? [assertion.collection]
         : assertion.kind === 'event_order'
           ? []

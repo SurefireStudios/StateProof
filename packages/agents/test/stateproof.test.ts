@@ -312,7 +312,7 @@ describe('task fingerprinting and the contract cache', () => {
     expect(artifact.taskFingerprint).toMatch(/^[0-9a-f]{64}$/);
     expect(artifact.toolRegistryHash).toMatch(/^[0-9a-f]{64}$/);
     expect(artifact.domainSchemaHash).toMatch(/^[0-9a-f]{64}$/);
-    expect(artifact.assertionSchemaVersion).toBe('2.0.0');
+    expect(artifact.assertionSchemaVersion).toBe('2.1.0');
     expect(artifact.promptHash).toBe(prompt.hash);
     expect(artifact.contractHash).toMatch(/^[0-9a-f]{64}$/);
     expect(artifact.rawResponsePaths).toHaveLength(1);
@@ -565,7 +565,7 @@ describe('StateProof run over the development split', () => {
       expect(manifest.system).toBe('stateproof');
       expect(manifest.datasetHash).toBe(score.datasetHash);
       expect(manifest.reportPath).toBe(`reports/${runId}.md`);
-      expect(Object.keys(manifest.promptHashes)).toEqual(['prompts/contract-agent/v2.md']);
+      expect(Object.keys(manifest.promptHashes)).toEqual(['prompts/contract-agent/v3.md']);
       expect(manifest.notes.join(' ')).toContain(`${runId}-contracts`);
     } finally {
       stopObserving();
