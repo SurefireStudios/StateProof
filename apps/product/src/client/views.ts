@@ -526,7 +526,15 @@ export function homeView(
     el(
       'section',
       { class: 'hero' },
-      el('h1', {}, 'The agent said it was done. Prove it.'),
+      // Two lines, with the demand on its own. `<em>` rather than a styled
+      // span: the italic is emphasis, and a screen reader should hear it.
+      el(
+        'h1',
+        {},
+        'The agent said it was done.',
+        el('br'),
+        el('em', {}, 'Prove it.'),
+      ),
       el(
         'p',
         { class: 'lede' },

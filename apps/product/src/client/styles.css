@@ -328,9 +328,21 @@ section:last-child { margin-bottom: 0; }
   padding: clamp(12px, 3vw, 40px) 0 0;
 }
 .hero h1 {
-  max-width: 24ch;
+  /* The line break is explicit in the markup, so the measure only has to hold
+     the longer of the two lines. */
+  max-width: 30ch;
   margin: 0 auto;
   font-size: clamp(30px, 1rem + 2.4vw, 46px);
+  text-wrap: pretty;
+}
+.hero h1 em {
+  display: inline-block;
+  font-style: italic;
+  /* The italic already sets the demand apart; the small weight drop is an
+     optical correction, because italics read heavier at the same weight. The
+     colour stays full strength — this line is the point of the page. */
+  font-weight: 560;
+  letter-spacing: -0.012em;
 }
 .hero .lede {
   max-width: 62ch;
