@@ -1,19 +1,19 @@
 {
   "schemaVersion": "1.1.0",
-  "generatedAt": "2026-08-29T08:38:33.446Z",
+  "generatedAt": "2026-08-29T08:46:46.326Z",
   "package": {
     "path": "release/stateproof-submission-final.zip",
-    "sha256": "5a2faba9390c088fc68d236f25fb9771d9e2c4066d7bb4500ffa3bb98d3c4684",
-    "sizeBytes": 1205169,
+    "sha256": "d5835f202e103da70755677a1a2b59b10961e4d4628ccad8573bc7d0f5b0b5c9",
+    "sizeBytes": 1205219,
     "sizeMb": 1.15,
-    "sourceCommit": "3cee85d0da2b84acc2fab7b7a7c6ca5751e43891",
+    "sourceCommit": "4e0cfb27784a0c2481a7f1d67523f3cfaa07f272",
     "trackedTreeClean": true
   },
   "environment": {
     "os": "win32 10.0.26200 (x64)",
     "node": "v20.10.0",
     "pnpm": "8.12.0",
-    "installDurationMs": 3265
+    "installDurationMs": 3196
   },
   "contents": {
     "fileCount": 562,
@@ -97,17 +97,32 @@
       {
         "command": "pnpm install --frozen-lockfile",
         "ok": true,
-        "durationMs": 3265
+        "durationMs": 3196
       },
       {
         "command": "pnpm typecheck",
         "ok": true,
-        "durationMs": 4677
+        "durationMs": 4728
       },
       {
         "command": "pnpm test",
+        "ok": true,
+        "durationMs": 14354
+      },
+      {
+        "command": "pnpm benchmark:validate",
+        "ok": true,
+        "durationMs": 1318
+      },
+      {
+        "command": "pnpm benchmark:validate-hard",
+        "ok": true,
+        "durationMs": 1380
+      },
+      {
+        "command": "pnpm reproduce",
         "ok": false,
-        "durationMs": 14092
+        "durationMs": 3450
       }
     ],
     "dashboardStructureOk": true,

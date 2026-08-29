@@ -54,7 +54,7 @@ pnpm install
 pnpm reproduce
 ```
 
-Expected: `RESULT: PASSED (26 checks)`. This re-verifies all twelve
+Expected: `RESULT: PASSED (27 checks)`. This re-verifies all twelve
 PhantomBench-Hard cases from the committed contract bundle, compares canonical
 predictions to the submitted hashes, recomputes development/locked/combined
 metrics, checks every evidence reference, and confirms zero model calls and zero

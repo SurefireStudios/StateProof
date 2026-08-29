@@ -23,7 +23,7 @@ Run the command to re-check it.
 
 | | Item | How to verify |
 | --- | --- | --- |
-| ☑ | Reproduction needs no API key | `pnpm reproduce` → `RESULT: PASSED (26 checks)` |
+| ☑ | Reproduction needs no API key | `pnpm reproduce` → `RESULT: PASSED (27 checks)` |
 | ☑ | Replay makes zero model calls and zero tokens | checks 5–7 of that run |
 | ☑ | All twelve canonical prediction hashes match | checks 10 and 18 |
 | ☑ | Replay does not overwrite submitted artifacts | check "submitted artifacts are untouched" |

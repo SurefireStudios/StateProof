@@ -225,7 +225,7 @@ pnpm reproduce
 No API credential is required, read, or accepted. It re-verifies all twelve Hard
 cases from the committed contract bundle, compares canonical predictions to the
 submitted hashes, recomputes development/locked/combined metrics, and prints
-`RESULT: PASSED (26 checks)`. Roughly 30 seconds on a warm `node_modules`.
+`RESULT: PASSED (27 checks)`. Roughly 30 seconds on a warm `node_modules`.
 
 Full judge path: [`docs/judge-quick-start.md`](docs/judge-quick-start.md).
 

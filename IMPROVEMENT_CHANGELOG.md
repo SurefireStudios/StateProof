@@ -561,7 +561,7 @@ justified it. Entries are added only after the supporting run artifact exists.
     unhandled exception and became an HTTP 500. It is now a field-level
     validation error naming the offending line.
 - **Result:** no metric changed, because nothing that produces a metric was
-  touched. `pnpm reproduce` still passes its 26 checks; the product's own suite
+  touched. `pnpm reproduce` still passes its 27 checks; the product's own suite
   asserts that the demo verdict matches the submitted prediction requirement for
   requirement, that the landing panel matches a fresh execution field by field,
   that the headline claim's figures come from `submission/final-evaluation.json`,

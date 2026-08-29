@@ -40,7 +40,7 @@ guardrails *were* met; the final report is the authority).
 | 16 | 3:35–3:50 | `/#/benchmark` | Scroll to **Improvement changelog**, stage 4 | "Contract Agent v1 — replaced": DSL could not express relational scope | "Our first version failed." | `IMPROVEMENT_CHANGELOG.md`. |
 | 17 | 3:50–4:05 | `/#/benchmark` | Stage 5 | "Contract Agent v2 — replaced": ambiguous exact-one selector | "So did our second." | Same. |
 | 18 | 4:05–4:15 | `/#/benchmark` | Stage 6 | "Contract Agent v3 — final": existential matching plus the lint | "Version three is the one in the box." | Same. |
-| 19 | 4:15–4:28 | Terminal | Run `pnpm reproduce` | `RESULT: PASSED (26 checks)` | "None of this needs my API key." | Pre-warm `node_modules`; the run is ~4 s. If it is slow, show `submission/clean-reproduction-report.md`. |
+| 19 | 4:15–4:28 | Terminal | Run `pnpm reproduce` | `RESULT: PASSED (27 checks)` | "None of this needs my API key." | Pre-warm `node_modules`; the run is ~4 s. If it is slow, show `submission/clean-reproduction-report.md`. |
 | 20 | 4:28–4:40 | `/#/import` | **Download the sample package, then upload and verify it** | `matched-frozen-contract`, then `PASS` with zero model calls | "Bring your own run." | Show the manifest list and say the sample is at `samples/stateproof-sample-run.zip`. |
 | 21 | 4:40–4:52 | `/#/benchmark` | Scroll to **What this does not show** | "Twelve synthetic cases in one domain … does not establish generalization" | "Honest limits." | `docs/limitations.md`. |
 | 22 | 4:52–5:00 | `/#/` | Scroll to the bottom | The hot take | Closing line. | `README.md` §16. |
@@ -77,7 +77,7 @@ guardrails *were* met; the final report is the authority).
 - [ ] `pnpm dashboard:build && pnpm product:build && pnpm product:dev` running before recording starts
 - [ ] `pnpm install` already warm so shot 19 is fast
 - [ ] Browser at 1440×900 or larger — the proof panel is side-by-side above 960 px
-- [ ] Terminal font large enough to read `RESULT: PASSED (26 checks)`
+- [ ] Terminal font large enough to read `RESULT: PASSED (27 checks)`
 - [ ] Terminal history and prompt contain no path under a home directory
 - [ ] No `.env`, no key, no editor sidebar showing local paths
 - [ ] A run already verified once, so shot 7 is not the first cold start

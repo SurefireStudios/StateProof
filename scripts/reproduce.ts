@@ -88,6 +88,23 @@ function sameArtifacts(before: string, after: string): boolean {
   return before === after;
 }
 
+/**
+ * Whether this copy of the repository is a git checkout.
+ *
+ * The submission also ships as a ZIP, and an extracted archive has no history.
+ * Re-deriving a prompt hash from the commit a manifest records is impossible
+ * there — which is a *missing check*, not a failed one. Reporting it as failure
+ * would tell a judge the artifacts had drifted when they had not.
+ */
+function inCheckout(): boolean {
+  try {
+    execFileSync('git', ['rev-parse', '--git-dir'], { cwd: REPO_ROOT, stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function promptHashAtCommit(commitSha: string, repoRelativePath: string): string | null {
   try {
     // stderr is silenced: the one expected miss here is the documented Gate 3A
@@ -124,14 +141,21 @@ async function main(): Promise<void> {
   }
 
   // --- 2. the pinned artifact registry -------------------------------------
+  const checkout = inCheckout();
   let view;
   try {
     view = loadSubmissionView({
       repoRoot: REPO_ROOT,
-      checkProvenance: (commitSha, promptPath) => {
-        const blob = promptHashAtCommit(commitSha, promptPath);
-        return blob === null ? `${promptPath} is not present at ${commitSha.slice(0, 12)}` : null;
-      },
+      ...(checkout
+        ? {
+            checkProvenance: (commitSha: string, promptPath: string): string | null => {
+              const blob = promptHashAtCommit(commitSha, promptPath);
+              return blob === null
+                ? `${promptPath} is not present at ${commitSha.slice(0, 12)}`
+                : null;
+            },
+          }
+        : {}),
     });
   } catch (error) {
     if (error instanceof SubmissionArtifactError) {
@@ -147,6 +171,17 @@ async function main(): Promise<void> {
     'pinned artifacts verify',
     `${view.bundles[0]?.contracts.length ?? 0} contracts, every hash re-derived`,
   );
+  if (checkout) {
+    ok('prompt provenance re-derived', 'every run checked against the commit it records');
+  } else {
+    // Reported, never silently dropped: a skipped check that looks like a
+    // passed one is exactly the failure this project exists to catch.
+    process.stdout.write(
+      '  --    prompt provenance                             not checked: this is an extracted package, not a git\n' +
+        '        checkout, so a prompt hash cannot be re-derived from the commit a manifest records.\n' +
+        '        Every artifact hash above was still re-derived. Run this from the repository for that check.\n',
+    );
+  }
 
   // --- 3. locked cases are unreachable -------------------------------------
   const lockedIds = new Set(view.manifest.lockedCaseIds);

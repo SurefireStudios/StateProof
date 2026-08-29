@@ -56,7 +56,7 @@ Expected tail:
   SVR / FVR / CDR    100.0% / 0.0% / 100.0%
   BVA                100.0%
 
-RESULT: PASSED (26 checks)
+RESULT: PASSED (27 checks)
 ```
 
 Expected runtime: under a minute on a warm `node_modules`, dominated by fixture

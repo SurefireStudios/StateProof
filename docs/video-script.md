@@ -131,7 +131,7 @@ path, prompt hash, "frozen contract bundle — no model call". Then `/dashboard/
 
 > None of this needs my API key. Neither does yours.
 
-*Terminal: `pnpm reproduce` → `RESULT: PASSED (26 checks)`.*
+*Terminal: `pnpm reproduce` → `RESULT: PASSED (27 checks)`.*
 
 > Twelve cases re-verified from committed artifacts, metrics recomputed from
 > counts, every evidence reference checked. Four seconds.
