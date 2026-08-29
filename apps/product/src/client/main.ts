@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import type {
   AppInfo,
   BenchmarkView,
@@ -6,6 +7,15 @@ import type {
   ImportResult,
   RunView,
 } from '../shared/types';
+import {
+  AppInfoSchema,
+  BenchmarkViewSchema,
+  DemoSummarySchema,
+  HeroProofSchema,
+  ImportResultSchema,
+  RunViewSchema,
+} from '../shared/types';
+
 import { clear, el, frag } from './dom';
 import {
   benchmarkPage,
@@ -17,6 +27,11 @@ import {
   runInspector,
   skeleton,
 } from './views';
+
+/** The one payload with no shared schema: it exists only for this screen. */
+const CompileStatusSchema = z
+  .object({ available: z.boolean(), reason: z.string() })
+  .strict();
 
 /**
  * Hash routing over a single shell.
@@ -39,20 +54,53 @@ interface ApiFailure {
   readonly details: Array<{ field: string; message: string }>;
 }
 
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
+function failure(message: string, details: Array<{ field: string; message: string }>): Error {
+  const error = new Error(message);
+  (error as Error & { details?: ApiFailure['details'] }).details = details;
+  return error;
+}
+
+/**
+ * Every response is parsed through the shared schema before it is rendered.
+ *
+ * The client used to cast instead. A server one version behind then returned a
+ * payload missing a field the page dereferenced, the render threw, and the page
+ * came out blank — the worst possible failure for a tool whose argument is that
+ * you should be able to see what happened. A mismatch is now a visible error
+ * with the offending field named.
+ */
+async function api<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
   });
   const text = await response.text();
-  const body: unknown = text === '' ? {} : JSON.parse(text);
-  if (!response.ok) {
-    const failure = body as ApiFailure;
-    const error = new Error(failure.error ?? 'The request failed.');
-    (error as Error & { details?: ApiFailure['details'] }).details = failure.details ?? [];
-    throw error;
+
+  let body: unknown;
+  try {
+    body = text === '' ? {} : JSON.parse(text);
+  } catch {
+    throw failure('The server did not return JSON.', [
+      { field: path, message: 'Is an older server still running on this port?' },
+    ]);
   }
-  return body as T;
+
+  if (!response.ok) {
+    const problem = body as ApiFailure;
+    throw failure(problem.error ?? 'The request failed.', problem.details ?? []);
+  }
+
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    throw failure('The server sent a response this page cannot read.', [
+      ...parsed.error.issues.slice(0, 4).map((issue) => ({
+        field: `${path}${issue.path.length === 0 ? '' : ` → ${issue.path.join('.')}`}`,
+        message: issue.message,
+      })),
+      { field: 'likely cause', message: 'A server from an earlier build is still running. Restart it.' },
+    ]);
+  }
+  return parsed.data;
 }
 
 function detailsOf(error: unknown): Array<{ field: string; message: string }> {
@@ -68,7 +116,7 @@ let appInfo: AppInfo | null = null;
 
 async function loadAppInfo(): Promise<AppInfo | null> {
   if (appInfo !== null) return appInfo;
-  appInfo = await api<AppInfo>('/api/app').catch(() => null);
+  appInfo = await api<AppInfo>('/api/app', AppInfoSchema).catch(() => null);
   return appInfo;
 }
 
@@ -137,8 +185,8 @@ async function renderHome(): Promise<void> {
   // Both are committed artifacts and either can be missing without the page
   // losing its point, so neither failure blocks the other.
   const [benchmark, hero] = await Promise.all([
-    api<BenchmarkView>('/api/benchmark').catch(() => null),
-    api<HeroProof>('/api/hero').catch(() => null),
+    api<BenchmarkView>('/api/benchmark', BenchmarkViewSchema).catch(() => null),
+    api<HeroProof>('/api/hero', HeroProofSchema).catch(() => null),
   ]);
   show([homeView(benchmark, hero)]);
 }
@@ -147,7 +195,7 @@ async function renderDemo(): Promise<void> {
   show([el('section', {}, el('div', { class: 'skeleton' }), el('div', { class: 'skeleton' }))]);
   let summary: DemoSummary;
   try {
-    summary = await api<DemoSummary>('/api/demo');
+    summary = await api<DemoSummary>('/api/demo', DemoSummarySchema);
   } catch (error) {
     show([errorPanel('The demo could not load.', detailsOf(error))]);
     return;
@@ -164,7 +212,7 @@ async function renderDemo(): Promise<void> {
     const root = main();
     root.appendChild(skeleton());
     try {
-      const run = await api<RunView>('/api/verify/demo', { method: 'POST', body: '{}' });
+      const run = await api<RunView>('/api/verify/demo', RunViewSchema, { method: 'POST', body: '{}' });
       window.location.hash = `#/runs/${run.runId}`;
     } catch (error) {
       root.appendChild(errorPanel('Verification failed.', detailsOf(error)));
@@ -177,7 +225,7 @@ async function renderDemo(): Promise<void> {
 async function renderRun(runId: string): Promise<void> {
   show([el('section', {}, el('div', { class: 'skeleton' }), el('div', { class: 'skeleton' }))]);
   try {
-    const run = await api<RunView>(`/api/runs/${encodeURIComponent(runId)}`);
+    const run = await api<RunView>(`/api/runs/${encodeURIComponent(runId)}`, RunViewSchema);
     show([runInspector(run)]);
   } catch (error) {
     show([
@@ -210,9 +258,10 @@ async function readFileInput(input: HTMLInputElement): Promise<string | undefine
 
 async function renderImport(): Promise<void> {
   await loadAppInfo();
-  const status = await api<{ available: boolean; reason: string }>('/api/compile-status').catch(
-    () => ({ available: false, reason: 'compile status unavailable' }),
-  );
+  const status = await api('/api/compile-status', CompileStatusSchema).catch(() => ({
+    available: false,
+    reason: 'compile status unavailable',
+  }));
 
   const output = el('div', { id: 'import-output' });
   const submit = el('button', { type: 'button' }, 'Validate run package');
@@ -240,7 +289,7 @@ async function renderImport(): Promise<void> {
           }
           body = { files };
         }
-        const result = await api<ImportResult>('/api/import', {
+        const result = await api<ImportResult>('/api/import', ImportResultSchema, {
           method: 'POST',
           body: JSON.stringify(body),
         });
@@ -260,7 +309,7 @@ async function renderImport(): Promise<void> {
             void (async () => {
               verifyButton.setAttribute('disabled', '');
               try {
-                const run = await api<RunView>('/api/verify', {
+                const run = await api<RunView>('/api/verify', RunViewSchema, {
                   method: 'POST',
                   body: JSON.stringify({
                     importId: result.importId,
@@ -295,7 +344,7 @@ async function renderImport(): Promise<void> {
                 ),
               );
               try {
-                const run = await api<RunView>('/api/contracts/compile', {
+                const run = await api<RunView>('/api/contracts/compile', RunViewSchema, {
                   method: 'POST',
                   body: JSON.stringify({ importId: result.importId }),
                 });
@@ -409,11 +458,29 @@ async function renderImport(): Promise<void> {
 async function renderBenchmark(): Promise<void> {
   show([el('section', {}, el('div', { class: 'skeleton' }))]);
   try {
-    const benchmark = await api<BenchmarkView>('/api/benchmark');
+    const benchmark = await api<BenchmarkView>('/api/benchmark', BenchmarkViewSchema);
     show([benchmarkPage(benchmark)]);
   } catch (error) {
     show([errorPanel('The benchmark could not load.', detailsOf(error))]);
   }
+}
+
+/**
+ * An error boundary for a route.
+ *
+ * Rendering happens after the fetch resolves, so anything that throws in a view
+ * leaves `#app` empty — a blank page, with the reason only in the console. Every
+ * route goes through here so a failure is something you can read.
+ */
+function safely(render: () => Promise<void>): void {
+  void render().catch((error: unknown) => {
+    show([
+      errorPanel(
+        error instanceof Error ? error.message : 'This page could not be rendered.',
+        detailsOf(error),
+      ),
+    ]);
+  });
 }
 
 function route(): void {
@@ -425,13 +492,14 @@ function route(): void {
 
   const runMatch = /^#\/runs\/([A-Za-z0-9_-]+)$/.exec(hash);
   if (runMatch !== null) {
-    void renderRun(runMatch[1] ?? '');
+    const runId = runMatch[1] ?? '';
+    safely(() => renderRun(runId));
     return;
   }
-  if (hash === '#/demo') return void renderDemo();
-  if (hash === '#/import') return void renderImport();
-  if (hash === '#/benchmark') return void renderBenchmark();
-  void renderHome();
+  if (hash === '#/demo') return safely(renderDemo);
+  if (hash === '#/import') return safely(renderImport);
+  if (hash === '#/benchmark') return safely(renderBenchmark);
+  safely(renderHome);
 }
 
 installEvidenceDelegation(main());

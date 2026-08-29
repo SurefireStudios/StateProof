@@ -683,6 +683,52 @@ describe('the production build', () => {
     expect(shell).toContain('The agent said it was done. Prove it.');
   });
 
+  it('parses every response before rendering it, and cannot blank the page', () => {
+    // A server one build behind returned a payload missing a field the home
+    // page dereferenced. The render threw, `#app` stayed empty, and the only
+    // trace was a console line — a blank page from a tool whose whole argument
+    // is that you should be able to see what happened.
+    const main = readFileSync(path.join(PRODUCT_SRC, 'client', 'main.ts'), 'utf8');
+
+    // Casting a response is what allowed it; parsing is what prevents it.
+    expect(main).toContain('schema.safeParse(body)');
+    expect(main).not.toMatch(/api<\w+>\('\/api\/[^']*'\)/);
+    for (const schema of [
+      'AppInfoSchema',
+      'BenchmarkViewSchema',
+      'DemoSummarySchema',
+      'HeroProofSchema',
+      'ImportResultSchema',
+      'RunViewSchema',
+    ]) {
+      expect(main, schema).toContain(schema);
+    }
+
+    // Every route renders behind an error boundary.
+    expect(main).toContain('function safely(');
+    for (const route of ['renderHome', 'renderDemo', 'renderImport', 'renderBenchmark']) {
+      expect(main, route).toMatch(new RegExp(`safely\\((?:\\(\\) => )?${route}`));
+    }
+  });
+
+  it('serves its own mark as an image, not as text', () => {
+    // `nosniff` means a stylesheet or an image sent as text/plain simply does
+    // not render, silently. Every asset the shell references needs a type.
+    const server = readFileSync(path.join(PRODUCT_SRC, 'server', 'index.ts'), 'utf8');
+    const shell = readFileSync(path.join(REPO_ROOT, 'apps', 'product', 'dist', 'index.html'), 'utf8');
+
+    const referenced = new Set(
+      [...shell.matchAll(/(?:src|href)="\/([^"]+)"/g)].map((match) =>
+        path.extname(match[1] ?? '').toLowerCase(),
+      ),
+    );
+    referenced.delete('');
+    for (const extension of referenced) {
+      expect(server, `${extension} needs a content type`).toContain(`'${extension}':`);
+    }
+    expect(referenced.has('.svg')).toBe(true);
+  });
+
   it('sets no style attribute from the client, which the CSP would drop', () => {
     // `style-src 'self'` blocks inline style attributes, including ones set
     // through setAttribute. Spacing that only exists in markup never renders,
