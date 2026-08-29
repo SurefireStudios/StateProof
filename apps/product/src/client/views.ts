@@ -1,4 +1,4 @@
-import type { BenchmarkView, DemoSummary, ImportResult, RunView } from '../shared/types';
+import type { BenchmarkView, DemoSummary, HeroProof, ImportResult, RunView } from '../shared/types';
 import { append, clear, el, frag, highlight, ms, pill } from './dom';
 
 /**
@@ -307,7 +307,79 @@ export function runInspector(run: RunView): DocumentFragment {
   );
 }
 
-export function homeView(benchmark: BenchmarkView | null): DocumentFragment {
+/**
+ * The landing page's worked example.
+ *
+ * Left: what a reviewer reads — the agent's own final report, confident and
+ * wrong. Right: what the verifier found in the state, in its own words. The
+ * contrast is the product, so it is the first thing on the page, and every
+ * number in it comes off an execution rather than out of a copy deck.
+ */
+export function proofPanel(hero: HeroProof): HTMLElement {
+  return el(
+    'div',
+    { class: 'proof' },
+    el(
+      'div',
+      { class: 'proof-pane proof-claim' },
+      el('div', { class: 'proof-head' }, el('h3', {}, 'What was asked')),
+      el('p', { class: 'proof-task' }, hero.task),
+      el(
+        'div',
+        { class: 'proof-head' },
+        el('h3', {}, 'What the agent reported'),
+        el('span', { class: 'pill v-pass', 'data-glyph': '✓' }, 'SELF-REPORTED'),
+      ),
+      el('blockquote', { class: 'quote' }, hero.agentClaim),
+      el(
+        'p',
+        { class: 'proof-meta' },
+        `${String(hero.eventCount)} events · ${String(hero.toolCallCount)} tool calls · nothing in the log announces a problem`,
+      ),
+    ),
+    el(
+      'div',
+      { class: 'proof-pane proof-reality' },
+      el(
+        'div',
+        { class: 'proof-head' },
+        el('h3', {}, 'What the state actually shows'),
+        pill(hero.verdict, { solid: true }),
+      ),
+      el(
+        'ol',
+        { class: 'findings' },
+        ...hero.findings.map((finding) =>
+          el(
+            'li',
+            { class: `finding ${statusEdge(finding.status)}` },
+            el('span', { class: 'finding-mark', 'aria-hidden': 'true' }),
+            el(
+              'div',
+              { class: 'finding-body' },
+              el(
+                'p',
+                { class: 'finding-label' },
+                finding.label,
+                el('span', { class: 'faint small' }, finding.category),
+              ),
+              el('p', { class: 'finding-evidence' }, finding.evidence),
+            ),
+          ),
+        ),
+      ),
+      el(
+        'p',
+        { class: 'proof-meta' },
+        `${String(hero.requirementsFailed)} of ${String(hero.requirementsChecked)} requirements contradicted · verified in ${ms(
+          hero.verificationDurationMs,
+        )} · ${String(hero.modelCalls)} model calls · ${String(hero.modelTokens)} tokens`,
+      ),
+    ),
+  );
+}
+
+export function homeView(benchmark: BenchmarkView | null, hero: HeroProof | null): DocumentFragment {
   const combined =
     benchmark === null
       ? null
@@ -317,28 +389,43 @@ export function homeView(benchmark: BenchmarkView | null): DocumentFragment {
   return frag(
     el(
       'section',
-      { class: 'grid grid-2 hero' },
+      { class: 'hero' },
+      el('h1', {}, 'The agent said it was done. Prove it.'),
+      el(
+        'p',
+        { class: 'lede' },
+        'StateProof compiles an agent task into a reusable executable contract, then verifies every run against real state and trajectory evidence — without paying another frontier model to reinterpret the same task each time.',
+      ),
       el(
         'div',
-        {},
-        el('h1', {}, 'The agent said it was done. Prove it.'),
-        el(
-          'p',
-          { class: 'lede' },
-          'StateProof compiles an agent task into a reusable executable contract, then verifies every run against real state and trajectory evidence — without paying another frontier model to reinterpret the same task each time.',
-        ),
-        el(
-          'div',
-          { class: 'actions mt-3' },
-          el('a', { class: 'btn', href: '#/demo' }, 'Run the verification demo'),
-          el('a', { class: 'btn ghost', href: '#/import' }, 'Import an agent run'),
-        ),
-        el(
-          'p',
-          { class: 'faint small mt-2' },
-          'The demo needs no API key and makes no model call.',
-        ),
+        { class: 'actions mt-3' },
+        el('a', { class: 'btn', href: '#/demo' }, 'Run the verification demo'),
+        el('a', { class: 'btn ghost', href: '#/import' }, 'Import an agent run'),
       ),
+      el(
+        'p',
+        { class: 'faint small mt-2' },
+        'The demo needs no API key and makes no model call.',
+      ),
+    ),
+    hero === null
+      ? null
+      : el(
+          'section',
+          {},
+          proofPanel(hero),
+          el(
+            'p',
+            { class: 'faint small mt-2' },
+            'Case ',
+            el('span', { class: 'mono' }, hero.caseId),
+            ' from PhantomBench-Hard-12, verified offline against the frozen contract. Every figure above came out of that execution. ',
+            el('a', { href: '#/demo' }, 'Run it yourself →'),
+          ),
+        ),
+    el(
+      'section',
+      { class: 'grid grid-2' },
       el(
         'div',
         { class: 'card' },
@@ -348,7 +435,11 @@ export function homeView(benchmark: BenchmarkView | null): DocumentFragment {
           { class: 'small muted' },
           'State and process are the evidence. A confident summary and a clean tool log can both be present while the work is wrong — a no-op, the wrong amount, an approval recorded after the money moved.',
         ),
-        el('h3', { class: 'mt-3' }, 'How it works'),
+      ),
+      el(
+        'div',
+        { class: 'card' },
+        el('h3', {}, 'How it works'),
         el(
           'ol',
           { class: 'steps' },

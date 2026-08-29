@@ -11,7 +11,7 @@ import {
 } from '../shared/types';
 import { benchmarkView } from './benchmark';
 import { compileForImport, compileStatus } from './compile';
-import { DEMO_CASE_ID, demoContext, demoSummary, verifyDemo } from './demo';
+import { DEMO_CASE_ID, demoContext, demoSummary, heroProof, verifyDemo } from './demo';
 import { buildEvidencePack, renderEvidenceMarkdown } from './evidence';
 import { ImportError, getImport, importRun } from './importer';
 import { buildRunView, getRun, readContractArtifact, storeRun } from './runs';
@@ -113,6 +113,11 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
   // --- API ----------------------------------------------------------------
   if (route === '/api/demo' && method === 'GET') {
     sendJson(response, 200, demoSummary(REPO_ROOT));
+    return;
+  }
+
+  if (route === '/api/hero' && method === 'GET') {
+    sendJson(response, 200, heroProof(REPO_ROOT));
     return;
   }
 

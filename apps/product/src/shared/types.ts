@@ -126,6 +126,48 @@ export const DemoSummarySchema = z
 
 export type DemoSummary = z.infer<typeof DemoSummarySchema>;
 
+/**
+ * What the landing page shows: one committed run, already put through the
+ * verifier.
+ *
+ * Nothing here is written by hand. The claim is the agent's own final response,
+ * the findings are the verifier's own evidence strings, and the counters come
+ * out of the same execution — so the picture on the home page cannot drift from
+ * what the product actually does when you click through to it.
+ */
+export const HeroFindingSchema = z
+  .object({
+    requirementKey: z.string().min(1),
+    /** The requirement key, humanised. Never a summary of what was found. */
+    label: z.string().min(1),
+    category: z.string(),
+    status: VerdictSchema,
+    /** The verifier's evidence for this requirement, in full. */
+    evidence: z.string().min(1),
+  })
+  .strict();
+
+export type HeroFinding = z.infer<typeof HeroFindingSchema>;
+
+export const HeroProofSchema = z
+  .object({
+    caseId: z.string().min(1),
+    task: z.string(),
+    agentClaim: z.string().min(1),
+    eventCount: z.number().int().nonnegative(),
+    toolCallCount: z.number().int().nonnegative(),
+    verdict: VerdictSchema,
+    requirementsChecked: z.number().int().nonnegative(),
+    requirementsFailed: z.number().int().nonnegative(),
+    verificationDurationMs: z.number().nonnegative(),
+    modelCalls: z.number().int().nonnegative(),
+    modelTokens: z.number().int().nonnegative(),
+    findings: z.array(HeroFindingSchema),
+  })
+  .strict();
+
+export type HeroProof = z.infer<typeof HeroProofSchema>;
+
 /** A validated but not-yet-verified import. */
 export const ImportResultSchema = z
   .object({

@@ -1,4 +1,4 @@
-import type { BenchmarkView, DemoSummary, ImportResult, RunView } from '../shared/types';
+import type { BenchmarkView, DemoSummary, HeroProof, ImportResult, RunView } from '../shared/types';
 import { clear, el, frag } from './dom';
 import {
   benchmarkPage,
@@ -79,13 +79,13 @@ function show(children: Parameters<typeof frag>): void {
 }
 
 async function renderHome(): Promise<void> {
-  let benchmark: BenchmarkView | null = null;
-  try {
-    benchmark = await api<BenchmarkView>('/api/benchmark');
-  } catch {
-    benchmark = null;
-  }
-  show([homeView(benchmark)]);
+  // Both are committed artifacts and either can be missing without the page
+  // losing its point, so neither failure blocks the other.
+  const [benchmark, hero] = await Promise.all([
+    api<BenchmarkView>('/api/benchmark').catch(() => null),
+    api<HeroProof>('/api/hero').catch(() => null),
+  ]);
+  show([homeView(benchmark, hero)]);
 }
 
 async function renderDemo(): Promise<void> {

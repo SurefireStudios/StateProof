@@ -9,12 +9,17 @@ import { HARD_CASES_DIR, loadAgentVisibleCase } from '@stateproof/benchmark';
 import { buildProduct } from '../src/build';
 import { benchmarkView } from '../src/server/benchmark';
 import { compileStatus } from '../src/server/compile';
-import { DEMO_CASE_ID, demoSummary, verifyDemo } from '../src/server/demo';
+import { DEMO_CASE_ID, demoSummary, heroProof, verifyDemo } from '../src/server/demo';
 import { buildEvidencePack, renderEvidenceMarkdown } from '../src/server/evidence';
 import { ImportError, clearImports, importRun } from '../src/server/importer';
 import { clearRuns, getRun } from '../src/server/runs';
 import { ZipError, assertSafeEntryName, readZip } from '../src/server/zip';
-import { RunViewSchema, ImportResultSchema, BenchmarkViewSchema } from '../src/shared/types';
+import {
+  RunViewSchema,
+  ImportResultSchema,
+  BenchmarkViewSchema,
+  HeroProofSchema,
+} from '../src/shared/types';
 
 /**
  * The product is a surface over a frozen engine. These tests hold it to that:
@@ -118,6 +123,40 @@ describe('the built-in demo', () => {
     ) as { replayCaseIds: string[]; lockedCaseIds: string[] };
     expect(registry.replayCaseIds).toContain(summary.caseId);
     expect(registry.lockedCaseIds).not.toContain(summary.caseId);
+  });
+
+  it('builds the landing-page panel out of the verifier, not out of copy', () => {
+    // The home page makes a strong claim in a few lines. Everything in it has
+    // to survive a re-execution, or the panel becomes marketing about a
+    // product whose entire argument is that summaries are not evidence.
+    const hero = HeroProofSchema.parse(heroProof(REPO_ROOT));
+    const run = verifyDemo(REPO_ROOT);
+
+    expect(hero.caseId).toBe(DEMO_CASE_ID);
+    expect(hero.agentClaim).toBe(run.agentClaim);
+    expect(hero.verdict).toBe(run.verdict);
+    expect(hero.requirementsChecked).toBe(run.requirements.length);
+    expect(hero.modelCalls).toBe(0);
+    expect(hero.modelTokens).toBe(0);
+
+    const contradicted = run.requirements.filter((requirement) => requirement.status !== 'PASS');
+    expect(hero.requirementsFailed).toBe(contradicted.length);
+    expect(hero.findings).toHaveLength(contradicted.length);
+    expect(hero.findings.map((finding) => finding.requirementKey)).toEqual(
+      contradicted.map((requirement) => requirement.requirementKey),
+    );
+
+    for (const [index, finding] of hero.findings.entries()) {
+      const requirement = contradicted[index];
+      expect(requirement).toBeDefined();
+      if (requirement === undefined) continue;
+      expect(finding.status).toBe(requirement.status);
+      // The evidence is the verifier's own words, carried whole.
+      expect(requirement.reason).toContain(finding.evidence);
+      expect(finding.evidence.length).toBeGreaterThan(0);
+      // The label is the key humanised — never a summary of the finding.
+      expect(finding.label.toLowerCase()).toBe(requirement.requirementKey.replace(/_/g, ' '));
+    }
   });
 
   it('runs the real verifier and makes zero model calls', () => {

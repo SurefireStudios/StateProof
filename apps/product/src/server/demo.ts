@@ -3,7 +3,7 @@ import path from 'node:path';
 import { diffSnapshots } from '@stateproof/core';
 import { HARD_CASES_DIR, loadAgentVisibleCase } from '@stateproof/benchmark';
 import { loadReproductionManifest } from '@stateproof/submission';
-import type { DemoSummary, RunView } from '../shared/types';
+import type { DemoSummary, HeroProof, RunView } from '../shared/types';
 import { buildRunView, readContractArtifact, storeRun } from './runs';
 
 /**
@@ -96,24 +96,81 @@ export function demoSummary(repoRoot: string, caseId: string = DEMO_CASE_ID): De
 }
 
 /** Runs the frozen verifier. No model is contacted, here or anywhere below. */
-export function verifyDemo(repoRoot: string, caseId: string = DEMO_CASE_ID): RunView {
+function demoRunView(repoRoot: string, caseId: string): RunView {
   const context = demoContext(repoRoot, caseId);
   const artifact = readContractArtifact(repoRoot, context.contractPath);
   const agentVisible = loadAgentVisibleCase(caseId, { casesDir: HARD_CASES_DIR });
 
-  return storeRun(
-    buildRunView({
-      label: `Demo — ${caseId}`,
-      caseId,
-      agentVisible,
-      contract: artifact.contract,
-      contractHash: context.contractHash,
-      taskFingerprint: context.taskFingerprint,
-      promptPath: context.promptPath,
-      promptHash: context.promptHash,
-      assertionSchemaVersion: context.assertionSchemaVersion,
-      contractSource: 'frozen-bundle',
-      imported: false,
-    }),
-  );
+  return buildRunView({
+    label: `Demo — ${caseId}`,
+    caseId,
+    agentVisible,
+    contract: artifact.contract,
+    contractHash: context.contractHash,
+    taskFingerprint: context.taskFingerprint,
+    promptPath: context.promptPath,
+    promptHash: context.promptHash,
+    assertionSchemaVersion: context.assertionSchemaVersion,
+    contractSource: 'frozen-bundle',
+    imported: false,
+  });
+}
+
+export function verifyDemo(repoRoot: string, caseId: string = DEMO_CASE_ID): RunView {
+  return storeRun(demoRunView(repoRoot, caseId));
+}
+
+/**
+ * A requirement key as a human would say it — `refund_outcome` becomes "Refund
+ * outcome". Deliberately not a summary of the finding: a label that described
+ * what the verifier found would be copy that can go stale, and the evidence
+ * string underneath already says it in the verifier's own words.
+ */
+function humanise(requirementKey: string): string {
+  const words = requirementKey.replace(/_/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/**
+ * The evidence half of a verifier reason.
+ *
+ * Reasons read `<what was required> — <what was observed>`. The landing page
+ * shows the observation, whole: trimming it to the punchiest clause would mean
+ * choosing which evidence a reader sees, which is the habit this whole product
+ * exists to argue against.
+ */
+function observation(reason: string): string {
+  const separator = reason.indexOf(' — ');
+  return separator === -1 ? reason.trim() : reason.slice(separator + 3).trim();
+}
+
+/**
+ * The landing page's worked example: one committed run, verified offline, with
+ * the agent's claim beside the verifier's findings.
+ */
+export function heroProof(repoRoot: string, caseId: string = DEMO_CASE_ID): HeroProof {
+  const agentVisible = loadAgentVisibleCase(caseId, { casesDir: HARD_CASES_DIR });
+  const run = demoRunView(repoRoot, caseId);
+  const contradicted = run.requirements.filter((requirement) => requirement.status !== 'PASS');
+
+  return {
+    caseId,
+    task: agentVisible.task.instruction,
+    agentClaim: run.agentClaim,
+    eventCount: agentVisible.trajectory.length,
+    toolCallCount: agentVisible.trajectory.filter((event) => event.type === 'tool_call').length,
+    verdict: run.verdict,
+    requirementsChecked: run.requirements.length,
+    requirementsFailed: contradicted.length,
+    verificationDurationMs: run.verificationDurationMs,
+    modelCalls: run.modelCalls,
+    modelTokens: run.modelTokens,
+    findings: contradicted.map((requirement) => ({
+      requirementKey: requirement.requirementKey,
+      label: humanise(requirement.requirementKey),
+      category: requirement.category,
+      status: requirement.status,
+      evidence: observation(requirement.reason),
+    })),
+  };
 }

@@ -279,9 +279,150 @@ section:last-child { margin-bottom: 0; }
 .grid { display: grid; gap: var(--s-4); }
 .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.hero { gap: clamp(20px, 3vw, 40px); align-items: center; }
-
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ── landing hero ────────────────────────────────────────────────────────── */
+.hero { max-width: 66ch; }
+.hero .lede { margin-top: 14px; }
+
+/*
+ * The worked example, and the whole argument of the product in one panel: the
+ * agent's own report on the left, what the verifier found in the state on the
+ * right. Both halves are real — the claim is the run's final response, the
+ * findings are the verifier's own evidence strings.
+ */
+.proof {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background-color: var(--bg-raise);
+  box-shadow: var(--shadow-md), var(--hairline);
+}
+.proof-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 22px 24px;
+}
+.proof-claim { border-right: 1px solid var(--line); }
+.proof-reality {
+  position: relative;
+  background-image: linear-gradient(180deg, rgba(255, 107, 107, 0.09), rgba(255, 107, 107, 0) 60%);
+}
+/* One sweep down the seam, once, while the findings arrive. */
+.proof-reality::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 -1px;
+  width: 1px;
+  transform-origin: top;
+  background: linear-gradient(180deg, transparent, var(--accent), transparent);
+  animation: seam 1.5s var(--ease) 150ms both;
+}
+@keyframes seam {
+  0% { opacity: 0; transform: scaleY(0); }
+  25% { opacity: 1; }
+  60% { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(1); }
+}
+
+.proof-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin: 0 0 10px;
+}
+/* A heading binds to the block under it, not to the one above. */
+.proof-head:not(:first-child) { margin-top: 22px; }
+.proof-head h3 {
+  margin: 0;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.proof-reality .pill { animation: reveal var(--dur-slow) var(--ease) 620ms both; }
+
+.proof-task {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-dim);
+  text-wrap: pretty;
+}
+.quote {
+  margin: 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--line-strong);
+  font-size: 16px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+/* Pushed to the bottom of each pane, so the two footnotes sit on one line. */
+.proof-meta {
+  margin: auto 0 0;
+  padding-top: 20px;
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.findings { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.finding {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.02);
+  animation: reveal var(--dur-slow) var(--ease) both;
+}
+.finding.r-fail { border-color: rgba(255, 107, 107, 0.28); background: var(--fail-tint); }
+.finding.r-review { border-color: rgba(240, 180, 41, 0.28); background: var(--review-tint); }
+.finding:nth-child(1) { animation-delay: 260ms; }
+.finding:nth-child(2) { animation-delay: 360ms; }
+.finding:nth-child(3) { animation-delay: 460ms; }
+.finding:nth-child(n + 4) { animation-delay: 560ms; }
+.finding-mark {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--line-strong);
+}
+.finding.r-fail .finding-mark { background: var(--fail); }
+.finding.r-fail .finding-mark::before { content: "\2715"; }
+.finding.r-review .finding-mark { background: var(--review); }
+.finding.r-review .finding-mark::before { content: "?"; }
+.finding-label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  margin: 0 0 3px;
+  font-size: 13.5px;
+  font-weight: 620;
+}
+.finding-evidence {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  overflow-wrap: anywhere;
+}
 
 /* ── cards ───────────────────────────────────────────────────────────────── */
 .card {
@@ -787,6 +928,10 @@ footer p:first-child { color: var(--ink-dim); }
   .contrast { grid-template-columns: 1fr; }
   .contrast .claim { border-right: none; border-bottom: 1px solid var(--line); }
   .kv { grid-template-columns: minmax(120px, 180px) minmax(0, 1fr); }
+  .proof { grid-template-columns: 1fr; }
+  .proof-claim { border-right: none; border-bottom: 1px solid var(--line); }
+  .proof-reality::before { display: none; }
+  .proof-meta { margin-top: 0; }
 }
 
 @media (max-width: 720px) {
@@ -799,6 +944,8 @@ footer p:first-child { color: var(--ink-dim); }
   .contrast > div { padding: 18px; }
   .req-head { padding: 13px 15px 0; }
   .req-body { padding: 9px 15px 14px; }
+  .proof-pane { padding: 18px; }
+  .quote { font-size: 15px; }
 
   .event { grid-template-columns: 46px minmax(0, 1fr); gap: 3px 12px; padding: 11px 15px; }
   .event .seq { grid-row: 1; }
@@ -825,6 +972,9 @@ footer p:first-child { color: var(--ink-dim); }
   html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
+    /* Zeroed too: a staggered `both`-filled reveal would otherwise hold its
+       start frame — invisible content — for the length of its delay. */
+    animation-delay: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
