@@ -242,7 +242,8 @@ describe('the one-time locked protocol', () => {
 });
 
 describe.skipIf(!inCheckout(REPO_ROOT))('the locked CLIs refuse without the protocol', () => {
-  const HEAD = git(['rev-parse', 'HEAD'], REPO_ROOT).trim();
+  // `skipIf` still evaluates the describe body, so this cannot be unconditional.
+  const HEAD = inCheckout(REPO_ROOT) ? git(['rev-parse', 'HEAD'], REPO_ROOT).trim() : '';
 
   function runCli(script: string, args: readonly string[], env: NodeJS.ProcessEnv = {}): string {
     const childEnv: NodeJS.ProcessEnv = { ...process.env, ...env };
