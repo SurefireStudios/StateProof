@@ -222,7 +222,16 @@ function main(): void {
     ].join('\n'),
   );
 
-  rmSync(checkout, { recursive: true, force: true });
+  // Best-effort teardown. On Windows a just-executed binary in node_modules can
+  // still be locked, and failing to delete a scratch directory must not turn a
+  // passing reproduction into a failing command.
+  try {
+    rmSync(checkout, { recursive: true, force: true, maxRetries: 3, retryDelay: 250 });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message.split('\n')[0] : String(error);
+    process.stdout.write(`note: the temporary checkout could not be removed (${reason}).\n`);
+    process.stdout.write(`      Delete it manually: ${checkout}\n`);
+  }
   if (!passed) process.exitCode = 1;
 }
 

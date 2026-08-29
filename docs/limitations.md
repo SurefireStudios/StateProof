@@ -64,20 +64,31 @@ to look tidier is the habit this project exists to catch.
 
 ## Post-freeze changes
 
-Exactly one tracked file changed after the evaluation freeze
+Two tracked files changed after the evaluation freeze
 (`c976e3838477afbf951d0faf57011be1b4ef6864`, tag
-`stateproof-evaluation-freeze-v1`): an assertion in
-`apps/dashboard/test/dashboard.test.ts` that hardcoded "8 inspector pages" was
-made registry-driven, because the locked cases legitimately add four more. It
-touches no prompt, no benchmark, no evaluator, no verifier and no scoring code,
-and it cannot affect any measurement. Diff it against the freeze tag to confirm.
+`stateproof-evaluation-freeze-v1`). Neither touches a prompt, the benchmark, the
+evaluator, the verifier or any scoring code, and neither can affect a
+measurement. Diff them against the freeze tag to confirm:
 
-One cosmetic imprecision is preserved rather than patched: the locked StateProof
+1. `apps/dashboard/test/dashboard.test.ts` — an assertion that hardcoded
+   "8 inspector pages" is now registry-driven, because the locked cases
+   legitimately add four more.
+2. `scripts/clean-reproduction.ts` — deleting the temporary checkout is now
+   best-effort. On Windows a just-executed `esbuild.exe` inside `node_modules`
+   stays locked, and a teardown failure was turning a passing reproduction into
+   a failing command. The reproduction itself was unaffected; the first run's
+   report already read `PASSED`.
+
+Two cosmetic imprecisions are preserved rather than patched: the locked StateProof
 run printed `no efficiency claim: quality guardrails not met` to stdout because
 no `--baseline-run` was supplied for that invocation, so no baseline was loaded
 to compare against. The guardrails were in fact met; the run's own report says
 "No baseline run was loaded", and `submission/final-evaluation.md` computes the
 comparison correctly.
+
+The clean-checkout harness also leaves its temporary directory behind on Windows
+for the same file-locking reason, and prints the path so it can be removed by
+hand. Nothing in the result depends on it.
 
 ## Things deliberately not built
 
