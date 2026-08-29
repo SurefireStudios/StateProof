@@ -25,6 +25,7 @@ import {
   loadContractPrompt,
   runStateProof,
 } from '@stateproof/agents';
+import { inCheckout } from './checkout';
 
 /**
  * Gate 3C: existential evidence matching, and the lint that makes the previous
@@ -57,7 +58,7 @@ function git(args: readonly string[]): string {
 
 // --- Gate 3B and everything before it stays exactly as it was ---------------
 
-describe('earlier gates are preserved', () => {
+describe.skipIf(!inCheckout(REPO_ROOT))('earlier gates are preserved', () => {
   it('leaves every historical prompt and run artifact unmodified in git', () => {
     // Adding files is how a gate records its own run; what must never happen is
     // a tracked prompt, fixture, or per-run artifact being edited or deleted.

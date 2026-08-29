@@ -1,22 +1,22 @@
 {
   "schemaVersion": "1.1.0",
-  "generatedAt": "2026-08-29T07:46:17.953Z",
+  "generatedAt": "2026-08-29T08:06:18.198Z",
   "package": {
     "path": "release/stateproof-submission-final.zip",
-    "sha256": "185a9649548d8bd1bfdb5253ea800974c1010151822f17aac18565dbe27282e8",
-    "sizeBytes": 1180975,
-    "sizeMb": 1.13,
-    "sourceCommit": "1c509e71ecf1610f3699bc97763b06a61805f550",
-    "trackedTreeClean": true
+    "sha256": "e11ce89f7b628c883ae6f38bf5b120e36f766c6b76dd580110b4a33ec716cb2e",
+    "sizeBytes": 1203871,
+    "sizeMb": 1.15,
+    "sourceCommit": "9ca7c7c4fa024c0686d744174029de16c33ae746",
+    "trackedTreeClean": false
   },
   "environment": {
     "os": "win32 10.0.26200 (x64)",
     "node": "v20.10.0",
     "pnpm": "8.12.0",
-    "installDurationMs": 3419
+    "installDurationMs": 3110
   },
   "contents": {
-    "fileCount": 554,
+    "fileCount": 561,
     "topLevelPaths": [
       ".env.example",
       ".gitattributes",
@@ -38,6 +38,7 @@
       "pnpm-lock.yaml",
       "pnpm-workspace.yaml",
       "prompts",
+      "release",
       "samples",
       "scripts",
       "submission",
@@ -64,6 +65,7 @@
       "inspector-PBH-C03.html",
       "inspector-PBH-C04.html",
       "inspector.html",
+      "logo.svg",
       "styles.css",
       "trajectories.html"
     ],
@@ -71,6 +73,7 @@
     "productFiles": [
       "client.js",
       "index.html",
+      "logo.svg",
       "styles.css"
     ],
     "includesSampleRunPackage": true
@@ -94,17 +97,17 @@
       {
         "command": "pnpm install --frozen-lockfile",
         "ok": true,
-        "durationMs": 3419
+        "durationMs": 3110
       },
       {
         "command": "pnpm typecheck",
         "ok": true,
-        "durationMs": 4723
+        "durationMs": 4707
       },
       {
         "command": "pnpm test",
         "ok": false,
-        "durationMs": 8728
+        "durationMs": 8787
       }
     ],
     "dashboardStructureOk": true,

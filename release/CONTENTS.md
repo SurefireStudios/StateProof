@@ -3,10 +3,10 @@
 | | |
 | --- | --- |
 | Archive | `release/stateproof-submission-final.zip` |
-| SHA-256 | `185a9649548d8bd1bfdb5253ea800974c1010151822f17aac18565dbe27282e8` |
-| Size | 1.13 MB (1180975 bytes) |
-| Files | 554 |
-| Source commit | `1c509e71ecf1610f3699bc97763b06a61805f550` |
+| SHA-256 | `e11ce89f7b628c883ae6f38bf5b120e36f766c6b76dd580110b4a33ec716cb2e` |
+| Size | 1.15 MB (1203871 bytes) |
+| Files | 561 |
+| Source commit | `9ca7c7c4fa024c0686d744174029de16c33ae746` |
 | Built on | win32 10.0.26200 (x64), Node v20.10.0, pnpm 8.12.0 |
 
 ## What is inside
@@ -35,6 +35,7 @@ without a build step.
 - `pnpm-lock.yaml`
 - `pnpm-workspace.yaml`
 - `prompts`
+- `release`
 - `samples`
 - `scripts`
 - `submission`
@@ -42,8 +43,8 @@ without a build step.
 - `tsconfig.json`
 - `vitest.config.ts`
 
-Prebuilt dashboard: 19 file(s).
-Prebuilt product: client.js, index.html, styles.css.
+Prebuilt dashboard: 20 file(s).
+Prebuilt product: client.js, index.html, logo.svg, styles.css.
 Sample run package: included.
 
 ## What is excluded
@@ -64,11 +65,11 @@ environment, and the whole offline workflow was run there:
 
 | Step | Result | Duration |
 | --- | --- | --- |
-| `pnpm install --frozen-lockfile` | passed | 3.4 s |
+| `pnpm install --frozen-lockfile` | passed | 3.1 s |
 | `pnpm typecheck` | passed | 4.7 s |
-| `pnpm test` | FAILED | 8.7 s |
+| `pnpm test` | FAILED | 8.8 s |
 
-Install took 3.4 s.
+Install took 3.1 s.
 
 **RESULT: FAILED**
 

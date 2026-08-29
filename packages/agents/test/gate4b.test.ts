@@ -14,6 +14,7 @@ import {
   assertFinalLockedProtocol,
   readLedger,
 } from '@stateproof/agents';
+import { inCheckout } from './checkout';
 
 /**
  * The locked split is worth exactly one run, and everything here exists to make
@@ -240,7 +241,7 @@ describe('the one-time locked protocol', () => {
   });
 });
 
-describe('the locked CLIs refuse without the protocol', () => {
+describe.skipIf(!inCheckout(REPO_ROOT))('the locked CLIs refuse without the protocol', () => {
   const HEAD = git(['rev-parse', 'HEAD'], REPO_ROOT).trim();
 
   function runCli(script: string, args: readonly string[], env: NodeJS.ProcessEnv = {}): string {

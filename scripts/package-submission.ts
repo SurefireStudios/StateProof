@@ -288,7 +288,17 @@ async function main(): Promise<void> {
   const samplePath = path.join(extracted, 'samples', 'stateproof-sample-run.zip');
   const sampleOk = existsSync(samplePath);
 
-  const scan = run(`pnpm --dir "${REPO_ROOT}" scan:secrets "${extracted}"`, REPO_ROOT, env);
+  // `pnpm --dir <x> <script> <arg>` swallows the argument and prints help; the
+  // cwd is already the repository, so `--dir` was redundant anyway.
+  const scan = run(`pnpm scan:secrets "${extracted}"`, REPO_ROOT, env);
+  if (!scan.ok) {
+    // A scan failure with no detail is useless; the whole point is the finding.
+    process.stdout.write(`
+  secret scan findings:
+${scan.tail}
+
+`);
+  }
 
   const passed = steps.every((step) => step.ok) && dashboardOk && productOk && sampleOk && scan.ok;
 

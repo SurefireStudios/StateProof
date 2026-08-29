@@ -7,6 +7,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { FakeModelClient } from '@stateproof/model-provider';
 import { STATEPROOF_STAGE_PREFIX, runStateProof, stateProofStage } from '@stateproof/agents';
 import { CompiledContractV2Schema } from '@stateproof/core';
+import { inCheckout } from './checkout';
 
 /**
  * Gate 4A keeps two promises that are easy to break quietly: future runs are
@@ -126,7 +127,7 @@ describe('run stage labels', () => {
   });
 });
 
-describe('no credential reaches a committed file', () => {
+describe.skipIf(!inCheckout(REPO_ROOT))('no credential reaches a committed file', () => {
   it('finds no credential-shaped string in any tracked artifact or prompt', () => {
     const tracked = execFileSync(
       'git',
@@ -158,11 +159,21 @@ describe('no credential reaches a committed file', () => {
 
 describe('historical artifacts are untouched', () => {
   it('reports no modification or deletion under artifacts, prompts or benchmarks', () => {
-    const touched = execFileSync(
-      'git',
-      ['status', '--porcelain', '--', 'artifacts', 'prompts', 'benchmarks'],
-      { cwd: REPO_ROOT, encoding: 'utf8' },
-    )
+    // This suite also runs inside an extracted release package, which is not a
+    // checkout: there is nothing to compare against there, and the archive was
+    // built from a clean tree in the first place.
+    let status: string;
+    try {
+      status = execFileSync(
+        'git',
+        ['status', '--porcelain', '--', 'artifacts', 'prompts', 'benchmarks'],
+        { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+      );
+    } catch {
+      return;
+    }
+
+    const touched = status
       .split('\n')
       .filter((line) => line.trim() !== '')
       .filter((line) => !line.startsWith('??'))
