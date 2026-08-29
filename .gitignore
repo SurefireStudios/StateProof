@@ -47,3 +47,7 @@ apps/dashboard/dist/
 # the commit its archive was built from.
 release/
 apps/product/dist/
+
+# a loose copy of the mark dropped at the root; the tracked copies that actually
+# ship are apps/product/src/client/logo.svg and apps/dashboard/src/logo.svg
+/Surefire-Icon.svg
