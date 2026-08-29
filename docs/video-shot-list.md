@@ -1,5 +1,15 @@
 # Video shot list — StateProof
 
+**Live:** <https://stateproof-production.up.railway.app/> · [demo](https://stateproof-production.up.railway.app/demo) · [benchmark](https://stateproof-production.up.railway.app/benchmark) ·
+[evidence](https://stateproof-production.up.railway.app/evidence/) · [inspector](https://stateproof-production.up.railway.app/evidence/inspector.html) ·
+[trajectories](https://stateproof-production.up.railway.app/evidence/trajectories.html)
+
+> This is the hand-recorded shot list. The **automated** pipeline that produces the
+> submitted walkthrough lives in [`../video/`](../video/README.md) — it captures
+> these same routes with Playwright and composes with FFmpeg. Its script is
+> generated from `video/src/narration.ts`; see
+> [`../video/voiceover-script.md`](../video/voiceover-script.md).
+
 Setup, before recording:
 
 ```bash

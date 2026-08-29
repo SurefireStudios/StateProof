@@ -14,11 +14,11 @@ The agent said it was done.
 Prove it.
 
 
-### [ 0:12 ]
+### [ 0:08 ]
 
-An agent just reported success.
+An agent reports success.
 
-It refunded forty dollars, emailed the receipt, added a support note, and got approval first.
+It refunded forty dollars, emailed the receipt, added the note, and got approval first.
 
 That sentence is a claim.
 
@@ -30,35 +30,37 @@ The note was never written.
 
 And the approval landed after the money moved.
 
-If you deploy agents that only read things, a wrong answer is embarrassing.
+When an agent only reads, a wrong answer is embarrassing.
 
-If they change refunds, tickets or inventory, it is an incident.
+When it moves money, it is an incident.
 
 So teams check by hand —
 
-the summary, the tool log, then the database.
+summary, tool log, database.
 
 That does not scale.
 
 
-### [ 0:41 ]
+### [ 0:47 ]
 
 The obvious fix is to ask a frontier model to grade it.
 
 That is our baseline, and it is a fair one.
 
-It gets the same task, the same final response, the same trajectory, and both state snapshots.
+It gets the same task, the same response, the same trajectory, both state snapshots.
 
 Its prompt was frozen before StateProof existed.
 
-And it is good.
+And it is good —
 
-Perfect diagnosis on every case.
+perfect diagnosis on every case.
 
-But it spends one frontier evaluation per run: across twelve cases, twelve calls and a hundred and twenty-five thousand tokens.
+But it spends one frontier evaluation per run.
+
+Across twelve cases: twelve calls, a hundred and twenty-five thousand tokens.
 
 
-### [ 1:08 ]
+### [ 1:22 ]
 
 Here is one real execution.
 
@@ -67,7 +69,7 @@ This is the task.
 This is what the agent said about it.
 
 
-### [ 1:30 ]
+### [ 1:35 ]
 
 Watch what happens when I verify it.
 
@@ -78,7 +80,7 @@ Five requirements checked, three contradicted.
 Zero model calls, zero tokens, about one millisecond.
 
 
-### [ 2:00 ]
+### [ 1:54 ]
 
 The refund record says fifty-five dollars.
 
@@ -87,7 +89,7 @@ The contract required exactly forty.
 The support note is simply absent.
 
 
-### [ 2:22 ]
+### [ 2:08 ]
 
 And the ordering.
 
@@ -100,45 +102,43 @@ The refund call carried an approval reference, so the log looked compliant.
 Only the order of events settles it.
 
 
-### [ 2:45 ]
+### [ 2:29 ]
 
-Interpreting a task is the genuinely model-shaped work, so we do it once.
+Interpreting a task is the model-shaped work, so we do it once.
 
-A Contract Agent turns the task into typed, checkable requirements before it has seen any run.
+A Contract Agent turns the task into typed, checkable requirements before it sees any run.
 
-That contract is cached by a fingerprint over the task, the tools and the schema.
+The contract is cached by task fingerprint.
 
 After that, every run is checked by code —
 
-state, event order, prohibitions and scope.
+state, event order, prohibitions, scope.
 
-Each citation is generated from the record or event that actually matched.
+Every citation comes from a record that actually matched.
 
 
-### [ 3:18 ]
+### [ 2:58 ]
 
 Twelve synthetic cases.
 
 Eight we developed against, four held out and run exactly once after we froze the source.
 
-On quality it is a tie: full recall, no false violations, complete diagnosis.
+On quality it is a tie.
 
-What is not a tie is the cost.
+On cost it is not.
 
 Twelve calls become three on first deployment —
 
-seventy-five percent fewer —
-
-and seventy-six point one percent fewer tokens.
+seventy-five percent fewer, and seventy-six point one percent fewer tokens.
 
 Every run after that is zero and zero.
 
-Twelve synthetic refund-operations cases.
+Twelve synthetic cases in one domain.
 
-That is not a universal generalization claim.
+Not a generalization claim.
 
 
-### [ 3:53 ]
+### [ 3:31 ]
 
 Two of our own versions failed, and both are in the submission.
 
@@ -146,16 +146,16 @@ Version one could not express relational scope —
 
 only the support case for this order may change.
 
-Version two fixed that and broke something else: it picked outbound messages by recipient alone, and a pre-existing email to the same person made the check ambiguous.
+Version two fixed that and broke something else: it picked messages by recipient alone, and an older email to the same person made the check ambiguous.
 
 That exact-one selector was removed.
 
-Version three replaced it with existential matching, plus a lint that refuses an under-specified selector before it can run.
+Version three replaced it with existential matching, and a lint that refuses a vague selector before it runs.
 
 That is the change that mattered.
 
 
-### [ 4:30 ]
+### [ 4:10 ]
 
 You can bring your own run.
 
@@ -164,14 +164,14 @@ This sample goes through the same validator, then verifies —
 passing, with no model call.
 
 
-### [ 4:54 ]
+### [ 4:25 ]
 
-Every model call we made is published with its exact input envelope, retries included.
+Every model call is published with its exact input envelope, retries included.
 
-Repeated verification needs no API key at all.
+Repeated verification needs no API key.
 
 
-### [ 5:12 ]
+### [ 4:36 ]
 
 For action-taking agents, the final answer is a claim —
 

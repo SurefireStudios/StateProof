@@ -49,28 +49,43 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
  * moves it with easing, so the viewer can follow what is being pressed.
  */
 const CURSOR_SCRIPT = `
-  (() => {
-    const dot = document.createElement('div');
-    dot.id = '__cursor';
-    dot.style.cssText = [
-      'position:fixed', 'z-index:2147483647', 'left:0', 'top:0',
-      'width:22px', 'height:22px', 'margin:-11px 0 0 -11px',
-      'border-radius:50%', 'pointer-events:none',
-      'background:rgba(255,255,255,.92)',
-      'box-shadow:0 0 0 2px rgba(0,0,0,.55), 0 2px 10px rgba(0,0,0,.5)',
-      'transition:transform 90ms ease-out', 'opacity:0',
-    ].join(';');
-    document.documentElement.appendChild(dot);
-    window.__moveCursor = (x, y) => {
-      dot.style.opacity = '1';
-      dot.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+  (function () {
+    var dot = null;
+    // addInitScript runs at document-start, when documentElement may not exist
+    // yet. Creating the element eagerly threw and took the whole script with it,
+    // so the helpers below were never defined and every clip that clicks failed.
+    function ensure() {
+      if (dot !== null && dot.isConnected) return dot;
+      var host = document.body || document.documentElement;
+      if (!host) return null;
+      dot = document.createElement('div');
+      dot.id = '__cursor';
+      dot.style.cssText = [
+        'position:fixed', 'z-index:2147483647', 'left:0', 'top:0',
+        'width:22px', 'height:22px', 'margin:-11px 0 0 -11px',
+        'border-radius:50%', 'pointer-events:none',
+        'background:rgba(255,255,255,.92)',
+        'box-shadow:0 0 0 2px rgba(0,0,0,.55), 0 2px 10px rgba(0,0,0,.5)',
+        'transition:transform 90ms ease-out', 'opacity:0'
+      ].join(';');
+      host.appendChild(dot);
+      return dot;
+    }
+    window.__moveCursor = function (x, y) {
+      var node = ensure();
+      if (!node) return;
+      node.style.opacity = '1';
+      node.style.transform = 'translate(' + x + 'px,' + y + 'px)';
     };
-    window.__pressCursor = () => {
-      dot.animate(
-        [{ transform: dot.style.transform + ' scale(1)' },
-         { transform: dot.style.transform + ' scale(0.55)' },
-         { transform: dot.style.transform + ' scale(1)' }],
-        { duration: 260, easing: 'ease-out' },
+    window.__pressCursor = function () {
+      var node = ensure();
+      if (!node || !node.animate) return;
+      var at = node.style.transform;
+      node.animate(
+        [{ transform: at + ' scale(1)' },
+         { transform: at + ' scale(0.55)' },
+         { transform: at + ' scale(1)' }],
+        { duration: 260, easing: 'ease-out' }
       );
     };
   })();
@@ -133,6 +148,32 @@ async function scrollToSelector(page: Page, selector: string, ms = 1400): Promis
   await glide(page, y, ms);
 }
 
+/**
+ * Scroll to a heading by its text.
+ *
+ * `h2:has-text(...)` is a Playwright selector and means nothing to
+ * `document.querySelector`, which is where this code actually runs. Matching on
+ * textContent keeps the lookup honest and survives copy edits that CSS
+ * positional selectors would not.
+ */
+async function scrollToHeading(page: Page, text: string, ms = 1600): Promise<void> {
+  const y = (await page.evaluate(
+    `(function () {
+      var wanted = ${JSON.stringify(text.toLowerCase())};
+      var nodes = Array.prototype.slice.call(document.querySelectorAll('h1,h2,h3'));
+      for (var i = 0; i < nodes.length; i += 1) {
+        var label = (nodes[i].textContent || '').toLowerCase();
+        if (label.indexOf(wanted) !== -1) {
+          return Math.max(0, window.scrollY + nodes[i].getBoundingClientRect().top - 140);
+        }
+      }
+      return null;
+    })()`,
+  )) as number | null;
+  if (y === null) throw new Error(`no heading containing "${text}"`);
+  await glide(page, y, ms);
+}
+
 /** What each clip does once its page is loaded. */
 async function performClip(page: Page, clip: Clip): Promise<void> {
   switch (clip.id) {
@@ -148,7 +189,7 @@ async function performClip(page: Page, clip: Clip): Promise<void> {
 
     case 'baseline':
       await sleep(3500);
-      await scrollToSelector(page, 'h2:has-text("Quality, by split")', 1500);
+      await scrollToHeading(page, 'Quality, by split', 1500);
       await sleep(9000);
       await scrollToSelector(page, '.table-wrap:last-of-type', 1600);
       await sleep(16000);
@@ -199,9 +240,9 @@ async function performClip(page: Page, clip: Clip): Promise<void> {
 
     case 'comparison':
       await sleep(2500);
-      await scrollToSelector(page, 'h2:has-text("Model usage")', 1600);
+      await scrollToHeading(page, 'Model usage', 1600);
       await sleep(12000);
-      await scrollToSelector(page, 'h2:has-text("What this does not show")', 1800);
+      await scrollToHeading(page, 'What this does not show', 1800);
       await sleep(11000);
       break;
 

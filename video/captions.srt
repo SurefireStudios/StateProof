@@ -1,0 +1,99 @@
+1
+00:00:00,400 --> 00:00:07,600
+StateProof. The agent said it was done. Prove it.
+
+2
+00:00:08,400 --> 00:00:17,279
+An agent reports success. It refunded forty dollars, emailed the receipt, added the note, and got approval first.
+
+3
+00:00:17,279 --> 00:00:20,814
+That sentence is a claim. It is not evidence.
+
+4
+00:00:20,814 --> 00:00:30,086
+The refund went out for fifty-five dollars. The note was never written. And the approval landed after the money moved.
+
+5
+00:00:30,086 --> 00:00:43,600
+When an agent only reads, a wrong answer is embarrassing. When it moves money, it is an incident. So teams check by hand — summary, tool log, database. That does not scale.
+
+6
+00:00:46,900 --> 00:00:54,752
+The obvious fix is to ask a frontier model to grade it. That is our baseline, and it is a fair one.
+
+7
+00:00:54,752 --> 00:01:05,300
+It gets the same task, the same response, the same trajectory, both state snapshots. Its prompt was frozen before StateProof existed.
+
+8
+00:01:05,300 --> 00:01:19,100
+And it is good — perfect diagnosis on every case. But it spends one frontier evaluation per run. Across twelve cases: twelve calls, a hundred and twenty-five thousand tokens.
+
+9
+00:01:22,400 --> 00:01:34,600
+Here is one real execution. This is the task. This is what the agent said about it.
+
+10
+00:01:35,400 --> 00:01:40,014
+Watch what happens when I verify it.
+
+11
+00:01:40,014 --> 00:01:53,600
+Fail. Five requirements checked, three contradicted. Zero model calls, zero tokens, about one millisecond.
+
+12
+00:01:54,400 --> 00:02:07,600
+The refund record says fifty-five dollars. The contract required exactly forty. The support note is simply absent.
+
+13
+00:02:08,400 --> 00:02:15,821
+And the ordering. Approval at sequence twelve. The refund executed at sequence eight.
+
+14
+00:02:15,821 --> 00:02:25,600
+The refund call carried an approval reference, so the log looked compliant. Only the order of events settles it.
+
+15
+00:02:28,900 --> 00:02:40,802
+Interpreting a task is the model-shaped work, so we do it once. A Contract Agent turns the task into typed, checkable requirements before it sees any run.
+
+16
+00:02:40,802 --> 00:02:55,100
+The contract is cached by task fingerprint. After that, every run is checked by code — state, event order, prohibitions, scope. Every citation comes from a record that actually matched.
+
+17
+00:02:58,400 --> 00:03:07,015
+Twelve synthetic cases. Eight we developed against, four held out and run exactly once after we froze the source.
+
+18
+00:03:07,015 --> 00:03:22,644
+On quality it is a tie. On cost it is not. Twelve calls become three on first deployment — seventy-five percent fewer, and seventy-six point one percent fewer tokens. Every run after that is zero and zero.
+
+19
+00:03:22,644 --> 00:03:27,600
+Twelve synthetic cases in one domain. Not a generalization claim.
+
+20
+00:03:30,900 --> 00:03:35,535
+Two of our own versions failed, and both are in the submission.
+
+21
+00:03:35,535 --> 00:03:53,856
+Version one could not express relational scope — only the support case for this order may change. Version two fixed that and broke something else: it picked messages by recipient alone, and an older email to the same person made the check ambiguous.
+
+22
+00:03:53,856 --> 00:04:07,100
+That exact-one selector was removed. Version three replaced it with existential matching, and a lint that refuses a vague selector before it runs. That is the change that mattered.
+
+23
+00:04:10,400 --> 00:04:24,600
+You can bring your own run. This sample goes through the same validator, then verifies — passing, with no model call.
+
+24
+00:04:25,400 --> 00:04:35,600
+Every model call is published with its exact input envelope, retries included. Repeated verification needs no API key.
+
+25
+00:04:36,400 --> 00:04:47,600
+For action-taking agents, the final answer is a claim — not evidence. Compile success once, then verify the state left behind.

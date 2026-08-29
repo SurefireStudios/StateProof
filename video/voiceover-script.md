@@ -1,100 +1,100 @@
 # Voiceover script
 
-Timings are **planned**; re-run after `pnpm video:render` to measure them.
-Total picture: **5:26**. Script: **560 words**, about 3:60 at 140 words per minute.
+Timings are **measured** from the rendered cut.
+Total picture: **4:48**. Script: **514 words**, about 3:40 at 140 words per minute.
 
 Read it unhurried. The picture has room, and the three number pairs are the
 whole point — slow down on those.
 
 ---
 
-## 0:00 – 0:12 · Title card
+## 0:00 – 0:08 · Title card
 
-*9 words in 12 s — 8 s of headroom*
+*9 words in 8 s — 4 s of headroom*
 
 > StateProof. The agent said it was done. Prove it.
 
-## 0:12 – 0:38 · The claim, and the three things the state says instead
+## 0:08 – 0:44 · The claim, and the three things the state says instead
 
-*91 words in 26 s — **13 s over, trim this one***
+*79 words in 36 s — 2 s of headroom*
 
-> An agent just reported success. It refunded forty dollars, emailed the receipt, added a support note, and got approval first.
+> An agent reports success. It refunded forty dollars, emailed the receipt, added the note, and got approval first.
 > That sentence is a claim. It is not evidence.
 > The refund went out for fifty-five dollars. The note was never written. And the approval landed after the money moved.
-> If you deploy agents that only read things, a wrong answer is embarrassing. If they change refunds, tickets or inventory, it is an incident. So teams check by hand — the summary, the tool log, then the database. That does not scale.
+> When an agent only reads, a wrong answer is embarrassing. When it moves money, it is an incident. So teams check by hand — summary, tool log, database. That does not scale.
 
-## 0:41 – 1:05 · The frontier baseline, scoring perfectly
+## 0:47 – 1:20 · The frontier baseline, scoring perfectly
 
-*74 words in 24 s — **8 s over, trim this one***
+*72 words in 33 s — 2 s of headroom*
 
 > The obvious fix is to ask a frontier model to grade it. That is our baseline, and it is a fair one.
-> It gets the same task, the same final response, the same trajectory, and both state snapshots. Its prompt was frozen before StateProof existed.
-> And it is good. Perfect diagnosis on every case. But it spends one frontier evaluation per run: across twelve cases, twelve calls and a hundred and twenty-five thousand tokens.
+> It gets the same task, the same response, the same trajectory, both state snapshots. Its prompt was frozen before StateProof existed.
+> And it is good — perfect diagnosis on every case. But it spends one frontier evaluation per run. Across twelve cases: twelve calls, a hundred and twenty-five thousand tokens.
 
-## 1:08 – 1:30 · PBH-B03: the task, and what the agent reported
+## 1:22 – 1:35 · PBH-B03: the task, and what the agent reported
 
-*17 words in 22 s — 15 s of headroom*
+*17 words in 13 s — 6 s of headroom*
 
 > Here is one real execution. This is the task. This is what the agent said about it.
 
-## 1:30 – 2:00 · Verify this run: FAIL, zero model calls
+## 1:35 – 1:54 · Verify this run: FAIL, zero model calls
 
-*21 words in 30 s — 21 s of headroom*
+*21 words in 19 s — 10 s of headroom*
 
 > Watch what happens when I verify it.
 > Fail. Five requirements checked, three contradicted. Zero model calls, zero tokens, about one millisecond.
 
-## 2:00 – 2:22 · 55.00 against a required 40.00; the missing note
+## 1:54 – 2:08 · 55.00 against a required 40.00; the missing note
 
-*17 words in 22 s — 15 s of headroom*
+*17 words in 14 s — 7 s of headroom*
 
 > The refund record says fifty-five dollars. The contract required exactly forty. The support note is simply absent.
 
-## 2:22 – 2:42 · Approval at seq 12, refund executed at seq 8
+## 2:08 – 2:26 · Approval at seq 12, refund executed at seq 8
 
-*32 words in 20 s — 6 s of headroom*
+*32 words in 18 s — 4 s of headroom*
 
 > And the ordering. Approval at sequence twelve. The refund executed at sequence eight.
 > The refund call carried an approval reference, so the log looked compliant. Only the order of events settles it.
 
-## 2:45 – 3:15 · Compile once, then verify by code
+## 2:29 – 2:56 · Compile once, then verify by code
 
-*71 words in 30 s — **0 s over, trim this one***
+*57 words in 27 s — 3 s of headroom*
 
-> Interpreting a task is the genuinely model-shaped work, so we do it once. A Contract Agent turns the task into typed, checkable requirements before it has seen any run.
-> That contract is cached by a fingerprint over the task, the tools and the schema. After that, every run is checked by code — state, event order, prohibitions and scope. Each citation is generated from the record or event that actually matched.
+> Interpreting a task is the model-shaped work, so we do it once. A Contract Agent turns the task into typed, checkable requirements before it sees any run.
+> The contract is cached by task fingerprint. After that, every run is checked by code — state, event order, prohibitions, scope. Every citation comes from a record that actually matched.
 
-## 3:18 – 3:50 · 12 → 3 → 0 model calls at equal measured quality
+## 2:58 – 3:28 · 12 → 3 → 0 model calls at equal measured quality
 
-*78 words in 32 s — **1 s over, trim this one***
+*66 words in 30 s — 2 s of headroom*
 
 > Twelve synthetic cases. Eight we developed against, four held out and run exactly once after we froze the source.
-> On quality it is a tie: full recall, no false violations, complete diagnosis. What is not a tie is the cost. Twelve calls become three on first deployment — seventy-five percent fewer — and seventy-six point one percent fewer tokens. Every run after that is zero and zero.
-> Twelve synthetic refund-operations cases. That is not a universal generalization claim.
+> On quality it is a tie. On cost it is not. Twelve calls become three on first deployment — seventy-five percent fewer, and seventy-six point one percent fewer tokens. Every run after that is zero and zero.
+> Twelve synthetic cases in one domain. Not a generalization claim.
 
-## 3:53 – 4:27 · v1 and v2 failed; v3 added existential matching
+## 3:31 – 4:08 · v1 and v2 failed; v3 added existential matching
 
-*86 words in 34 s — **3 s over, trim this one***
+*84 words in 37 s — 1 s of headroom*
 
 > Two of our own versions failed, and both are in the submission.
-> Version one could not express relational scope — only the support case for this order may change. Version two fixed that and broke something else: it picked outbound messages by recipient alone, and a pre-existing email to the same person made the check ambiguous.
-> That exact-one selector was removed. Version three replaced it with existential matching, plus a lint that refuses an under-specified selector before it can run. That is the change that mattered.
+> Version one could not express relational scope — only the support case for this order may change. Version two fixed that and broke something else: it picked messages by recipient alone, and an older email to the same person made the check ambiguous.
+> That exact-one selector was removed. Version three replaced it with existential matching, and a lint that refuses a vague selector before it runs. That is the change that mattered.
 
-## 4:30 – 4:54 · Sample import verifies PASS with no credential
+## 4:10 – 4:25 · Sample import verifies PASS with no credential
 
-*21 words in 24 s — 15 s of headroom*
+*21 words in 15 s — 6 s of headroom*
 
 > You can bring your own run. This sample goes through the same validator, then verifies — passing, with no model call.
 
-## 4:54 – 5:12 · Every model call, with its exact input envelope
+## 4:25 – 4:36 · Every model call, with its exact input envelope
 
-*22 words in 18 s — 9 s of headroom*
+*18 words in 11 s — 3 s of headroom*
 
-> Every model call we made is published with its exact input envelope, retries included. Repeated verification needs no API key at all.
+> Every model call is published with its exact input envelope, retries included. Repeated verification needs no API key.
 
-## 5:12 – 5:26 · The hot take
+## 4:36 – 4:48 · The hot take
 
-*21 words in 14 s — 5 s of headroom*
+*21 words in 12 s — 3 s of headroom*
 
 > For action-taking agents, the final answer is a claim — not evidence. Compile success once, then verify the state left behind.
 
