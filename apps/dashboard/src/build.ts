@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { APP_JS, STYLES } from './assets';
@@ -21,6 +21,7 @@ import { renderTrajectories } from './pages/trajectories';
 
 const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const OUT_DIR = path.join(REPO_ROOT, 'apps', 'dashboard', 'dist');
+const SRC_DIR = fileURLToPath(new URL('./', import.meta.url));
 
 export function buildDashboard(repoRoot: string = REPO_ROOT, outDir: string = OUT_DIR): string[] {
   const model = buildModel(repoRoot);
@@ -34,6 +35,9 @@ export function buildDashboard(repoRoot: string = REPO_ROOT, outDir: string = OU
   };
 
   write('styles.css', STYLES);
+  // Self-hosted so the page needs no external origin, here or when the product
+  // serves this site under /dashboard/ behind its own strict policy.
+  write('logo.svg', readFileSync(path.join(SRC_DIR, 'logo.svg'), 'utf8'));
   write('app.js', APP_JS);
   write('index.html', renderOverview(model));
   write('benchmark.html', renderBenchmark(model));

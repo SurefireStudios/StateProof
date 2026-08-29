@@ -104,7 +104,15 @@ export function page(options: PageOptions): string {
 <footer class="footer">
   <p>Every figure on this page is read from a checked-in run artifact pinned in
   <code>submission/reproduction-manifest.json</code>. Nothing is hardcoded, and the build makes no network or model calls.</p>
-  <p>Results shown are the <strong>development split</strong> of PhantomBench-Hard-12. The locked split has not been run.</p>
+  <p>PhantomBench-Hard-12 is the final benchmark; PhantomBench-12 (Core-12) is the diagnostic suite that
+  established the harness. Eight cases were <strong>developed against</strong>; four were <strong>held out</strong>
+  and evaluated exactly once after the source freeze. Deterministic verification is code, not an agent.</p>
+  <div class="colophon">
+    <img class="colophon-mark" src="logo.svg" alt="" width="26" height="26">
+    <p class="colophon-credit">Designed and built by <strong>Stephen Fitzgerald</strong><br>
+    for the micro1 Agentic Workflows Hackathon &middot; 2026</p>
+    <nav class="colophon-links" aria-label="Project links"><a href="https://github.com/SurefireStudios/StateProof" rel="noreferrer noopener">GitHub</a><span aria-hidden="true"> &middot; </span><a href="https://github.com/SurefireStudios/StateProof/blob/main/REPRODUCTION.md" rel="noreferrer noopener">Reproduction guide</a><span aria-hidden="true"> &middot; </span><a href="index.html">Evidence dashboard</a><span aria-hidden="true"> &middot; </span><a href="https://github.com/SurefireStudios/StateProof/blob/main/LICENSE" rel="noreferrer noopener">License</a></nav>
+  </div>
 </footer>
 <script src="app.js"></script>
 ${options.pageScript === undefined ? '' : `<script>${options.pageScript}</script>`}

@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { deflateRawSync } from 'node:zlib';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -487,17 +487,34 @@ describe('the product cannot touch the evaluation', () => {
   });
 
   it('leaves submitted artifacts untouched when the demo runs', () => {
-    const before = execFileSync('git', ['status', '--porcelain', '--', 'artifacts', 'submission', 'prompts', 'benchmarks'], {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-    });
+    // Falls back to modification times outside a checkout: this suite also runs
+    // inside an extracted release package, where there is no git to ask.
+    const frozen = ['artifacts', 'submission', 'prompts', 'benchmarks'];
+    const snapshot = (): string => {
+      try {
+        return execFileSync('git', ['status', '--porcelain', '--', ...frozen], {
+          cwd: REPO_ROOT,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'ignore'],
+        });
+      } catch {
+        return frozen
+          .flatMap((directory) => {
+            const root = path.join(REPO_ROOT, directory);
+            if (!existsSync(root)) return [];
+            return sourceFiles(root).map(
+              (file) => `${path.relative(REPO_ROOT, file)}:${statSync(file).mtimeMs}`,
+            );
+          })
+          .sort()
+          .join('\n');
+      }
+    };
+
+    const before = snapshot();
     verifyDemo(REPO_ROOT);
     importRun({ files: runPackageFiles() }, REPO_ROOT);
-    const after = execFileSync('git', ['status', '--porcelain', '--', 'artifacts', 'submission', 'prompts', 'benchmarks'], {
-      cwd: REPO_ROOT,
-      encoding: 'utf8',
-    });
-    expect(after).toBe(before);
+    expect(snapshot()).toBe(before);
   });
 
   it('loads benchmark numbers through the validated final evaluation', () => {
@@ -675,6 +692,23 @@ describe('the production build', () => {
       expect(text, file).not.toMatch(/\bstyle:\s*['"`]/);
       expect(text, file).not.toMatch(/setAttribute\(\s*['"`]style['"`]/);
     }
+  });
+
+  it('carries the colophon and a self-hosted mark on every page', () => {
+    const dist = path.join(REPO_ROOT, 'apps', 'product', 'dist');
+    const shell = readFileSync(path.join(dist, 'index.html'), 'utf8');
+
+    // The shell is every route, so the footer is on every route.
+    expect(shell).toContain('Designed and built by <strong>Stephen Fitzgerald</strong>');
+    expect(shell).toContain('micro1 Agentic Workflows Hackathon');
+    for (const label of ['GitHub', 'Reproduction guide', 'Evidence dashboard', 'License']) {
+      expect(shell, label).toContain(`>${label}</a>`);
+    }
+
+    // `img-src 'self' data:` means a remote mark would simply not render.
+    expect(shell).toContain('src="/logo.svg"');
+    expect(shell).not.toMatch(/<img[^>]+src="https?:/);
+    expect(existsSync(path.join(dist, 'logo.svg')), 'the mark must ship').toBe(true);
   });
 
   it('ships no credential in the bundle', () => {

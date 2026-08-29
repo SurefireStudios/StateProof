@@ -85,6 +85,14 @@ pre {
   max-width: 1180px; margin: 0 auto;
 }
 .footer p { margin: 4px 0; }
+.colophon { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.colophon-mark { width: 26px; height: 26px; flex: none; border-radius: 6px; opacity: .9; }
+.colophon-credit { margin: 0; line-height: 1.45; }
+.colophon-credit strong { color: var(--ink-dim); font-weight: 600; }
+.colophon-links { margin-left: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 2px; }
+.colophon-links a { padding: 2px 6px; border-radius: 4px; }
+.colophon-links a:hover { background: rgba(255,255,255,.05); text-decoration: none; }
+@media (max-width: 720px) { .colophon-links { margin-left: 0; width: 100%; } }
 
 /* --- structure ---------------------------------------------------------- */
 section { margin: 34px 0; }

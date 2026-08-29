@@ -99,12 +99,14 @@ const RULE_EXEMPT_FILES = new Set([
   '.gitignore',
 ]);
 
-const FORBIDDEN_PATHS = [
-  '.env',
-  '.env - Copy.example',
-  'node_modules',
-  '.claude/settings.local.json',
-];
+const FORBIDDEN_PATHS = ['.env', '.env - Copy.example', '.claude/settings.local.json'];
+
+/**
+ * Skipped rather than reported. An installed dependency tree is expected in a
+ * directory scan — the release archive is checked for it separately, where its
+ * presence *would* be a finding.
+ */
+const SKIPPED_DIRECTORIES = ['node_modules', '.pnpm-store', '.git'];
 
 /**
  * Copies of an environment file, however they came to be named, plus key
@@ -159,10 +161,7 @@ function scan(root: string, files: readonly string[]): { findings: Finding[]; fo
       forbidden.push(relative);
       continue;
     }
-    if (relative.split('/').includes('node_modules')) {
-      forbidden.push(relative);
-      continue;
-    }
+    if (relative.split('/').some((segment) => SKIPPED_DIRECTORIES.includes(segment))) continue;
     if (RULE_EXEMPT_FILES.has(relative)) continue;
     if (BINARY_EXTENSIONS.has(path.extname(relative).toLowerCase())) continue;
 
@@ -221,9 +220,12 @@ function scanArchives(root: string, files: readonly string[]): Finding[] {
 
     for (const entry of entries) {
       const base = path.basename(entry.name);
+      // Inside an archive a dependency tree is not "expected", it is baggage or
+      // worse, so here the same names *are* a finding.
       if (
         FORBIDDEN_PATHS.includes(entry.name) ||
         FORBIDDEN_PATHS.includes(base) ||
+        entry.name.split('/').some((segment) => SKIPPED_DIRECTORIES.includes(segment)) ||
         FORBIDDEN_PATTERNS.some((pattern) => pattern.test(base))
       ) {
         findings.push({
@@ -307,7 +309,8 @@ function main(): void {
     [
       '',
       `rules applied:  ${RULES.map((rule) => rule.id).join(', ')}, env-example-value, forbidden-archive-entry`,
-      `forbidden paths: ${FORBIDDEN_PATHS.join(', ')}, node_modules`,
+      `forbidden paths: ${FORBIDDEN_PATHS.join(', ')}`,
+      `skipped dirs:    ${SKIPPED_DIRECTORIES.join(', ')}`,
       `findings:        ${findings.length}`,
       `forbidden found: ${forbidden.length}`,
       '',

@@ -1,0 +1,117 @@
+{
+  "schemaVersion": "1.1.0",
+  "generatedAt": "2026-08-29T07:46:17.953Z",
+  "package": {
+    "path": "release/stateproof-submission-final.zip",
+    "sha256": "185a9649548d8bd1bfdb5253ea800974c1010151822f17aac18565dbe27282e8",
+    "sizeBytes": 1180975,
+    "sizeMb": 1.13,
+    "sourceCommit": "1c509e71ecf1610f3699bc97763b06a61805f550",
+    "trackedTreeClean": true
+  },
+  "environment": {
+    "os": "win32 10.0.26200 (x64)",
+    "node": "v20.10.0",
+    "pnpm": "8.12.0",
+    "installDurationMs": 3419
+  },
+  "contents": {
+    "fileCount": 554,
+    "topLevelPaths": [
+      ".env.example",
+      ".gitattributes",
+      ".gitignore",
+      "CLAUDE.md",
+      "FINAL_SUBMISSION_CHECKLIST.md",
+      "IMPROVEMENT_CHANGELOG.md",
+      "LICENSE",
+      "PREEXISTING_WORK.md",
+      "README.md",
+      "REPRODUCTION.md",
+      "SUBMISSION.md",
+      "apps",
+      "artifacts",
+      "benchmarks",
+      "docs",
+      "package.json",
+      "packages",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "prompts",
+      "samples",
+      "scripts",
+      "submission",
+      "tsconfig.base.json",
+      "tsconfig.json",
+      "vitest.config.ts"
+    ],
+    "includesPrebuiltDashboard": true,
+    "dashboardPages": [
+      "app.js",
+      "architecture.html",
+      "benchmark.html",
+      "changelog.html",
+      "index.html",
+      "inspector-PBH-A01.html",
+      "inspector-PBH-A02.html",
+      "inspector-PBH-A03.html",
+      "inspector-PBH-A04.html",
+      "inspector-PBH-B01.html",
+      "inspector-PBH-B02.html",
+      "inspector-PBH-B04.html",
+      "inspector-PBH-C01.html",
+      "inspector-PBH-C02.html",
+      "inspector-PBH-C03.html",
+      "inspector-PBH-C04.html",
+      "inspector.html",
+      "styles.css",
+      "trajectories.html"
+    ],
+    "includesPrebuiltProduct": true,
+    "productFiles": [
+      "client.js",
+      "index.html",
+      "styles.css"
+    ],
+    "includesSampleRunPackage": true
+  },
+  "excluded": [
+    ".env",
+    ".env - Copy.example",
+    "node_modules",
+    "release/",
+    "temporary clean-checkout directories",
+    ".claude/ local settings",
+    "untracked files of any kind (git archive is the include list)"
+  ],
+  "verification": {
+    "extractedTo": "a fresh temporary directory outside the source tree",
+    "credentialsRemoved": [
+      "STATEPROOF_ANTHROPIC_API_KEY",
+      "ANTHROPIC_API_KEY"
+    ],
+    "steps": [
+      {
+        "command": "pnpm install --frozen-lockfile",
+        "ok": true,
+        "durationMs": 3419
+      },
+      {
+        "command": "pnpm typecheck",
+        "ok": true,
+        "durationMs": 4723
+      },
+      {
+        "command": "pnpm test",
+        "ok": false,
+        "durationMs": 8728
+      }
+    ],
+    "dashboardStructureOk": true,
+    "missingDashboardPages": [],
+    "productStructureOk": true,
+    "sampleRunPackagePresent": true,
+    "secretScanOk": false,
+    "result": "FAILED"
+  }
+}

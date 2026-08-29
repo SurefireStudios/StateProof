@@ -959,6 +959,45 @@ footer {
 footer p { max-width: 78ch; margin-bottom: 6px; }
 footer p:first-child { color: var(--ink-dim); }
 
+/* Attribution. Quiet, but present on every page. */
+.colophon {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: var(--s-5);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
+}
+.colophon-mark {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 6px;
+  opacity: 0.9;
+}
+.colophon-credit { margin: 0; line-height: 1.45; color: var(--ink-faint); }
+.colophon-credit strong { color: var(--ink-dim); font-weight: 600; }
+.colophon-links {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  color: var(--line-strong);
+}
+.colophon-links a {
+  color: var(--ink-faint);
+  padding: 2px 6px;
+  border-radius: var(--r-xs);
+  transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.colophon-links a:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+  text-decoration: none;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -1015,6 +1054,8 @@ footer p:first-child { color: var(--ink-dim); }
   .section-nav { gap: 2px; padding: 5px; }
   .section-nav a { padding: 6px 9px; font-size: 12.5px; }
   .nav-rule { display: none; }
+  .colophon { gap: 10px; }
+  .colophon-links { margin-left: 0; width: 100%; }
 
   .event { grid-template-columns: 46px minmax(0, 1fr); gap: 3px 12px; padding: 11px 15px; }
   .event .seq { grid-row: 1; }
