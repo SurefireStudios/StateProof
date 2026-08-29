@@ -33,8 +33,11 @@ not someone who wants a score.
    full provenance. Every evidence reference is a link that scrolls to the exact
    event or record it names.
 4. **Export the evidence pack** as JSON or Markdown.
-5. **Import your own run** and validate it against the supported domain.
+5. **Import your own run** and validate it against the supported domain. A
+   sample package is one click away on that screen.
 6. **Read the benchmark**, including the locked and combined results.
+7. **Open the evidence dashboard** at `/dashboard/`, served by the same process,
+   for the raw artifacts behind every number.
 
 ## Domain limitation, stated plainly
 
@@ -109,6 +112,12 @@ rejected, as is a collection outside the supported domain.
 verification, because "your file parsed" and "your agent did the job" are
 different claims and should not arrive in one click.
 
+A ready-made package ships at `samples/stateproof-sample-run.zip` and is offered
+for download on the import screen. It is `PBH-A01` — a development case, a
+different task template from the demo — and it verifies to `PASS` against a
+different frozen contract, with zero model calls. See
+[`../samples/README.md`](../samples/README.md).
+
 After validation the app offers whichever path applies:
 
 | Situation | What you get |
@@ -150,6 +159,16 @@ it.
 | No filesystem access from the browser | the client only calls the JSON API |
 | Read-only verification; no consequential action exists | by construction |
 
+### One deliberate exception
+
+The evidence dashboard is a separate application hosted at `/dashboard/`, and its
+generator writes `style` attributes. Rather than relax the product's own policy,
+that path is served with its own header: identical except that it also allows
+`'unsafe-inline'` for styles. Scripts stay restricted to same-origin, and the
+dashboard renders committed artifacts only — no request data reaches it — so the
+allowance carries no injection surface. The product's own routes keep the strict
+policy, and a test asserts they do.
+
 ## How this differs from the static dashboard
 
 They are deliberately different things, and both ship.
@@ -166,6 +185,17 @@ They are deliberately different things, and both ship.
 If you want to audit the submitted result, use the dashboard. If you want to
 see what StateProof does to a run, use the product.
 
+## Routes
+
+Pages: `/#/` · `/#/demo` · `/#/import` · `/#/runs/:id` · `/#/benchmark`, plus the
+hosted dashboard at `/dashboard/`.
+
+API: `GET /api/app` · `GET /api/hero` · `GET /api/demo` · `POST /api/verify/demo`
+· `POST /api/import` · `POST /api/verify` · `POST /api/contracts/compile` ·
+`GET /api/compile-status` · `GET /api/runs/:id` ·
+`GET /api/runs/:id/export?format=json|md` · `GET /api/benchmark` ·
+`GET /api/sample-package`.
+
 ## Commands
 
 ```bash
@@ -173,6 +203,7 @@ pnpm product:build    # bundle the client and emit the shell
 pnpm product:dev      # serve on http://localhost:4180/
 pnpm product:start    # same as dev; the app has no separate runtime
 pnpm product:test     # the product test suite
+pnpm sample:build     # rebuild samples/stateproof-sample-run.zip
 ```
 
 `PORT` overrides the port.

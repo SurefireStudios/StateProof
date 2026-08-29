@@ -31,6 +31,8 @@ Thumbs.db
 
 # local archives / backups
 *.zip
+# the sample run package is a deliverable: a judge imports it from the product
+!samples/*.zip
 
 # local working notes: supplied briefs, gate prompts and audit addenda.
 # These are planning documents, not deliverables, and are not published.
@@ -39,6 +41,9 @@ Thumbs.db
 CLAUDE_*.md
 apps/dashboard/dist/
 
-# release packages are built artifacts, not source
-release/
+# release packages are built artifacts, not source — but the hash and the
+# contents note are small, and they describe the exact archive that was proved
+release/*
+!release/CONTENTS.md
+!release/stateproof-submission-final.sha256
 apps/product/dist/

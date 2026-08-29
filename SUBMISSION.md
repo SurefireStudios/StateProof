@@ -207,8 +207,18 @@ Full detail with artifact links: [`IMPROVEMENT_CHANGELOG.md`](IMPROVEMENT_CHANGE
 
 ## 11. Reproduction
 
+Start with the product — it is the judge-facing surface, and it needs no
+credential:
+
 ```bash
 pnpm install
+pnpm product:build
+pnpm product:dev        # http://localhost:4180/
+```
+
+Then reproduce the evaluation itself:
+
+```bash
 pnpm reproduce
 ```
 
@@ -217,7 +227,7 @@ cases from the committed contract bundle, compares canonical predictions to the
 submitted hashes, recomputes development/locked/combined metrics, and prints
 `RESULT: PASSED (26 checks)`. Roughly 30 seconds on a warm `node_modules`.
 
-Full judge path: [`JUDGE_QUICKSTART.md`](JUDGE_QUICKSTART.md).
+Full judge path: [`docs/judge-quick-start.md`](docs/judge-quick-start.md).
 
 ## 12. Limitations
 

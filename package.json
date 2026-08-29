@@ -36,12 +36,18 @@
     "scan:secrets": "tsx scripts/scan-secrets.ts",
     "check:provenance": "tsx scripts/check-run-provenance.ts",
     "fixtures:generate": "tsx scripts/generate-fixtures.ts",
-    "fixtures:generate-hard": "tsx scripts/generate-hard-fixtures.ts"
+    "fixtures:generate-hard": "tsx scripts/generate-hard-fixtures.ts",
+    "sample:build": "tsx scripts/build-sample-package.ts",
+    "final:verify": "tsx scripts/final-verify.ts"
   },
   "devDependencies": {
     "@types/node": "20.14.10",
     "tsx": "4.19.2",
     "typescript": "5.4.5",
     "vitest": "1.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SurefireStudios/StateProof"
   }
 }

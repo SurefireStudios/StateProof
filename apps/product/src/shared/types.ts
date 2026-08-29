@@ -168,6 +168,17 @@ export const HeroProofSchema = z
 
 export type HeroProof = z.infer<typeof HeroProofSchema>;
 
+/** Committed, non-secret facts the client uses to decide which links exist. */
+export const AppInfoSchema = z
+  .object({
+    repositoryUrl: z.string().url().nullable(),
+    dashboardAvailable: z.boolean(),
+    samplePackageAvailable: z.boolean(),
+  })
+  .strict();
+
+export type AppInfo = z.infer<typeof AppInfoSchema>;
+
 /** A validated but not-yet-verified import. */
 export const ImportResultSchema = z
   .object({
@@ -262,6 +273,26 @@ export const BenchmarkViewSchema = z
       z.object({ stage: z.string(), title: z.string(), outcome: z.string() }).strict(),
     ),
     reductions: z.array(z.object({ label: z.string(), value: z.string() }).strict()),
+    /**
+     * The submission's headline sentences, assembled from the same final
+     * evaluation the tables read — never typed in, so a claim on the page and a
+     * number in the table cannot disagree.
+     */
+    primaryClaim: z.string().min(1),
+    qualification: z.string().min(1),
+    hotTake: z.string().min(1),
+    /** Combined-split headlines the landing page shows without a table. */
+    headline: z
+      .object({
+        caseCount: z.number().int().nonnegative(),
+        safetyViolationRecall: z.string(),
+        falseViolationRate: z.string(),
+        firstDeploymentCallReduction: z.string(),
+        firstDeploymentTokenReduction: z.string(),
+        repeatedModelCalls: z.string(),
+        repeatedModelTokens: z.string(),
+      })
+      .strict(),
   })
   .strict();
 

@@ -62,6 +62,21 @@ interface FinalEvaluation {
   } | null;
 }
 
+/**
+ * A rate as prose: `75.0%` reads as a measurement, `75%` reads as a sentence.
+ * Only a trailing zero decimal is dropped, so 76.1% keeps its precision.
+ */
+function percent(value: number | null): string {
+  if (value === null) return '—';
+  const scaled = value * 100;
+  const rounded = Math.round(scaled * 10) / 10;
+  return Number.isInteger(rounded) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
+}
+
+export const HOT_TAKE =
+  'For action-taking agents, the final answer is a claim—not evidence. ' +
+  'Compile success once, then verify the state left behind.';
+
 export const SCOPE_NOTE =
   'This is a 12-case synthetic evaluation on PhantomBench-Hard-12. It does not establish ' +
   'generalization beyond the submitted benchmark. It shows that StateProof preserved measured ' +
@@ -120,6 +135,12 @@ function metrics(view: FinalMetricView | null): Record<string, string> {
     BVA: formatRate(view.balancedVerdictAccuracy),
     'Evidence refs': `${formatRate(view.evidenceRefValidity)} (${view.evidenceRefCounts[0]}/${view.evidenceRefCounts[1]})`,
   };
+}
+
+/** Small counts read better as words in a sentence than as digits. */
+function spellOut(count: number): string {
+  const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
+  return words[count] ?? String(count);
 }
 
 function seconds(ms: number | null): string {
@@ -198,11 +219,44 @@ export function benchmarkView(repoRoot: string): BenchmarkView {
           },
         ];
 
+  const combined = final.recomputedCombined.stateproof;
+  const locked = final.observedLocked.stateproof;
+  const repeated = final.usage.stateproofRepeatedVerification;
+
+  // The headline sentences are assembled here, from the same object the tables
+  // read, so a claim and a table cell cannot drift apart.
+  const primaryClaim =
+    final.efficiency === null || combined === null
+      ? 'Efficiency is not claimed: a quality guardrail did not hold on the locked or combined result.'
+      : `On ${String(combined.caseCount)} synthetic benchmark cases, StateProof matched the frontier ` +
+        `baseline's perfect requirement-level diagnosis while reducing first-deployment model calls ` +
+        `by ${percent(final.efficiency.firstDeploymentCallReduction)}, model tokens by ` +
+        `${percent(final.efficiency.firstDeploymentTokenReduction)}, and repeated verification to ` +
+        'zero model calls and zero model tokens.';
+
+  const qualification =
+    'This evaluation does not establish universal generalization. It shows that StateProof ' +
+    `preserved measured quality on ${locked === null ? 'the' : spellOut(locked.caseCount)} untouched ` +
+    'held-out cases while making repeated verification deterministic, reproducible, and ' +
+    'substantially more efficient.';
+
   return {
     generatedFrom: 'submission/final-evaluation.json',
     lockedEvaluationComplete: final.lockedEvaluationComplete,
     qualityGuardrailsMet: final.qualityGuardrailsMet,
     scopeNote: SCOPE_NOTE,
+    primaryClaim,
+    qualification,
+    hotTake: HOT_TAKE,
+    headline: {
+      caseCount: combined?.caseCount ?? 0,
+      safetyViolationRecall: formatRate(combined?.safetyViolationRecall ?? null),
+      falseViolationRate: formatRate(combined?.falseViolationRate ?? null),
+      firstDeploymentCallReduction: percent(final.efficiency?.firstDeploymentCallReduction ?? null),
+      firstDeploymentTokenReduction: percent(final.efficiency?.firstDeploymentTokenReduction ?? null),
+      repeatedModelCalls: repeated.modelCalls.toLocaleString('en-US'),
+      repeatedModelTokens: repeated.totalTokens.toLocaleString('en-US'),
+    },
     splits: [
       {
         label: 'Development (iterated against)',
@@ -224,9 +278,9 @@ export function benchmarkView(repoRoot: string): BenchmarkView {
       },
     ],
     usage: [
-      usageRow('Frontier baseline, all 12', final.usage.baselineCombined),
-      usageRow('StateProof first deployment, all 12', final.usage.stateproofFirstDeployment),
-      usageRow('StateProof repeated verification, all 12', final.usage.stateproofRepeatedVerification),
+      usageRow('Frontier baseline', final.usage.baselineCombined),
+      usageRow('StateProof cold — first deployment', final.usage.stateproofFirstDeployment),
+      usageRow('StateProof warm — repeated verification', final.usage.stateproofRepeatedVerification),
     ],
     changelog: CHANGELOG,
     reductions,

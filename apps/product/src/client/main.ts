@@ -1,4 +1,11 @@
-import type { BenchmarkView, DemoSummary, HeroProof, ImportResult, RunView } from '../shared/types';
+import type {
+  AppInfo,
+  BenchmarkView,
+  DemoSummary,
+  HeroProof,
+  ImportResult,
+  RunView,
+} from '../shared/types';
 import { clear, el, frag } from './dom';
 import {
   benchmarkPage,
@@ -53,13 +60,44 @@ function detailsOf(error: unknown): Array<{ field: string; message: string }> {
   return details ?? [];
 }
 
+/**
+ * Fetched once. Which links exist is a property of the deployment, not of the
+ * route, and re-asking on every hash change would be noise.
+ */
+let appInfo: AppInfo | null = null;
+
+async function loadAppInfo(): Promise<AppInfo | null> {
+  if (appInfo !== null) return appInfo;
+  appInfo = await api<AppInfo>('/api/app').catch(() => null);
+  return appInfo;
+}
+
 function main(): HTMLElement {
   const node = document.getElementById('app');
   if (node === null) throw new Error('missing #app');
   return node as HTMLElement;
 }
 
-function renderNav(active: string): void {
+/**
+ * Links out of the product. The dashboard is served by this same server under a
+ * predictable path; the rest depend on what the repository actually declares,
+ * so a missing remote produces no link rather than a broken one.
+ */
+function externalLinks(app: AppInfo | null): Array<{ href: string; label: string }> {
+  if (app === null) return [];
+  const links: Array<{ href: string; label: string }> = [];
+  if (app.dashboardAvailable) links.push({ href: '/dashboard/', label: 'Evidence dashboard' });
+  if (app.repositoryUrl !== null) {
+    links.push({
+      href: `${app.repositoryUrl}/blob/main/REPRODUCTION.md`,
+      label: 'Reproduction guide',
+    });
+    links.push({ href: app.repositoryUrl, label: 'GitHub' });
+  }
+  return links;
+}
+
+function renderNav(active: string, app: AppInfo | null): void {
   const nav = document.getElementById('nav');
   if (nav === null) return;
   clear(nav);
@@ -67,6 +105,23 @@ function renderNav(active: string): void {
     const isActive = active === route.href || (active === '' && route.href === '#/');
     nav.appendChild(
       el('a', { href: route.href, ...(isActive ? { 'aria-current': 'page' } : {}) }, route.label),
+    );
+  }
+  const links = externalLinks(app);
+  if (links.length === 0) return;
+  nav.appendChild(el('span', { class: 'nav-rule', 'aria-hidden': 'true' }));
+  for (const link of links) {
+    const external = link.href.startsWith('http');
+    nav.appendChild(
+      el(
+        'a',
+        {
+          href: link.href,
+          class: 'nav-out',
+          ...(external ? { target: '_blank', rel: 'noreferrer noopener' } : {}),
+        },
+        link.label,
+      ),
     );
   }
 }
@@ -154,6 +209,7 @@ async function readFileInput(input: HTMLInputElement): Promise<string | undefine
 }
 
 async function renderImport(): Promise<void> {
+  await loadAppInfo();
   const status = await api<{ available: boolean; reason: string }>('/api/compile-status').catch(
     () => ({ available: false, reason: 'compile status unavailable' }),
   );
@@ -299,8 +355,28 @@ async function renderImport(): Promise<void> {
         'div',
         { class: 'card' },
         el('h3', {}, 'Option A — run package'),
-        el('p', { class: 'small muted' }, 'A .zip containing task.json, tool-registry.json, initial-state.json, trajectory.jsonl, final-state.json, final-response.txt and optionally compiled-contract.json.'),
+        el('p', { class: 'small muted' }, 'A .zip containing the six agent-visible files below, and optionally a compiled contract.'),
+        el(
+          'ul',
+          { class: 'manifest small mono' },
+          ...['task.json', 'tool-registry.json', 'initial-state.json', 'trajectory.jsonl', 'final-state.json', 'final-response.txt'].map(
+            (name) => el('li', {}, name),
+          ),
+          el('li', { class: 'faint' }, 'compiled-contract.json  (optional)'),
+        ),
         el('div', { class: 'field mt-2' }, zipInput),
+        appInfo?.samplePackageAvailable === true
+          ? el(
+              'p',
+              { class: 'small mt-2' },
+              el('a', { href: '/api/sample-package' }, 'Download a sample run package'),
+              el(
+                'span',
+                { class: 'faint' },
+                ' — PBH-A01, a development case, built from the same gold-isolated loader the evaluation uses.',
+              ),
+            )
+          : null,
       ),
       el(
         'div',
@@ -342,7 +418,10 @@ async function renderBenchmark(): Promise<void> {
 
 function route(): void {
   const hash = window.location.hash === '' ? '#/' : window.location.hash;
-  renderNav(hash.startsWith('#/runs/') ? '#/demo' : hash);
+  renderNav(hash.startsWith('#/runs/') ? '#/demo' : hash, appInfo);
+  void loadAppInfo().then((info) => {
+    renderNav(hash.startsWith('#/runs/') ? '#/demo' : hash, info);
+  });
 
   const runMatch = /^#\/runs\/([A-Za-z0-9_-]+)$/.exec(hash);
   if (runMatch !== null) {

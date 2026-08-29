@@ -11,7 +11,12 @@ import { benchmarkView } from '../src/server/benchmark';
 import { compileStatus } from '../src/server/compile';
 import { DEMO_CASE_ID, demoSummary, heroProof, verifyDemo } from '../src/server/demo';
 import { buildEvidencePack, renderEvidenceMarkdown } from '../src/server/evidence';
-import { ImportError, clearImports, importRun } from '../src/server/importer';
+import {
+  ImportError,
+  REQUIRED_FILES,
+  clearImports,
+  importRun,
+} from '../src/server/importer';
 import { clearRuns, getRun } from '../src/server/runs';
 import { ZipError, assertSafeEntryName, readZip } from '../src/server/zip';
 import {
@@ -519,6 +524,121 @@ describe('the product cannot touch the evaluation', () => {
 });
 
 // --- the build ----------------------------------------------------------------
+
+describe('the submission claim language', () => {
+  // The gate fixes this wording. Fixing the wording is only meaningful if the
+  // numbers inside it are the measured ones, so the sentences are assembled
+  // from the final evaluation and compared here against the required text.
+  const REQUIRED_PRIMARY =
+    "On 12 synthetic benchmark cases, StateProof matched the frontier baseline's perfect " +
+    'requirement-level diagnosis while reducing first-deployment model calls by 75%, model tokens ' +
+    'by 76.1%, and repeated verification to zero model calls and zero model tokens.';
+  const REQUIRED_QUALIFICATION =
+    'This evaluation does not establish universal generalization. It shows that StateProof ' +
+    'preserved measured quality on four untouched held-out cases while making repeated ' +
+    'verification deterministic, reproducible, and substantially more efficient.';
+  const REQUIRED_HOT_TAKE =
+    'For action-taking agents, the final answer is a claim—not evidence. ' +
+    'Compile success once, then verify the state left behind.';
+
+  it('renders the primary claim, its qualification and the hot take verbatim', () => {
+    const view = BenchmarkViewSchema.parse(benchmarkView(REPO_ROOT));
+    expect(view.primaryClaim).toBe(REQUIRED_PRIMARY);
+    expect(view.qualification).toBe(REQUIRED_QUALIFICATION);
+    expect(view.hotTake).toBe(REQUIRED_HOT_TAKE);
+  });
+
+  it('sources every figure in the claim from the final evaluation', () => {
+    const view = benchmarkView(REPO_ROOT);
+    const final = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'submission', 'final-evaluation.json'), 'utf8'),
+    ) as {
+      recomputedCombined: { stateproof: { caseCount: number } };
+      efficiency: {
+        firstDeploymentCallReduction: number;
+        firstDeploymentTokenReduction: number;
+      };
+      usage: { stateproofRepeatedVerification: { modelCalls: number; totalTokens: number } };
+    };
+
+    expect(view.headline.caseCount).toBe(final.recomputedCombined.stateproof.caseCount);
+    expect(view.primaryClaim).toContain(String(final.recomputedCombined.stateproof.caseCount));
+    expect(view.headline.firstDeploymentCallReduction).toBe(
+      `${(final.efficiency.firstDeploymentCallReduction * 100).toFixed(0)}%`,
+    );
+    expect(view.headline.firstDeploymentTokenReduction).toBe(
+      `${(final.efficiency.firstDeploymentTokenReduction * 100).toFixed(1)}%`,
+    );
+    expect(view.headline.repeatedModelCalls).toBe(
+      String(final.usage.stateproofRepeatedVerification.modelCalls),
+    );
+    expect(view.headline.repeatedModelTokens).toBe(
+      String(final.usage.stateproofRepeatedVerification.totalTokens),
+    );
+  });
+
+  it('never claims to be more accurate than the frontier baseline', () => {
+    const view = benchmarkView(REPO_ROOT);
+    const prose = `${view.primaryClaim} ${view.qualification} ${view.scopeNote} ${view.hotTake}`;
+    expect(prose).not.toMatch(/more accurate|outperform|beats the (?:frontier|baseline)|better than/i);
+    expect(prose).toContain('does not establish universal generalization');
+  });
+});
+
+describe('the sample run package', () => {
+  const samplePath = path.join(REPO_ROOT, 'samples', 'stateproof-sample-run.zip');
+
+  it('contains the six agent-visible files and nothing else', () => {
+    expect(existsSync(samplePath), 'run `pnpm sample:build`').toBe(true);
+    const names = readZip(readFileSync(samplePath)).map((entry) => entry.name).sort();
+    expect(names).toEqual([...REQUIRED_FILES].sort());
+    for (const name of names) {
+      expect(name, name).not.toMatch(/gold|metadata|verdict|split/i);
+    }
+  });
+
+  it('carries no gold label, credential or local path', () => {
+    const text = readZip(readFileSync(samplePath))
+      .map((entry) => entry.contents)
+      .join('\n');
+    expect(text).not.toMatch(/goldLabel|failureMode|isolatedFailureRequirementId/);
+    expect(text).not.toMatch(/sk-ant-/);
+    expect(text).not.toMatch(/[A-Za-z]:\\Users\\|\/(?:home|Users)\//);
+  });
+
+  it('imports and verifies deterministically against a frozen contract', () => {
+    const { result, imported } = importRun(
+      { zipBase64: readFileSync(samplePath).toString('base64') },
+      REPO_ROOT,
+    );
+    expect(result.contractStatus).toBe('matched-frozen-contract');
+    expect(imported.matchedContractPath).not.toBeNull();
+    // A judge who imports the sample should see a second, independent
+    // verification rather than a repeat of the demo.
+    expect(result.caseLabel).not.toContain(DEMO_CASE_ID);
+  });
+});
+
+describe('links out of the product', () => {
+  it('offers only committed, non-secret destinations', () => {
+    const manifest = JSON.parse(
+      readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'),
+    ) as { repository?: { url?: string } };
+    const url = manifest.repository?.url;
+    expect(url, 'package.json must declare the repository').toBeDefined();
+    expect(url).toMatch(/^https:\/\//);
+    expect(url).not.toMatch(/[A-Za-z]:\\|\/home\/|\/Users\//);
+  });
+
+  it('hosts the evidence dashboard instead of reimplementing it', () => {
+    const server = readFileSync(path.join(PRODUCT_SRC, 'server', 'index.ts'), 'utf8');
+    expect(server).toContain("'/dashboard/'");
+    expect(server).toContain("path.join(REPO_ROOT, 'apps', 'dashboard', 'dist')");
+    // Serving it must not mean copying it.
+    const views = readFileSync(path.join(PRODUCT_SRC, 'client', 'views.ts'), 'utf8');
+    expect(views).not.toContain('inspector.html');
+  });
+});
 
 describe('the production build', () => {
   let outDir = '';

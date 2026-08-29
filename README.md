@@ -2,53 +2,85 @@
 
 > **The agent said it was done. Prove it.**
 
-StateProof is an evidence-backed verifier for action-taking AI agents: given a
-task, the agent's final response, its tool trajectory, and the initial and final
-sandbox state, it decides whether the work was actually done — and ties every
-part of that verdict to a concrete observation.
+StateProof compiles success criteria once, then verifies every agent run against
+actual state and event evidence—without asking another model to judge the same
+workflow again.
+
+Given a task, the agent's final response, its tool trajectory, and the initial
+and final sandbox state, it decides whether the work was actually done — and ties
+every part of that verdict to a concrete observation.
 
 ---
 
-## 1. Who has this problem
+## 1. The pitch
+
+An agent reports: *"Approval was obtained before the refund. I refunded exactly
+40.00 USD, emailed the receipt, and added the note to SUP-2077."* Every tool call
+in the run returned `ok`.
+
+The refund executed for **55.00**. The note was **never written**. The approval is
+at `seq 12`; `refund.execute` is at `seq 8` — the money moved first.
+
+StateProof reports all three in about a millisecond, with a citation into the
+record or event that proves each one, and without calling a model.
+
+## 2. Who has this problem
 
 AI product engineers, evaluation engineers and operations teams deploying agents
 that **modify business systems**: refunds, tickets, CRM records, inventory,
 scheduling. The moment an agent writes rather than reads, "did it work?" stops
 being a question about text quality.
 
-The bottleneck: a confident final response and a clean-looking tool log can both
-be present while the work is wrong. Six failure shapes hide behind them — no-op
-or phantom completion, partial completion, wrong-target action, wrong amount or
-recipient or status, an approval recorded *after* the protected action, and
-unrelated side effects.
+## 3. The bottleneck
 
-## 2. A realistic failure
+A confident final response and a clean-looking tool log can both be present while
+the work is wrong. Six failure shapes hide behind them:
 
-`PBH-B03`. The task: refund order `ORD-2077` by exactly 40.00 USD, email the
-receipt, add a specific support note, and get human approval **before**
-executing the refund.
+- no-op or phantom completion;
+- partial completion;
+- wrong-target action;
+- wrong amount, recipient or status;
+- an approval recorded **after** the protected action;
+- unrelated side effects.
 
-The agent's own summary reads like a success. The trajectory shows a refund
-tool call that returned `ok`. What actually happened:
+Checking by hand means reading the summary, skimming the log, and opening the
+database. It is slow, it does not scale, and the failure that hurts most — an
+approval that arrived too late — is invisible in both the summary and the log,
+because the call can carry an `approvalReference` argument regardless.
 
-- the refund was executed for **55.00** USD, not 40.00;
-- the approval event is at `seq 12`, and `refund.execute` is at `seq 8` — the
-  approval came **after** the money moved;
-- the required support note was never written.
+## 4. What the product looks like
 
-Three independent faults, none visible in the final response, and one of them —
-the approval ordering — invisible in the tool log too, because the call carried
-an `approvalReference` argument. An argument claiming an approval exists is not
-evidence that one did; only the order of events settles it.
+No screenshots are embedded here — nothing in this repository is a mock-up, and a
+still image of a page you can run in thirty seconds would be the only unverified
+thing in the submission. Run it (§5); these are the screens you will see.
 
-StateProof reports all three, each with a reference to the exact event or record
-that proves it. Open `inspector.html` in the dashboard to walk it.
+| Route | What is on it |
+| --- | --- |
+| `/#/` | **Home.** A worked example across the top: what was asked, what the agent reported, and what the verifier found in the state. Generated on request by the frozen verifier — the claim is the run's own final response, the findings are the verifier's own evidence strings. Below it, the measured result and the scope limitation. |
+| `/#/demo` | **Demo.** `PBH-B03`: the task, the agent's completion claim, and a **Verify this run** button. |
+| `/#/runs/<id>` | **Run inspector.** Verdict · Requirements · Timeline · State diff · Evidence · Contract · Export, with in-page navigation. Every evidence reference is a link that scrolls to the exact event, record or diff row it names. |
+| `/#/import` | **Import.** A run-package ZIP or individual files, the supported manifest, field-specific validation errors, an explicit verify step, and JSON/Markdown evidence export. A sample package is one click away. |
+| `/#/benchmark` | **Benchmark.** Development, locked and combined results; baseline, cold StateProof and warm StateProof; calls, tokens, wall time, deterministic verification time, evidence-reference validity, and what the result does not show. |
+| `/dashboard/` | **The static evidence dashboard**, served by the same process: every run, prompt, raw response and report behind the numbers. |
 
-## 3. Architecture
+## 5. Interactive quick start
+
+```bash
+pnpm install
+pnpm product:build
+pnpm product:dev
+```
+
+Open <http://localhost:4180/>, click **Run the verification demo**, then **Verify
+this run**. No API key, no model call, no network.
+
+Full walkthrough: [`docs/judge-quick-start.md`](docs/judge-quick-start.md).
+
+## 6. How StateProof works
 
 1. **Compile the contract once.** A Contract Agent turns the task into typed,
-   machine-checkable requirements — before it has seen the trajectory, the
-   state, or the agent's answer.
+   machine-checkable requirements — before it has seen the trajectory, the state,
+   or the agent's answer.
 2. **Cache it by task fingerprint.** The key covers task text, tools, domain
    schema, assertion vocabulary, prompt and model configuration.
 3. **Verify deterministically.** Code evaluates the contract against the
@@ -59,7 +91,7 @@ that proves it. Open `inspector.html` in the dashboard to walk it.
 Verdicts are `PASS`, `FAIL`, or `NEEDS_REVIEW`. Missing evidence never becomes
 `PASS`.
 
-## 4. Why each component exists
+## 7. Why each component exists
 
 | Component | Why it is there |
 | --- | --- |
@@ -71,58 +103,46 @@ Verdicts are `PASS`, `FAIL`, or `NEEDS_REVIEW`. Missing evidence never becomes
 | Gold-isolation package boundary | The prediction phase cannot import gold data; predictions are on disk before the scorer opens its first gold file. |
 | One-time locked protocol | Makes the held-out evaluation unrepeatable, so it stays held out. |
 
-## 5. The fair baseline
+## 8. The fair baseline
 
 One general-purpose frontier evaluator, given the **same** task, final response,
 trajectory, both state snapshots, model, configuration and single repair retry.
-Its prompt (`prompts/baseline-evaluator/v2.md`) was frozen before StateProof was
-built and has never been tuned since.
+Its prompt ([`prompts/baseline-evaluator/v2.md`](prompts/baseline-evaluator/v2.md))
+was frozen before StateProof was built and has never been tuned since.
 
-## 6. Primary metric and guardrails
+## 9. Evaluation protocol
 
-> Total model tokens required to verify the combined Hard-12 suite, subject to
-> SVR 100%, CDR 100%, FVR 0%, evidence-reference validity 100%.
+- **Two benchmarks.** `PhantomBench-12` (Core-12) is the diagnostic suite that
+  established the harness. `PhantomBench-Hard-12` is the final benchmark, scored
+  at requirement level.
+- **Two splits.** Eight development cases, iterated against. Four locked cases,
+  held out, evaluated **exactly once** after a source freeze
+  (`stateproof-evaluation-freeze-v1` → `c976e3838477afbf951d0faf57011be1b4ef6864`)
+  under a one-time protocol recorded in an append-only ledger.
+- **Gold isolation as a package boundary.** `@stateproof/benchmark` cannot reach
+  gold data; only `@stateproof/benchmark/gold` can, and the prediction phase
+  never imports it.
+- **Metrics recomputed from counts**, never averaged from percentages.
+- **Efficiency withheld in code** unless SVR 100%, CDR 100%, FVR 0% and
+  evidence-reference validity 100% all hold on both the locked and combined
+  results. Two earlier iterations were cheaper than the baseline and are reported
+  with no reduction figures at all.
 
-An efficiency claim is **withheld in code** unless all four hold on both the
-locked and the combined result. Two earlier iterations were cheaper than the
-baseline and are reported with no reduction figures at all.
+Detail: [`docs/evaluation-plan.md`](docs/evaluation-plan.md).
 
-## 7. Development result (8 cases, iterated against)
+## 10. Final results
 
-| | Frontier baseline | StateProof v3 cold | StateProof v3 warm |
-| --- | --- | --- | --- |
-| SVR / FVR / CDR / BVA | 100% / 0% / 100% / 100% | 100% / 0% / 100% / 100% | 100% / 0% / 100% / 100% |
-| Model calls | 8 | 3 | **0** |
-| Total tokens | 84,616 | 29,889 | **0** |
-| Wall clock | 115.1 s | 53.6 s | **0.386 s** |
+> On 12 synthetic benchmark cases, StateProof matched the frontier baseline's
+> perfect requirement-level diagnosis while reducing first-deployment model calls
+> by 75%, model tokens by 76.1%, and repeated verification to zero model calls
+> and zero model tokens.
 
-## 8. Untouched locked result (4 cases, run once after the freeze)
+> This evaluation does not establish universal generalization. It shows that
+> StateProof preserved measured quality on four untouched held-out cases while
+> making repeated verification deterministic, reproducible, and substantially
+> more efficient.
 
-Source frozen at `c976e3838477afbf951d0faf57011be1b4ef6864`, tag
-`stateproof-evaluation-freeze-v1`. Both runs happened exactly once, recorded in
-an append-only ledger; the protocol makes a second attempt impossible.
-
-| | Frontier baseline | StateProof v3 |
-| --- | --- | --- |
-| SVR | 100% (6/6) | 100% (6/6) |
-| FVR | 0% (0/11) | 0% (0/11) |
-| CDR | 100% (2/2) | 100% (2/2) |
-| BVA | 100% | 100% |
-| Evidence-reference validity | 98.5% (64/65) | **100% (36/36)** |
-| Model calls | 4 | **0** |
-| Total tokens | 40,538 | **0** |
-
-The StateProof locked run used the frozen contract bundle with **no credential
-in its environment**: all four locked tasks resolved to the three contracts
-compiled during development, so nothing was recompiled and no model was called.
-
-One difference worth naming: the baseline cited one evidence reference on the
-locked split that does not resolve to any real event or record. StateProof
-cannot do that — its references are generated from what the assertions matched.
-
-## 9. Combined final comparison (all 12 Hard cases)
-
-Recomputed from counts, not averaged from percentages.
+**Combined, all 12 cases** — recomputed from counts:
 
 | Metric | Frontier baseline | StateProof v3 |
 | --- | --- | --- |
@@ -133,45 +153,56 @@ Recomputed from counts, not averaged from percentages.
 | Assessment completeness | 100% (52/52) | 100% (52/52) |
 | Evidence-reference validity | 99.5% (205/206) | **100% (116/116)** |
 
-| Model usage over all 12 | Baseline | First deployment | Repeated verification |
+**Untouched locked split, 4 cases, run once:**
+
+| Metric | Frontier baseline | StateProof v3 |
+| --- | --- | --- |
+| SVR / FVR / CDR / BVA | 100% / 0% / 100% / 100% | 100% / 0% / 100% / 100% |
+| Evidence-reference validity | 98.5% (64/65) | **100% (36/36)** |
+| Model calls / tokens | 4 / 40,538 | **0 / 0** |
+
+The StateProof locked run used the frozen contract bundle with **no credential in
+its environment**: all four locked tasks resolved to contracts compiled during
+development, so nothing was recompiled and no model was called.
+
+**Model usage over all 12:**
+
+| | Frontier baseline | StateProof cold (first deployment) | StateProof warm (repeated) |
 | --- | --- | --- | --- |
 | Model calls | 12 | 3 | **0** |
 | Total tokens | 125,154 | 29,889 | **0** |
-| Model wall clock | 157.0 s | 53.6 s | **0.587 s** |
+| Model-call wall time | not isolated | 53.3 s | 0 ms |
 | Deterministic verification | — | 143 ms | 133 ms |
+| End-to-end elapsed | 157.0 s | 53.8 s | 587 ms |
+| API cost estimate | $0.91 | $0.26 | **$0.00** |
 
-**75.0% fewer model calls and 76.1% fewer tokens on first deployment; 100%
-fewer on every repeat. Break-even is one run of the suite.** USD cost is not
-claimed — no pricing rule is implemented.
+Break-even is one run of the suite. USD figures are an estimate against a dated,
+sourced price list ([`submission/final-pricing-manifest.json`](submission/final-pricing-manifest.json)),
+not an invoice.
 
-## 10. Improvement changelog
+One difference worth naming: on the locked split the baseline cited one evidence
+reference that does not resolve to any real event or record. StateProof cannot do
+that — its references are generated from what the assertions matched.
 
-Core-12 saturated. Hard-12 saturated. StateProof v1 got every overall verdict
+Full result: [`submission/final-evaluation.md`](submission/final-evaluation.md).
+Claims → evidence: [`submission/final-claims-evidence-map.md`](submission/final-claims-evidence-map.md).
+
+## 11. Improvement changelog
+
+Core-12 saturated. Hard-12 saturated. StateProof **v1** got every overall verdict
 right but could not express "only the support case for *this* order may change",
-and double-counted a prohibited refund as a scope failure. v2 fixed all three
+and double-counted a prohibited refund as a scope failure. **v2** fixed all three
 and introduced one of its own: outbound messages identified by recipient alone,
 which a pre-existing message to the same person made unresolvable — the verifier
-correctly withheld a verdict, and the warm run was withheld with it. v3 added
+correctly withheld a verdict, and the warm run was withheld with it. **v3** added
 existential matching and a lint that refuses under-specified output selectors,
 met every guardrail, and earned the efficiency claim. Then the locked split was
-run once, and held. Full detail, including both failures, in
+run once, and held. Finally the engine was wrapped in an interactive product.
+
+Every failed iteration is preserved with its report, manifest and prompt:
 [`IMPROVEMENT_CHANGELOG.md`](IMPROVEMENT_CHANGELOG.md).
 
-## 11. Try it, then reproduce it
-
-**The interactive product** — a local app where you verify a run and export the
-evidence. No API key, no model call:
-
-```bash
-pnpm install
-pnpm product:build
-pnpm product:dev        # http://localhost:4180/
-```
-
-Click *Run the verification demo*, then *Verify this run*. See
-[`docs/product-application.md`](docs/product-application.md).
-
-**Reproduce the evaluation** — the credential-free replay of all twelve cases:
+## 12. Reproduction
 
 ```bash
 pnpm install
@@ -180,70 +211,74 @@ pnpm reproduce
 
 No API credential is required, read, or accepted. It re-verifies all twelve Hard
 cases from the committed contract bundle, compares canonical predictions to the
-submitted hashes, recomputes development, locked and combined metrics, and
-prints `RESULT: PASSED`. See [`REPRODUCTION.md`](REPRODUCTION.md) and
+submitted hashes, recomputes development, locked and combined metrics, and prints
+`RESULT: PASSED (26 checks)`.
+
+Everything at once:
+
+```bash
+pnpm final:verify
+```
+
+See [`REPRODUCTION.md`](REPRODUCTION.md) and
 [`submission/clean-reproduction-report.md`](submission/clean-reproduction-report.md).
 
-Dashboard:
+## 13. Security and data
 
-```bash
-pnpm dashboard:build   # static site into apps/dashboard/dist/
-pnpm dev               # build and serve on http://localhost:4173/
-```
+- Synthetic data only. All writes stay inside the local sandbox. No consequential
+  integration exists.
+- Evidence tools are read-only; the product performs no write of any kind.
+- `.env` is git-ignored; `.env.example` carries empty placeholders only.
+- The only credential variable ever read is `STATEPROOF_ANTHROPIC_API_KEY`.
+  `ANTHROPIC_API_KEY` is never read, and a test asserts no product source reads
+  it.
+- Optional in-product contract compilation is **off by default** — it requires a
+  key on the server, an explicit click, and is rate-limited.
+- The product renders structurally (never `innerHTML`), sends a strict CSP, and
+  rejects zip-slip, absolute paths, oversized uploads and undeclared tools.
+- `pnpm scan:secrets` checks tracked files and release packages for keys, private
+  keys, environment files and absolute local paths.
 
-## 12. Limitations
+Detail: [`docs/security-and-data.md`](docs/security-and-data.md).
+
+## 14. Limitations
 
 Synthetic refund-operations domain; twelve cases; one model family;
-template-oriented regex in the semantic lint's task-fact extraction; no USD cost
-claim; two preserved historical provenance defects. This is not a claim of
-production readiness. See [`docs/limitations.md`](docs/limitations.md).
+template-oriented regex in the semantic lint's task-fact extraction; two
+preserved historical provenance defects; USD cost is an estimate, not an invoice.
+Both systems saturate the quality metrics, so the suite cannot separate them on
+accuracy. This is not a claim of production readiness, and not a claim that
+StateProof is more accurate than a frontier model.
 
-## 13. Main insight
+Full list: [`docs/limitations.md`](docs/limitations.md).
 
-> **The agent's final answer is a claim, not evidence.**
+## 15. Repository map
 
-and, now that the locked result supports it:
-
-> **For repeated agent tasks, the expensive part is interpreting what success
-> means. Compile that once, then verify each execution against evidence.**
-
-The second follows from the first. Once you stop grading prose and start
-checking state, the model is needed exactly once per *task* — not once per
-*run* — and every execution after that is verified by code, for free, forever.
-
-## 14. Documentation and artifacts
-
-- Final evaluation: [`submission/final-evaluation.md`](submission/final-evaluation.md)
-- Final claims map: [`submission/final-claims-evidence-map.md`](submission/final-claims-evidence-map.md)
-- Final run registry: [`submission/final-run-registry.json`](submission/final-run-registry.json)
-- One-time locked ledger: [`submission/final-evaluation-ledger.jsonl`](submission/final-evaluation-ledger.jsonl)
-- Pinned artifact registry: [`submission/reproduction-manifest.json`](submission/reproduction-manifest.json)
-- [`docs/project-brief.md`](docs/project-brief.md) · [`docs/evaluation-plan.md`](docs/evaluation-plan.md) · [`docs/architecture.md`](docs/architecture.md)
-- [`docs/claims-evidence-map.md`](docs/claims-evidence-map.md) · [`docs/agent-prompts.md`](docs/agent-prompts.md)
-- [`docs/limitations.md`](docs/limitations.md) · [`docs/security-and-data.md`](docs/security-and-data.md)
-- [`docs/decisions/`](docs/decisions/) — one record per gate
-- Run manifests, predictions, raw model responses and compiled contracts: [`artifacts/`](artifacts/)
-
-## Commands
-
-```bash
-pnpm typecheck                 # TypeScript strict, whole workspace
-pnpm test                      # unit + integration, no credentials
-pnpm benchmark:validate        # Core-12 fixtures
-pnpm benchmark:validate-hard   # Hard-12 fixtures
-pnpm reproduce                 # credential-free replay of all 12 cases
-pnpm reproduce:check           # artifacts and provenance only
-pnpm product:dev               # the interactive product on :4180
-pnpm product:build             # bundle the product client
-pnpm product:test              # the product test suite
-pnpm dashboard:build           # static dashboard
-pnpm dev                       # dashboard on localhost
-pnpm test:clean-reproduction   # clone HEAD to a temp dir and run it all offline
-pnpm submission:finalize       # regenerate the final evaluation documents
-pnpm check:provenance <runId>  # verify a run against its recorded commit
+```text
+apps/product/        the interactive application (server + client)
+apps/dashboard/      the static evidence dashboard, generated from artifacts
+packages/core/       schemas, assertions, state diff, scoring primitives
+packages/agents/     Contract Agent, baseline evaluator, run orchestration
+packages/benchmark/  fixture loading, validation, gold isolation boundary
+packages/sandbox/    the synthetic refund-operations domain
+packages/model-provider/  the single provider client and replay mode
+packages/submission/ pinned artifact registry, metric combination, pricing
+benchmarks/          PhantomBench-12 and PhantomBench-Hard-12 fixtures
+prompts/             every versioned prompt, hashed into run manifests
+artifacts/           run manifests, predictions, raw responses, contracts, reports
+submission/          final evaluation, registry, ledger, reproduction manifest
+samples/             a ready-made run package for the import screen
+scripts/             reproduction, packaging, scanning, verification
+docs/                architecture, evaluation plan, limitations, quick start, video
 ```
 
-Live commands (`pnpm benchmark:baseline*`, `pnpm benchmark:stateproof-hard`,
-`pnpm benchmark:smoke-model`) require `STATEPROOF_ANTHROPIC_API_KEY` and are not
-needed to reproduce anything here. The locked split additionally requires the
-one-time protocol and refuses to run twice.
+Commands: [`docs/judge-quick-start.md`](docs/judge-quick-start.md).
+
+## 16. Main insight
+
+> **For action-taking agents, the final answer is a claim—not evidence. Compile
+> success once, then verify the state left behind.**
+
+Once you stop grading prose and start checking state, the model is needed exactly
+once per *task* — not once per *run* — and every execution after that is verified
+by code, for nothing.

@@ -56,6 +56,60 @@ asserts that no locked case reaches the prediction phase. Locked fixtures *are*
 read during scoring to compute the gold-inclusive dataset hash, which is
 deliberate and distinct from evaluating them.
 
+## The product surface
+
+`apps/product` is read-only by construction: it verifies, it never writes to a
+sandbox, and no route performs a consequential action.
+
+- **Uploads are treated as hostile.** Archives are read by a hand-written reader
+  that rejects traversal names, absolute paths, null bytes, unsupported
+  compression methods, more than 64 entries, entries over 8 MB and expansions
+  over 32 MB. Bodies are capped at 12 MB. Every payload is parsed through Zod in
+  both directions.
+- **Rendering is structural.** The client builds DOM nodes and sets text through
+  `textContent`; `innerHTML`, `outerHTML` and `insertAdjacentHTML` appear nowhere
+  in it, and a test enforces that. An imported task instruction or agent response
+  cannot become markup.
+- **Headers.** Every product response carries
+  `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;
+  connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+  plus `nosniff` and `no-referrer`. The client sets no `style` attributes,
+  because that policy blocks them — a test fails the build if one reappears.
+- **One deliberate exception.** The static evidence dashboard is a separate
+  application hosted at `/dashboard/`, and its generator writes `style`
+  attributes. That path alone is served with `style-src 'self' 'unsafe-inline'`.
+  Scripts remain same-origin, and the dashboard renders committed artifacts only
+  — no request data reaches it — so the allowance carries no injection surface.
+  The product's own routes keep the strict policy.
+- **Nothing persists.** Imports and runs live in memory behind a TTL. Restarting
+  the server loses them, by design.
+- **Contract compilation is off by default**, requires a key on the server, runs
+  only on an explicit click, is rate-limited to three per minute, and writes to a
+  temporary directory it deletes before responding.
+
+## The sample run package
+
+`samples/stateproof-sample-run.zip` is built through `loadAgentVisibleCase`, the
+gold-isolated loader, so it can only contain the six files an agent could itself
+have seen. It carries no gold contract, gold verdict, case metadata, split label,
+credential or local path, and three tests check the archive's contents
+independently of how it was produced.
+
+## Secret scanning
+
+`pnpm scan:secrets` runs over tracked files and built output, and over an
+extracted release package when given a directory. It looks for Anthropic keys,
+either credential variable carrying a value, generic `api_key`/`secret_key`/
+`access_token`/`auth_token`/`client_secret` assignments, bearer-token literals,
+private-key blocks, absolute Windows and POSIX user paths, and email addresses
+outside the reserved `example.*` fixture domains. It refuses `.env` and anything
+that looks like a copy of one, plus key material by extension, **by name** —
+those files are never opened. It also opens `.zip` archives and scans each entry,
+so a secret cannot hide inside the sample package or the release archive.
+
+`.env.example` is the one permitted member of the environment-file family and is
+checked separately for carrying a value rather than a blank placeholder.
+
 ## What is not addressed
 
 No authentication, authorization, rate limiting, tenancy isolation, audit

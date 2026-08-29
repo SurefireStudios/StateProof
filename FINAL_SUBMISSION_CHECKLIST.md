@@ -61,11 +61,11 @@ Run the command to re-check it.
 
 | | Item |
 | --- | --- |
-| ☑ | `README.md`, `SUBMISSION.md`, `JUDGE_QUICKSTART.md`, `REPRODUCTION.md` |
+| ☑ | `README.md`, `SUBMISSION.md`, `docs/judge-quick-start.md`, `REPRODUCTION.md` |
 | ☑ | `IMPROVEMENT_CHANGELOG.md`, `PREEXISTING_WORK.md` |
 | ☑ | `docs/` — project brief, evaluation plan, architecture, limitations, claims map, agent prompts, security, decision records |
 | ☑ | `submission/` — final evaluation, claims map, run registry, pricing manifest, package manifest, ledger, clean-reproduction report |
-| ☑ | `VIDEO_SCRIPT.md`, `VIDEO_SHOT_LIST.md` |
+| ☑ | `docs/video-script.md`, `docs/video-shot-list.md` |
 | ☑ | Static dashboard, six views, built from artifacts |
 | ☑ | Representative trajectory for every agent role, verifier labelled as code |
 | ☑ | `release/stateproof-submission-final.zip` with sha256 and manifest |
@@ -74,7 +74,7 @@ Run the command to re-check it.
 
 These are the only things a person still has to do:
 
-1. **Record the video** using `VIDEO_SCRIPT.md` and `VIDEO_SHOT_LIST.md`.
+1. **Record the video** using `docs/video-script.md` and `docs/video-shot-list.md`.
 2. **Delete `.env - Copy.example`** from the working directory if it is still
    there. It is git-ignored and was never packaged, but it should not exist
    locally.

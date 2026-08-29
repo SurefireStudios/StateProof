@@ -1,7 +1,7 @@
 # PhantomBench-12 schemas
 
 The canonical schemas for every fixture file live in
-[`packages/core/src/schema`](../../../packages/core/src/schema) as Zod schemas,
+[`packages/core/src/schema`](../../../packages/core/src/schema/) as Zod schemas,
 and are the single source of truth. They are executable, so validation cannot
 drift from documentation.
 

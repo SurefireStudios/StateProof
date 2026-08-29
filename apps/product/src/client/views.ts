@@ -182,13 +182,83 @@ export function contrastPanel(run: RunView): HTMLElement {
   );
 }
 
+/** In-page navigation, so a reviewer can go straight to the part they doubt. */
+const INSPECTOR_SECTIONS = [
+  { id: 'verdict', label: 'Verdict' },
+  { id: 'requirements', label: 'Requirements' },
+  { id: 'timeline', label: 'Timeline' },
+  { id: 'state-diff', label: 'State diff' },
+  { id: 'evidence', label: 'Evidence' },
+  { id: 'contract', label: 'Contract' },
+  { id: 'export', label: 'Export' },
+] as const;
+
+function evidenceIndex(run: RunView): HTMLElement {
+  const cited = run.requirements.filter((requirement) => requirement.evidence.length > 0);
+  const total = cited.reduce((count, requirement) => count + requirement.evidence.length, 0);
+
+  if (total === 0) {
+    return el(
+      'p',
+      { class: 'empty' },
+      'This contract resolved without citing a record or event.',
+    );
+  }
+
+  return el(
+    'div',
+    {},
+    el(
+      'p',
+      { class: 'muted small' },
+      `${String(total)} reference(s) across ${String(cited.length)} requirement(s). Every one is generated from what an assertion matched, and every one is a link to the exact event, record or diff row it names.`,
+    ),
+    ...cited.map((requirement) =>
+      el(
+        'div',
+        { class: 'card mt-2' },
+        el(
+          'div',
+          { class: 'req-head flush' },
+          pill(requirement.status),
+          el('span', { class: 'req-key' }, requirement.requirementKey),
+        ),
+        el(
+          'ul',
+          { class: 'ev-list' },
+          ...requirement.evidence.map((reference) =>
+            el(
+              'li',
+              {},
+              el(
+                'a',
+                {
+                  class: 'ev-link',
+                  href: `#${reference.targets[0] ?? ''}`,
+                  'data-evidence': reference.targets.join(' '),
+                },
+                reference.ref,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 export function runInspector(run: RunView): DocumentFragment {
   const exportBase = `/api/runs/${run.runId}/export`;
 
   return frag(
     el(
+      'nav',
+      { class: 'section-nav', 'aria-label': 'Sections of this run' },
+      ...INSPECTOR_SECTIONS.map((section) => el('a', { href: `#${section.id}` }, section.label)),
+    ),
+    el(
       'section',
-      {},
+      { id: 'verdict' },
       el(
         'div',
         { class: 'run-title' },
@@ -215,12 +285,6 @@ export function runInspector(run: RunView): DocumentFragment {
         el('dt', {}, 'Model calls / tokens'),
         el('dd', {}, `${String(run.modelCalls)} / ${String(run.modelTokens)}`),
       ),
-      el(
-        'div',
-        { class: 'actions mt-3' },
-        el('a', { class: 'btn', href: `${exportBase}?format=json` }, 'Export evidence (JSON)'),
-        el('a', { class: 'btn ghost', href: `${exportBase}?format=md` }, 'Export evidence (Markdown)'),
-      ),
     ),
 
     el('section', {}, contrastPanel(run)),
@@ -234,14 +298,14 @@ export function runInspector(run: RunView): DocumentFragment {
 
     el(
       'section',
-      {},
+      { id: 'requirements' },
       el('h2', {}, `Requirements (${String(run.requirements.length)})`),
       ...run.requirements.map(requirementCard),
     ),
 
     el(
       'section',
-      {},
+      { id: 'timeline' },
       el('h2', {}, 'Event timeline'),
       el(
         'p',
@@ -253,7 +317,7 @@ export function runInspector(run: RunView): DocumentFragment {
 
     el(
       'section',
-      {},
+      { id: 'state-diff' },
       el('h2', {}, 'State diff'),
       el(
         'p',
@@ -265,7 +329,14 @@ export function runInspector(run: RunView): DocumentFragment {
 
     el(
       'section',
-      {},
+      { id: 'evidence' },
+      el('h2', {}, 'Evidence index'),
+      evidenceIndex(run),
+    ),
+
+    el(
+      'section',
+      { id: 'contract' },
       el('h2', {}, 'Contract'),
       el(
         'dl',
@@ -303,6 +374,23 @@ export function runInspector(run: RunView): DocumentFragment {
             el('h3', {}, 'Ambiguities the contract declared'),
             el('ul', {}, ...run.contract.ambiguities.map((item) => el('li', { class: 'small' }, item))),
           ),
+    ),
+
+    el(
+      'section',
+      { id: 'export' },
+      el('h2', {}, 'Export the evidence'),
+      el(
+        'p',
+        { class: 'muted small' },
+        'Both formats carry the verdict and everything needed to disagree with it: the task, the contract provenance, every requirement with its reason, and every evidence reference. Neither carries a credential, an environment variable, a gold label or a local path.',
+      ),
+      el(
+        'div',
+        { class: 'actions mt-3' },
+        el('a', { class: 'btn', href: `${exportBase}?format=json` }, 'Export evidence (JSON)'),
+        el('a', { class: 'btn ghost', href: `${exportBase}?format=md` }, 'Export evidence (Markdown)'),
+      ),
     ),
   );
 }
@@ -379,13 +467,17 @@ export function proofPanel(hero: HeroProof): HTMLElement {
   );
 }
 
-export function homeView(benchmark: BenchmarkView | null, hero: HeroProof | null): DocumentFragment {
-  const combined =
-    benchmark === null
-      ? null
-      : (benchmark.splits.find((split) => split.label.startsWith('Combined')) ?? null);
-  const usage = benchmark?.usage ?? [];
+function statCard(label: string, value: string, caption: string): HTMLElement {
+  return el(
+    'div',
+    { class: 'card' },
+    el('h3', {}, label),
+    el('p', { class: 'stat' }, value),
+    el('p', { class: 'small faint' }, caption),
+  );
+}
 
+export function homeView(benchmark: BenchmarkView | null, hero: HeroProof | null): DocumentFragment {
   return frag(
     el(
       'section',
@@ -394,18 +486,19 @@ export function homeView(benchmark: BenchmarkView | null, hero: HeroProof | null
       el(
         'p',
         { class: 'lede' },
-        'StateProof compiles an agent task into a reusable executable contract, then verifies every run against real state and trajectory evidence — without paying another frontier model to reinterpret the same task each time.',
+        'StateProof compiles success criteria once, then verifies every agent run against actual state and event evidence—without asking another model to judge the same workflow again.',
       ),
       el(
         'div',
         { class: 'actions mt-3' },
         el('a', { class: 'btn', href: '#/demo' }, 'Run the verification demo'),
         el('a', { class: 'btn ghost', href: '#/import' }, 'Import an agent run'),
+        el('a', { class: 'btn ghost', href: '#/benchmark' }, 'Review the measured benchmark'),
       ),
       el(
         'p',
         { class: 'faint small mt-2' },
-        'The demo needs no API key and makes no model call.',
+        'All three need no API key and make no model call.',
       ),
     ),
     hero === null
@@ -449,7 +542,7 @@ export function homeView(benchmark: BenchmarkView | null, hero: HeroProof | null
         ),
       ),
     ),
-    combined === null || benchmark === null
+    benchmark === null
       ? el(
           'section',
           {},
@@ -462,43 +555,47 @@ export function homeView(benchmark: BenchmarkView | null, hero: HeroProof | null
       : el(
           'section',
           {},
-          el('h2', {}, 'Verified benchmark result'),
+          el('h2', {}, `Measured on ${String(benchmark.headline.caseCount)} synthetic cases`),
           el(
             'div',
-            { class: 'grid grid-3' },
-            el(
-              'div',
-              { class: 'card' },
-              el('h3', {}, 'Quality, all 12 cases'),
-              el('p', { class: 'stat' }, combined.stateproof['SVR'] ?? '—'),
-              el('p', { class: 'small faint' }, 'Safety Violation Recall, matching the frontier baseline.'),
+            { class: 'grid grid-4' },
+            statCard(
+              'Safety Violation Recall',
+              benchmark.headline.safetyViolationRecall,
+              'combined, matching the frontier baseline',
             ),
-            el(
-              'div',
-              { class: 'card' },
-              el('h3', {}, 'First deployment'),
-              el('p', { class: 'stat' }, usage[1]?.modelCalls ?? '—'),
-              el(
-                'p',
-                { class: 'small faint' },
-                `model calls, against ${usage[0]?.modelCalls ?? '—'} for the baseline.`,
-              ),
+            statCard(
+              'False Violation Rate',
+              benchmark.headline.falseViolationRate,
+              'no requirement wrongly called a violation',
             ),
-            el(
-              'div',
-              { class: 'card' },
-              el('h3', {}, 'Every repeat after that'),
-              el('p', { class: 'stat' }, usage[2]?.modelCalls ?? '—'),
-              el('p', { class: 'small faint' }, 'model calls, and zero tokens.'),
+            statCard(
+              'First deployment',
+              benchmark.headline.firstDeploymentCallReduction,
+              `fewer model calls, and ${benchmark.headline.firstDeploymentTokenReduction} fewer tokens`,
+            ),
+            statCard(
+              'Every repeat after that',
+              `${benchmark.headline.repeatedModelCalls} / ${benchmark.headline.repeatedModelTokens}`,
+              'model calls and model tokens',
             ),
           ),
           el(
             'div',
             { class: 'callout mt-3' },
-            el('p', {}, benchmark.scopeNote),
+            el('p', { class: 'claim-line' }, benchmark.primaryClaim),
+            el('p', { class: 'small muted mt-2' }, benchmark.qualification),
           ),
-          el('p', { class: 'mt-3' }, el('a', { href: '#/benchmark' }, 'See the full comparison →')),
+          el('p', { class: 'faint small mt-2' }, benchmark.scopeNote),
+          el(
+            'div',
+            { class: 'actions mt-3' },
+            el('a', { class: 'btn ghost', href: '#/benchmark' }, 'See every number →'),
+          ),
         ),
+    benchmark === null
+      ? null
+      : el('section', {}, el('p', { class: 'hot-take' }, benchmark.hotTake)),
   );
 }
 
@@ -632,18 +729,38 @@ export function benchmarkPage(benchmark: BenchmarkView): DocumentFragment {
       'section',
       {},
       el('h1', {}, 'Benchmark'),
-      el('p', { class: 'lede' }, benchmark.scopeNote),
+      el('p', { class: 'lede' }, benchmark.primaryClaim),
+      el(
+        'div',
+        { class: 'callout warn mt-3' },
+        el('p', {}, benchmark.qualification),
+      ),
       el(
         'p',
-        { class: 'faint small' },
+        { class: 'faint small mt-2' },
         `Every value is read from ${benchmark.generatedFrom}. Nothing on this page is entered by hand.`,
       ),
     ),
-    el('section', {}, ...benchmark.splits.map(splitTable)),
+    el(
+      'section',
+      {},
+      el('h2', {}, 'Quality, by split'),
+      el(
+        'p',
+        { class: 'muted small mb-3' },
+        'Development is the split StateProof was iterated against. Locked was held out, evaluated exactly once after the source freeze, and never used for tuning. Combined is recomputed from counts, not averaged from the two percentages.',
+      ),
+      ...benchmark.splits.map(splitTable),
+    ),
     el(
       'section',
       {},
       el('h2', {}, 'Model usage across the full suite'),
+      el(
+        'p',
+        { class: 'muted small mb-3' },
+        'Three operating modes over the same twelve cases. "Model-call wall time" is time spent inside model calls; "end-to-end elapsed" is the whole run including deterministic verification. The warm row makes no model call at all, so its elapsed time is verification and I/O only — not model wall-clock time.',
+      ),
       el(
         'div',
         { class: 'table-wrap' },
@@ -723,6 +840,20 @@ export function benchmarkPage(benchmark: BenchmarkView): DocumentFragment {
           '. This product is the interactive surface; that one is the evidence trail.',
         ),
       ),
+    ),
+    el(
+      'section',
+      {},
+      el('h2', {}, 'What this does not show'),
+      el(
+        'ul',
+        {},
+        el('li', { class: 'small' }, 'Twelve synthetic cases in one domain — refund operations — against one model family. It does not establish generalization.'),
+        el('li', { class: 'small' }, 'Both systems score 100% on every quality metric, so the suite cannot separate them on accuracy. What separates them is cost, determinism and evidence validity.'),
+        el('li', { class: 'small' }, 'The efficiency figures are withheld in code unless SVR 100%, CDR 100%, FVR 0% and evidence-reference validity 100% all hold. Two earlier iterations were cheaper than the baseline and are reported with no reduction figures at all.'),
+        el('li', { class: 'small' }, 'USD figures are an estimate against a dated published price list, not an invoice.'),
+      ),
+      el('p', { class: 'faint small mt-2' }, benchmark.scopeNote),
     ),
   );
 }

@@ -28,8 +28,36 @@ import { buildRunView, getRun, readContractArtifact, storeRun } from './runs';
 
 const REPO_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
 const DIST_DIR = path.join(REPO_ROOT, 'apps', 'product', 'dist');
+/** The static evidence dashboard, served rather than reimplemented. */
+const DASHBOARD_DIR = path.join(REPO_ROOT, 'apps', 'dashboard', 'dist');
+const SAMPLE_PACKAGE = path.join(REPO_ROOT, 'samples', 'stateproof-sample-run.zip');
 const PORT = Number.parseInt(process.env['PORT'] ?? '4180', 10);
 const MAX_BODY_BYTES = 12 * 1024 * 1024;
+
+/** Non-secret, committed metadata the client uses to build its links. */
+function appInfo(): {
+  repositoryUrl: string | null;
+  dashboardAvailable: boolean;
+  samplePackageAvailable: boolean;
+} {
+  let repositoryUrl: string | null = null;
+  try {
+    const manifest = JSON.parse(readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')) as {
+      repository?: { url?: string };
+    };
+    const url = manifest.repository?.url ?? null;
+    // Only an https remote is a link. A local path or an ssh remote is neither
+    // useful to a reader nor safe to put on a page.
+    repositoryUrl = url !== null && url.startsWith('https://') ? url : null;
+  } catch {
+    repositoryUrl = null;
+  }
+  return {
+    repositoryUrl,
+    dashboardAvailable: existsSync(path.join(DASHBOARD_DIR, 'index.html')),
+    samplePackageAvailable: existsSync(SAMPLE_PACKAGE),
+  };
+}
 
 /** No inline script or style, no remote origin, nothing embeddable. */
 const CSP = [
@@ -42,6 +70,14 @@ const CSP = [
   "form-action 'none'",
   "frame-ancestors 'none'",
 ].join('; ');
+
+/**
+ * The evidence dashboard is a separate application being hosted here, and its
+ * generator writes `style` attributes. It renders committed artifacts only —
+ * no request data reaches it — so it gets its own policy rather than forcing
+ * the product's routes to relax theirs. Scripts stay restricted to same-origin.
+ */
+const DASHBOARD_CSP = CSP.replace("style-src 'self'", "style-src 'self' 'unsafe-inline'");
 
 function send(
   response: ServerResponse,
@@ -113,6 +149,24 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
   // --- API ----------------------------------------------------------------
   if (route === '/api/demo' && method === 'GET') {
     sendJson(response, 200, demoSummary(REPO_ROOT));
+    return;
+  }
+
+  if (route === '/api/app' && method === 'GET') {
+    sendJson(response, 200, appInfo());
+    return;
+  }
+
+  if (route === '/api/sample-package' && method === 'GET') {
+    if (!existsSync(SAMPLE_PACKAGE)) {
+      sendError(response, 404, 'The sample run package has not been built.', [
+        { field: 'samples', message: 'Run `pnpm sample:build` to generate it.' },
+      ]);
+      return;
+    }
+    send(response, 200, 'application/zip', readFileSync(SAMPLE_PACKAGE), {
+      'content-disposition': 'attachment; filename="stateproof-sample-run.zip"',
+    });
     return;
   }
 
@@ -309,6 +363,35 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
     } catch (error) {
       sendError(response, 503, error instanceof Error ? error.message : 'benchmark unavailable');
     }
+    return;
+  }
+
+  // --- the static evidence dashboard, hosted rather than reimplemented -----
+  if (route === '/dashboard' && method === 'GET') {
+    response.writeHead(302, { location: '/dashboard/' });
+    response.end();
+    return;
+  }
+  if (route.startsWith('/dashboard/') && method === 'GET') {
+    const relative = route.slice('/dashboard/'.length);
+    const page = relative === '' ? 'index.html' : relative;
+    const candidate = path.join(DASHBOARD_DIR, page);
+    if (!candidate.startsWith(DASHBOARD_DIR) || !existsSync(candidate) || candidate.endsWith(path.sep)) {
+      send(
+        response,
+        404,
+        'text/plain; charset=utf-8',
+        'The evidence dashboard is not built. Run `pnpm dashboard:build`.\n',
+      );
+      return;
+    }
+    send(
+      response,
+      200,
+      STATIC_TYPES[path.extname(candidate)] ?? 'text/plain; charset=utf-8',
+      readFileSync(candidate),
+      { 'content-security-policy': DASHBOARD_CSP },
+    );
     return;
   }
 
