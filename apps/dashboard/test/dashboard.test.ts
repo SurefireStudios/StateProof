@@ -147,6 +147,9 @@ describe('links and evidence resolve', () => {
       for (const match of markup.matchAll(/href="([^"#]+)(?:#[^"]*)?"/g)) {
         const href = match[1] ?? '';
         if (href.startsWith('../../') || href.startsWith('http')) continue;
+        // The wordmark deliberately leaves this site; where it lands depends on
+        // who is serving it. Covered by its own test below.
+        if (href === '../') continue;
         expect(generated, `${file} → ${href}`).toContain(href);
       }
     }
@@ -319,6 +322,21 @@ describe('both surfaces share one design system', () => {
       expect(page, file).toContain('logo.svg');
       expect(page, file).toContain('<link rel="stylesheet" href="styles.css">');
     }
+  });
+
+  it('sends the wordmark home, wherever this site is being served from', () => {
+    // The dashboard is served two ways, and the wordmark has to be right in
+    // both. `../` resolves to the product's home when the product hosts this
+    // site at /dashboard/, and clamps at the origin root — this dashboard's own
+    // overview — when it is served standalone. No script, no build-time branch.
+    for (const file of built.files.filter((name) => name.endsWith('.html'))) {
+      expect(html(file), file).toContain('<a class="brand" href="../">');
+    }
+
+    const resolve = (from: string): string => new URL('../', `http://host${from}`).pathname;
+    expect(resolve('/dashboard/benchmark.html')).toBe('/');
+    expect(resolve('/dashboard/inspector-PBH-A01.html')).toBe('/');
+    expect(resolve('/benchmark.html')).toBe('/');
   });
 
   it('marks a requirement card with the same status edge the product uses', () => {

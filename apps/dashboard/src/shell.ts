@@ -100,7 +100,14 @@ export function page(options: PageOptions): string {
 <body>
 <header class="topbar">
   <div class="topbar-inner">
-    <a class="brand" href="index.html">
+    <!--
+      One level up, deliberately, because this site is served two ways. Hosted
+      by the product at /dashboard/, this resolves to the product's home — which
+      is where a wordmark should take you. Served standalone, URL resolution
+      clamps at the origin root, which is this dashboard's own overview. Both
+      are right, with no script and no build-time branch.
+    -->
+    <a class="brand" href="../">
       <span class="brand-mark" aria-hidden="true"></span>
       <span class="brand-name">StateProof</span>
       <span class="brand-tag">${esc(PITCH)}</span>
