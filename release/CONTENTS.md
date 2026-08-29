@@ -3,10 +3,10 @@
 | | |
 | --- | --- |
 | Archive | `release/stateproof-submission-final.zip` |
-| SHA-256 | `a0718cfbff5b41b5ab536501431d40ccd2d44a1823fde39c42fa946bba57e37f` |
-| Size | 1.15 MB (1204966 bytes) |
+| SHA-256 | `e7ee1e458bf9a2f345e939a7fda0a634758bd2e9ac1360760522053b00eb86dd` |
+| Size | 1.15 MB (1205014 bytes) |
 | Files | 562 |
-| Source commit | `bd159227535ceec365a041295bc3fd58186b719a` |
+| Source commit | `087fa903f0afa4f364fe65f509d253eec96b7333` |
 | Built on | win32 10.0.26200 (x64), Node v20.10.0, pnpm 8.12.0 |
 
 ## What is inside
@@ -65,11 +65,11 @@ environment, and the whole offline workflow was run there:
 
 | Step | Result | Duration |
 | --- | --- | --- |
-| `pnpm install --frozen-lockfile` | passed | 3.7 s |
-| `pnpm typecheck` | passed | 5.4 s |
-| `pnpm test` | FAILED | 9.6 s |
+| `pnpm install --frozen-lockfile` | passed | 3.6 s |
+| `pnpm typecheck` | passed | 5.3 s |
+| `pnpm test` | FAILED | 14.8 s |
 
-Install took 3.7 s.
+Install took 3.6 s.
 
 **RESULT: FAILED**
 

@@ -31,6 +31,7 @@ import {
   loadContractPrompt,
   runStateProof,
 } from '@stateproof/agents';
+import { inCheckout } from './checkout';
 
 /**
  * Gate 3B: the DSL and provenance work, tested against the two things that
@@ -63,10 +64,13 @@ function git(args: readonly string[], cwd: string): string {
 // --- repository hygiene ------------------------------------------------------
 
 describe('the public environment template', () => {
-  const tracked = git(['ls-files', '.env.example'], REPO_ROOT).trim();
+  // Evaluated when the describe body runs, so it cannot assume a checkout: this
+  // suite also runs inside an extracted release package.
+  const checkout = inCheckout(REPO_ROOT);
+  const tracked = checkout ? git(['ls-files', '.env.example'], REPO_ROOT).trim() : '';
   const text = readFileSync(path.join(REPO_ROOT, '.env.example'), 'utf8');
 
-  it('is tracked', () => {
+  it.skipIf(!checkout)('is tracked', () => {
     expect(tracked).toBe('.env.example');
   });
 
