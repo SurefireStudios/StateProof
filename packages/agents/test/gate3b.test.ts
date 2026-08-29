@@ -158,9 +158,10 @@ describe('the clean-source guard', () => {
   });
 });
 
-describe('prompt provenance', () => {
+describe.skipIf(!inCheckout(REPO_ROOT))('prompt provenance', () => {
   const v1 = loadContractPrompt(path.join(REPO_ROOT, V1_PROMPT_REPO_PATH));
-  const head = git(['rev-parse', 'HEAD'], REPO_ROOT).trim();
+  // Provenance is a property of a commit; an extracted archive has none.
+  const head = inCheckout(REPO_ROOT) ? git(['rev-parse', 'HEAD'], REPO_ROOT).trim() : '';
 
   it('matches the prompt file at the commit a manifest records', () => {
     expect(fileHashAtCommit(head, V1_PROMPT_REPO_PATH, REPO_ROOT)).toBe(v1.hash);
