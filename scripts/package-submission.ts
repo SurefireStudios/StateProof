@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -154,6 +154,20 @@ function renderContents(
   return lines.join('\n');
 }
 
+/**
+ * A scratch directory that every `tar` invocation runs from.
+ *
+ * Windows `tar` is bsdtar, and bsdtar reads `-f C:\path\to.zip` as a *remote*
+ * archive on host `C` — "Cannot connect to C: resolve failed". Keeping the
+ * archive argument a bare filename in the working directory sidesteps that
+ * without a platform branch, and `-C` takes an absolute path safely.
+ */
+const scratch = mkdtempSync(path.join(tmpdir(), 'stateproof-tar-'));
+
+function untar(archiveName: string, into: string): void {
+  execFileSync('tar', ['-xf', archiveName, '-C', into], { cwd: scratch });
+}
+
 async function main(): Promise<void> {
   for (const [dist, command] of [
     [DASHBOARD_DIST, 'pnpm dashboard:build'],
@@ -173,10 +187,11 @@ async function main(): Promise<void> {
   const zipPath = path.join(RELEASE_DIR, ZIP_NAME);
   rmSync(zipPath, { force: true });
 
-  // Stage: tracked files at HEAD, plus the prebuilt dashboard for convenience.
+  // Stage: tracked files at HEAD, plus both prebuilt surfaces for convenience.
   const staging = mkdtempSync(path.join(tmpdir(), 'stateproof-package-'));
   execFileSync('git', ['archive', '--format=zip', '-o', zipPath, head], { cwd: REPO_ROOT });
-  execFileSync('tar', ['-xf', zipPath, '-C', staging], { cwd: REPO_ROOT });
+  copyFileSync(zipPath, path.join(scratch, 'source.zip'));
+  untar('source.zip', staging);
 
   for (const [source, relative] of [
     [DASHBOARD_DIST, path.join('apps', 'dashboard', 'dist')],
@@ -190,7 +205,9 @@ async function main(): Promise<void> {
   }
 
   rmSync(zipPath, { force: true });
-  execFileSync('tar', ['-a', '-c', '-f', zipPath, '.'], { cwd: staging });
+  rmSync(path.join(scratch, 'package.zip'), { force: true });
+  execFileSync('tar', ['-a', '-c', '-f', 'package.zip', '-C', staging, '.'], { cwd: scratch });
+  copyFileSync(path.join(scratch, 'package.zip'), zipPath);
 
   const digest = await sha256File(zipPath);
   const sizeBytes = statSync(zipPath).size;
@@ -200,7 +217,7 @@ async function main(): Promise<void> {
 
   // --- prove the package ---------------------------------------------------
   const extracted = mkdtempSync(path.join(tmpdir(), 'stateproof-extract-'));
-  execFileSync('tar', ['-xf', zipPath, '-C', extracted]);
+  untar('package.zip', extracted);
 
   const env: NodeJS.ProcessEnv = { ...process.env };
   delete env['STATEPROOF_ANTHROPIC_API_KEY'];
@@ -342,9 +359,9 @@ async function main(): Promise<void> {
     ].join('\n'),
   );
 
-  for (const scratch of [staging, extracted]) {
+  for (const directory of [staging, extracted, scratch]) {
     try {
-      rmSync(scratch, { recursive: true, force: true, maxRetries: 3, retryDelay: 250 });
+      rmSync(directory, { recursive: true, force: true, maxRetries: 3, retryDelay: 250 });
     } catch {
       process.stdout.write(`note: could not remove ${scratch}; delete it manually.\n`);
     }
