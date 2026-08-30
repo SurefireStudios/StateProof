@@ -161,15 +161,20 @@ pnpm reproduce</pre>
     here establishes behaviour on real production systems.</li>
     <li>The semantic lint's task-fact extraction is <strong>template-oriented and regex-based</strong>.
     A broader domain needs typed task adapters rather than pattern matching.</li>
-    <li><strong>Development-split results only.</strong> The four locked challenge cases have not
-    been run, by design, so nothing is tuned against them.</li>
-    <li><strong>No USD cost is claimed.</strong> Token counts are measured; no pricing rule is
-    implemented.</li>
+    <li><strong>Eight development cases, four held out.</strong> The locked cases were evaluated
+    exactly once after the source freeze and were never used for tuning.</li>
+    <li><strong>USD figures are an estimate</strong> against a dated, sourced price list, not an
+    invoice. Token counts are measured; the money is derived from them.</li>
     <li>Two historical provenance defects are preserved and documented rather than repaired: the
     Gate 3A run predates its own commit, and the Gate 3C cold manifest carries a stale
     <code>stage</code> label. Both are cosmetic-to-the-result and both are visible in the artifacts.</li>
     <li>This is not a claim of production readiness.</li>
   </ul>
+
+  <h3>Human review for consequential actions</h3>
+  <p class="muted">StateProof does not autonomously approve or execute consequential actions. In a
+  real-world deployment, failed or uncertain verification results should be escalated to a
+  qualified human reviewer before any consequential decision is made.</p>
 </section>
 `;
 

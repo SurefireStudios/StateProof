@@ -292,6 +292,14 @@ export function runInspector(run: RunView): DocumentFragment {
         el('dt', {}, 'Model calls / tokens'),
         el('dd', {}, `${String(run.modelCalls)} / ${String(run.modelTokens)}`),
       ),
+      // Sits with the verdict rather than in a footnote: this is the moment
+      // someone decides what to do about a result.
+      el(
+        'p',
+        { class: 'human-review mt-2' },
+        el('strong', {}, 'Human-in-the-loop:'),
+        ' consequential or uncertain outcomes require qualified human review.',
+      ),
     ),
 
     el('section', {}, contrastPanel(run)),
@@ -913,6 +921,16 @@ export function benchmarkPage(benchmark: BenchmarkView): DocumentFragment {
         el('li', { class: 'small' }, 'USD figures are an estimate against a dated published price list, not an invoice.'),
       ),
       el('p', { class: 'faint small mt-2' }, benchmark.scopeNote),
+      el(
+        'div',
+        { class: 'callout warn mt-3' },
+        el('h3', {}, 'Human review for consequential actions'),
+        el(
+          'p',
+          { class: 'small' },
+          'StateProof does not autonomously approve or execute consequential actions. In a real-world deployment, failed or uncertain verification results should be escalated to a qualified human reviewer before any consequential decision is made.',
+        ),
+      ),
     ),
   );
 }

@@ -562,6 +562,20 @@ section:last-child { margin-bottom: 0; }
   text-wrap: balance;
 }
 
+/*
+ * The human-review line, beside a verdict. Quiet, but not buried: it belongs
+ * with the result, because that is where someone decides what to do next.
+ */
+.human-review {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.human-review strong { color: var(--ink-dim); font-weight: 600; }
+
 /* The supported run-package manifest, on the import screen. */
 .manifest { margin: 10px 0 0; padding-left: 18px; color: var(--ink-dim); }
 .manifest li { margin-bottom: 2px; }
