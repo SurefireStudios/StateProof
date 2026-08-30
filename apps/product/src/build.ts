@@ -67,7 +67,7 @@ const SHELL = (): string => `<!doctype html>
     <a class="brand" href="#/">
       <span class="brand-mark" aria-hidden="true"></span>
       <span>StateProof</span>
-      <span class="brand-tag">The agent said it was done. Prove it.</span>
+      <span class="brand-tag">The agent said it was done. <em>Prove it.</em></span>
     </a>
     <nav class="main" id="nav" aria-label="Primary"></nav>
   </div>

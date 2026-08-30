@@ -9,6 +9,14 @@
  */
 
 export const PITCH = 'The agent said it was done. Prove it.';
+
+/**
+ * The same slogan as markup, with the demand in italics.
+ *
+ * `PITCH` stays a plain string because the submission documents and the video
+ * scripts read it; only the rendered header carries the emphasis.
+ */
+export const PITCH_HTML = 'The agent said it was done. <em>Prove it.</em>';
 export const INSIGHT = 'For action-taking agents, the final response is a claim—not evidence.';
 
 export interface NavItem {
@@ -110,7 +118,7 @@ export function page(options: PageOptions): string {
     <a class="brand" href="../">
       <span class="brand-mark" aria-hidden="true"></span>
       <span class="brand-name">StateProof</span>
-      <span class="brand-tag">${esc(PITCH)}</span>
+      <span class="brand-tag">${PITCH_HTML}</span>
     </a>
     <nav class="main" aria-label="Primary">${nav}</nav>
   </div>

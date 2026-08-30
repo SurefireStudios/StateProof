@@ -1,6 +1,6 @@
 # StateProof
 
-> **The agent said it was done. Prove it.**
+> **The agent said it was done.** ***Prove it.***
 
 StateProof compiles success criteria once, then verifies every agent run against
 actual state and event evidence—without asking another model to judge the same

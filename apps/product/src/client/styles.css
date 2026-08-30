@@ -246,6 +246,11 @@ pre code { background: none; border: none; padding: 0; }
   padding-left: 10px;
   border-left: 1px solid var(--line-strong);
 }
+/* The demand carries the emphasis wherever the slogan appears. */
+.brand-tag em {
+  font-style: italic;
+  color: var(--ink-dim);
+}
 nav.main {
   margin-left: auto;
   display: flex;
@@ -540,6 +545,11 @@ section:last-child { margin-bottom: 0; }
   color: var(--ink);
   text-wrap: pretty;
 }
+/*
+ * Full width. This is the closing line of the page, sitting under a rule that
+ * spans the container — holding it to a prose measure left it looking like a
+ * paragraph that had been cut off rather than a statement.
+ */
 .hot-take {
   margin: 0;
   padding: 22px 0 0;
@@ -549,7 +559,6 @@ section:last-child { margin-bottom: 0; }
   font-weight: 600;
   letter-spacing: -0.015em;
   color: var(--ink);
-  max-width: 60ch;
   text-wrap: balance;
 }
 
@@ -1028,7 +1037,13 @@ footer {
   color: var(--ink-faint);
   font-size: 13px;
 }
-footer p { max-width: 78ch; margin-bottom: 6px; }
+/*
+ * Full width, deliberately. A prose measure is right for body copy, but this is
+ * two short lines of fine print sitting above a colophon that spans the whole
+ * container — capping it at 78ch left the footer looking like a column that had
+ * lost its other half.
+ */
+footer p { margin-bottom: 6px; }
 footer p:first-child { color: var(--ink-dim); }
 
 /* Attribution. Quiet, but present on every page. */

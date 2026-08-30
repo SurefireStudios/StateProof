@@ -717,7 +717,9 @@ describe('the production build', () => {
     );
     expect(shell).not.toMatch(/<script(?![^>]*src=)/);
     expect(shell).not.toMatch(/<style/);
-    expect(shell).toContain('The agent said it was done. Prove it.');
+    // The demand is italicised in the markup, so assert the halves.
+    expect(shell).toContain('The agent said it was done.');
+    expect(shell).toContain('<em>Prove it.</em>');
   });
 
   it('parses every response before rendering it, and cannot blank the page', () => {
