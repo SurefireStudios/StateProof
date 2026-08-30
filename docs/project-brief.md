@@ -85,5 +85,5 @@ uncertainty is expressible but cannot be used to farm score.
 ## Scope
 
 Fixed 48-hour scope, non-goals, and the current phase boundary are in
-[`competition-scope.md`](competition-scope.md). Metric definitions and the run
+[`evaluation-plan.md`](evaluation-plan.md). Metric definitions and the run
 protocol are in [`evaluation-plan.md`](evaluation-plan.md).

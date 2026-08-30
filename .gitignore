@@ -36,9 +36,11 @@ Thumbs.db
 
 # local working notes: supplied briefs, gate prompts and audit addenda.
 # These are planning documents, not deliverables, and are not published.
-# CLAUDE.md is deliberately NOT ignored: it is the repository instruction file.
+# CLAUDE.md is the agent's own instruction file — useful locally, not part of
+# what a judge needs to build, run or reproduce the submission.
 0[0-9]_*.md
 CLAUDE_*.md
+CLAUDE.md
 apps/dashboard/dist/
 
 # release packages are build output, not source. Tracking the contents note or
@@ -68,3 +70,8 @@ video/*_AME/
 video/**/*.prproj
 video/**/*.mov
 video/**/*.mp4
+
+# The walkthrough-video pipeline and its media. The film is submitted as a
+# finished file; the capture rig, raw clips and editing projects are not
+# something a judge needs to build, run or reproduce anything.
+video/

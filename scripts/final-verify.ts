@@ -134,8 +134,7 @@ const REQUIRED_DOCS = [
   'docs/claims-evidence-map.md',
   'docs/agent-prompts.md',
   'docs/judge-quick-start.md',
-  'docs/video-script.md',
-  'docs/video-shot-list.md',
+  'docs/live-deployment.md',
 ];
 
 function checkRequiredDocs(): string[] {

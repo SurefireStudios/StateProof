@@ -28,3 +28,6 @@ tmp
 .DS_Store
 Thumbs.db
 Surefire-Icon.svg
+
+# the walkthrough-video pipeline and its media
+video/

@@ -40,12 +40,7 @@
     "sample:build": "tsx scripts/build-sample-package.ts",
     "final:verify": "tsx scripts/final-verify.ts",
     "product:server:build": "pnpm --filter product server:build",
-    "deploy:verify": "tsx scripts/deploy-verify.ts",
-    "video:capture": "tsx video/src/capture.ts",
-    "video:render": "tsx video/src/render.ts",
-    "video:mux": "tsx video/src/mux-voiceover.ts",
-    "video:verify": "tsx video/src/verify-video.ts",
-    "video:script": "tsx video/src/write-scripts.ts"
+    "deploy:verify": "tsx scripts/deploy-verify.ts"
   },
   "devDependencies": {
     "@types/node": "20.14.10",

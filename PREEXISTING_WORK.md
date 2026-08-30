@@ -14,7 +14,9 @@ prior StateProof implementation, public or private. These are working planning
 notes, held locally and not committed:
 
 - `00_READ_ME_FIRST.md` — build pack overview and division of labour.
-- `01_CLAUDE_48H.md` — persistent scope and standards (copied to `CLAUDE.md`).
+- `01_CLAUDE_48H.md` — persistent scope and standards. Held locally as the
+  agent's standing instruction file; not published, because it is an input to
+  the build rather than part of what the submission delivers.
 - `02_CLAUDE_KICKOFF_48H.md` — foundation gate specification.
 - `03_PARALLEL_WORK_PLAN.md` — checkpoints.
 - `04_PHANTOMBENCH_12_CASE_MATRIX.md` — **canonical** benchmark design.
