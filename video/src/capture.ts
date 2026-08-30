@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Browser, type Page } from 'playwright';
@@ -76,6 +84,34 @@ const CURSOR_SCRIPT = `
       if (!node) return;
       node.style.opacity = '1';
       node.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+    };
+    /*
+     * A repaint heartbeat.
+     *
+     * Chromium's screencast only emits a frame when something is damaged. A
+     * page that fits the viewport and is not animating produces no damage at
+     * all, so the recording froze on whatever it captured first — which was the
+     * pre-render skeleton — and held it for the whole clip. This nudges a 2px
+     * corner element so frames keep coming. It is invisible at 1920x1080 and
+     * changes nothing the viewer can see.
+     */
+    var beat = null;
+    var timer = null;
+    window.__startHeartbeat = function () {
+      if (timer !== null) return;
+      var host = document.body || document.documentElement;
+      if (!host) return;
+      beat = document.createElement('div');
+      beat.style.cssText = [
+        'position:fixed', 'right:0', 'bottom:0', 'width:2px', 'height:2px',
+        'pointer-events:none', 'z-index:2147483646', 'background:rgba(8,9,12,1)'
+      ].join(';');
+      host.appendChild(beat);
+      var on = false;
+      timer = setInterval(function () {
+        on = !on;
+        beat.style.background = on ? 'rgba(9,10,13,1)' : 'rgba(8,9,12,1)';
+      }, 120);
     };
     window.__pressCursor = function () {
       var node = ensure();
@@ -196,11 +232,11 @@ async function performClip(page: Page, clip: Clip): Promise<void> {
       break;
 
     case 'demo-setup':
-      await sleep(3000);
-      await scrollToSelector(page, '.grid-2', 1400);
-      await sleep(9000);
-      await scrollToSelector(page, '.grid-3', 1400);
-      await sleep(5000);
+      // This page fits 1080 with nothing below the fold, so there is nothing to
+      // scroll to. Hold on the task and the claim and let the viewer read.
+      await sleep(6000);
+      await scrollToSelector(page, '.grid-3', 1200);
+      await sleep(7000);
       break;
 
     case 'demo-verify':
@@ -289,18 +325,36 @@ async function performClip(page: Page, clip: Clip): Promise<void> {
 async function prepare(page: Page, clip: Clip, base: string): Promise<void> {
   if (clip.id === 'demo-findings' || clip.id === 'demo-timeline') {
     await page.goto(`${base}/demo`, { waitUntil: 'networkidle' });
-    await page.waitForSelector('#verify-button', { timeout: 30_000 });
+    await page.waitForSelector('#verify-button', { timeout: 45_000 });
     await page.click('#verify-button');
-    await page.waitForSelector('.req', { timeout: 30_000 });
+    await page.waitForSelector('.req', { timeout: 45_000 });
     return;
   }
   await page.goto(`${base}${clip.route}`, { waitUntil: 'networkidle' });
-  if (clip.id === 'reproduce') {
-    await page.waitForSelector('#import-output .card', { timeout: 30_000 });
+
+  /*
+   * Wait for real content, not just a quiet network.
+   *
+   * A cold instance answered `/api/demo` slower than the clip was long, and the
+   * whole shot was a loading skeleton — captured "successfully", because
+   * nothing threw. Gating on an element that only exists once the data has
+   * arrived turns that into a slow start instead of a wasted take.
+   */
+  if (clip.ready !== undefined) {
+    await page.waitForSelector(clip.ready, { timeout: 45_000, state: 'visible' });
+    // Let the reveal animations settle before the first frame that matters.
+    await sleep(600);
   }
+  // Keep the screencast producing frames even on a page that never moves.
+  await page.evaluate('window.__startHeartbeat && window.__startHeartbeat()');
+  await sleep(400);
 }
 
-async function captureClip(browser: Browser, clip: Clip, base: string): Promise<string> {
+async function captureClip(
+  browser: Browser,
+  clip: Clip,
+  base: string,
+): Promise<{ file: string; offset: number }> {
   const dir = path.join(RAW_DIR, clip.id);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
@@ -317,9 +371,21 @@ async function captureClip(browser: Browser, clip: Clip, base: string): Promise<
   await context.addInitScript(CURSOR_SCRIPT);
 
   const page = await context.newPage();
+  /*
+   * Recording starts when the page is created, so navigation and every wait in
+   * `prepare` are already in the file. The renderer trimmed from the start,
+   * which meant a slow page put its loading skeleton on screen for the whole
+   * clip — and nothing threw, because the capture had "succeeded". Measuring
+   * where the performance actually begins lets the render seek past the wait
+   * instead of filming it.
+   */
+  const recordingStarted = Date.now();
+  let offset = 0;
   try {
     await prepare(page, clip, base);
     await sleep(900);
+    // Half a second of lead-in, so the cut does not land on the first frame.
+    offset = Math.max(0, (Date.now() - recordingStarted) / 1000 - 0.5);
     await performClip(page, clip);
     await sleep(700);
   } finally {
@@ -334,7 +400,7 @@ async function captureClip(browser: Browser, clip: Clip, base: string): Promise<
   rmSync(target, { force: true });
   renameSync(path.join(dir, source), target);
   rmSync(dir, { recursive: true, force: true });
-  return target;
+  return { file: target, offset };
 }
 
 async function main(): Promise<void> {
@@ -354,33 +420,60 @@ async function main(): Promise<void> {
     );
   }
 
+  // Wake the deployment before recording. Railway sleeps an idle instance, and
+  // the first request after that is the one that ends up on film.
+  process.stdout.write('warming');
+  for (const route of ['/', '/demo', '/benchmark', '/import?sample', '/evidence/']) {
+    await fetch(`${options.base}${route}`).catch(() => null);
+    process.stdout.write('.');
+  }
+  await fetch(`${options.base}/api/demo`).catch(() => null);
+  process.stdout.write(' ready\n\n');
+
   mkdirSync(RAW_DIR, { recursive: true });
   const browser = await chromium.launch({
     args: ['--force-color-profile=srgb', '--font-render-hinting=none', '--hide-scrollbars'],
   });
 
-  const results: Array<{ id: string; file: string; ok: boolean; error?: string }> = [];
+  const results: Array<{
+    id: string;
+    file: string;
+    offset: number;
+    ok: boolean;
+    error?: string;
+  }> = [];
   try {
     for (const clip of wanted) {
       const started = Date.now();
       try {
-        const file = await captureClip(browser, clip, options.base);
+        const { file, offset } = await captureClip(browser, clip, options.base);
         const seconds = ((Date.now() - started) / 1000).toFixed(1);
-        process.stdout.write(`  ok    ${clip.id.padEnd(16)} ${seconds}s  ${path.basename(file)}\n`);
-        results.push({ id: clip.id, file, ok: true });
+        process.stdout.write(
+          `  ok    ${clip.id.padEnd(16)} ${seconds}s  (skipping ${offset.toFixed(1)}s of setup)\n`,
+        );
+        results.push({ id: clip.id, file, offset, ok: true });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         process.stdout.write(`  FAIL  ${clip.id.padEnd(16)} ${message}\n`);
-        results.push({ id: clip.id, file: '', ok: false, error: message });
+        results.push({ id: clip.id, file: '', offset: 0, ok: false, error: message });
       }
     }
   } finally {
     await browser.close();
   }
 
+  // Merged, so re-shooting one clip does not erase the offsets of the others.
+  const manifestPath = path.join(RAW_DIR, 'capture-manifest.json');
+  const previous = existsSync(manifestPath)
+    ? ((JSON.parse(readFileSync(manifestPath, 'utf8')) as { results?: typeof results }).results ?? [])
+    : [];
+  const merged = [
+    ...previous.filter((row) => !results.some((result) => result.id === row.id)),
+    ...results,
+  ];
   writeFileSync(
-    path.join(RAW_DIR, 'capture-manifest.json'),
-    `${JSON.stringify({ base: options.base, capturedAt: new Date().toISOString(), results }, null, 2)}\n`,
+    manifestPath,
+    `${JSON.stringify({ base: options.base, capturedAt: new Date().toISOString(), results: merged }, null, 2)}\n`,
     'utf8',
   );
 
@@ -400,4 +493,3 @@ void main().catch((error: unknown) => {
 });
 
 export { RAW_DIR };
-void existsSync;

@@ -155,9 +155,9 @@ function calloutFilters(clipId: string): string[] {
  * `pad` guarantee the frame, and the clip is trimmed to its planned length so
  * the cue sheet and the picture agree.
  */
-function normaliseClip(clip: Clip, source: string, target: string): number {
+function normaliseClip(clip: Clip, source: string, target: string, offset: number): number {
   const available = probeSeconds(source);
-  const duration = Math.min(clip.seconds, Math.max(2, available - 0.15));
+  const duration = Math.min(clip.seconds, Math.max(2, available - offset - 0.15));
   const filters = [
     `fps=${String(FPS)}`,
     `scale=${String(WIDTH)}:${String(HEIGHT)}:force_original_aspect_ratio=decrease`,
@@ -170,6 +170,9 @@ function normaliseClip(clip: Clip, source: string, target: string): number {
   ].join(',');
 
   ffmpeg([
+    // Seek past the navigation and the content wait, which Playwright recorded
+    // because it starts filming when the page is created.
+    '-ss', offset.toFixed(2),
     '-i', source,
     '-t', duration.toFixed(2),
     '-vf', filters,
@@ -252,10 +255,74 @@ function concat(segments: Segment[], target: string): void {
   ffmpeg(['-f', 'concat', '-safe', '0', '-i', listFile, '-c', 'copy', '-movflags', '+faststart', target]);
 }
 
+/**
+ * `pnpm video:render -- --only demo-setup`
+ *
+ * Renders one clip on its own, with exactly the treatment it gets inside the
+ * film — same size, rate, codec, fades and callouts — so it drops onto an
+ * editing timeline as a replacement for that section.
+ */
+function renderSingle(id: string, offsets: Map<string, number>): void {
+  const clip = CLIPS.find((candidate) => candidate.id === id);
+  if (clip === undefined) {
+    throw new Error(`no clip named "${id}". Known: ${CLIPS.map((entry) => entry.id).join(', ')}`);
+  }
+  const source = path.join(RAW, `${clip.id}.webm`);
+  if (!existsSync(source)) {
+    throw new Error(`no capture for ${clip.id}; run: pnpm video:capture -- --only ${clip.id}`);
+  }
+
+  const clipsDir = path.join(OUT, 'clips');
+  mkdirSync(clipsDir, { recursive: true });
+
+  const target = path.join(clipsDir, `stateproof-${clip.id}.mp4`);
+  const seconds = normaliseClip(clip, source, target, offsets.get(clip.id) ?? 0);
+
+  process.stdout.write(
+    [
+      '',
+      `clip:     ${clip.id}`,
+      `purpose:  ${clip.purpose}`,
+      `file:     ${path.relative(ROOT, target)}`,
+      `duration: ${seconds.toFixed(2)}s (planned ${String(clip.seconds)}s)`,
+      `format:   ${String(WIDTH)}x${String(HEIGHT)} · ${String(FPS)} fps · H.264 · yuv420p`,
+      '',
+      'RESULT: CLIP RENDERED',
+      '',
+    ].join('\n'),
+  );
+}
+
 function main(): void {
   if (!existsSync(RAW)) {
     throw new Error('no captured clips; run `pnpm video:capture` first');
   }
+  /*
+   * Where each clip's performance actually begins.
+   *
+   * Playwright starts recording when the page is created, so navigation and the
+   * wait for content are in the file too. The capture measures that and the
+   * seek skips it, instead of the render trimming from the top and keeping the
+   * loading state.
+   */
+  const manifestPath = path.join(RAW, 'capture-manifest.json');
+  const offsets = new Map<string, number>();
+  if (existsSync(manifestPath)) {
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+      results?: Array<{ id: string; offset?: number }>;
+    };
+    for (const row of manifest.results ?? []) offsets.set(row.id, row.offset ?? 0);
+  }
+
+  const argv = process.argv.slice(2);
+  const onlyIndex = argv.indexOf('--only');
+  if (onlyIndex !== -1) {
+    const id = argv[onlyIndex + 1];
+    if (id === undefined) throw new Error('--only needs a clip id');
+    renderSingle(id, offsets);
+    return;
+  }
+
   rmSync(WORK, { recursive: true, force: true });
   mkdirSync(WORK, { recursive: true });
   mkdirSync(OUT, { recursive: true });
@@ -294,7 +361,7 @@ function main(): void {
       continue;
     }
     const target = path.join(WORK, `${String(order).padStart(3, '0')}-${clip.id}.mp4`);
-    const seconds = normaliseClip(clip, source, target);
+    const seconds = normaliseClip(clip, source, target, offsets.get(clip.id) ?? 0);
     segments.push({ id: clip.id, kind: 'clip', file: target, seconds });
     process.stdout.write(`  ok    ${clip.id.padEnd(16)} ${seconds.toFixed(1)}s\n`);
     order += 1;
@@ -368,4 +435,3 @@ try {
   process.exitCode = 1;
 }
 
-void readFileSync;
