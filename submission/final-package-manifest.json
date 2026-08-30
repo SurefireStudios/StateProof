@@ -1,31 +1,29 @@
 {
   "schemaVersion": "1.1.0",
-  "generatedAt": "2026-08-29T20:04:07.531Z",
+  "generatedAt": "2026-08-30T02:12:12.902Z",
   "note": "The sha256 below is of the archive built from `package.sourceCommit`. Rebuilding from that commit reproduces it: the writer stores no timestamps and both bundled surfaces build deterministically. `release/` itself is not tracked, because a contents note describing an archive that contains it would be circular.",
   "package": {
     "path": "release/stateproof-submission-final.zip",
-    "sha256": "bb302f45a7781e2f08cdaed3aabb8b3bc9f5858d7f560019c3eb0c802091a489",
-    "sizeBytes": 1280886,
-    "sizeMb": 1.22,
-    "sourceCommit": "63a58d988f55698563f0f18a27db497c324fd28c",
-    "trackedTreeClean": false
+    "sha256": "6456829085697edeca3ff9e31d7f8daa2e7c0dff6f3c0a5a0df34eed60212a05",
+    "sizeBytes": 1228318,
+    "sizeMb": 1.17,
+    "sourceCommit": "be53990baa9cc54feff707163fdd96cb02ea1b7e",
+    "trackedTreeClean": true
   },
   "environment": {
     "os": "win32 10.0.26200 (x64)",
     "node": "v20.10.0",
     "pnpm": "8.12.0",
-    "installDurationMs": 5099
+    "installDurationMs": 4315
   },
   "contents": {
-    "fileCount": 577,
+    "fileCount": 560,
     "topLevelPaths": [
       ".dockerignore",
       ".env.example",
       ".gitattributes",
       ".gitignore",
-      "CLAUDE.md",
       "Dockerfile",
-      "FINAL_SUBMISSION_CHECKLIST.md",
       "IMPROVEMENT_CHANGELOG.md",
       "LICENSE",
       "PREEXISTING_WORK.md",
@@ -47,7 +45,6 @@
       "submission",
       "tsconfig.base.json",
       "tsconfig.json",
-      "video",
       "vitest.config.ts"
     ],
     "includesPrebuiltDashboard": true,
@@ -101,52 +98,52 @@
       {
         "command": "pnpm install --frozen-lockfile",
         "ok": true,
-        "durationMs": 5099
+        "durationMs": 4315
       },
       {
         "command": "pnpm typecheck",
         "ok": true,
-        "durationMs": 6534
+        "durationMs": 4983
       },
       {
         "command": "pnpm test",
         "ok": true,
-        "durationMs": 17230
+        "durationMs": 13829
       },
       {
         "command": "pnpm benchmark:validate",
         "ok": true,
-        "durationMs": 1809
+        "durationMs": 1401
       },
       {
         "command": "pnpm benchmark:validate-hard",
         "ok": true,
-        "durationMs": 1689
+        "durationMs": 1436
       },
       {
         "command": "pnpm reproduce",
         "ok": true,
-        "durationMs": 5062
+        "durationMs": 4018
       },
       {
         "command": "pnpm dashboard:build",
         "ok": true,
-        "durationMs": 2549
+        "durationMs": 1926
       },
       {
         "command": "pnpm sample:build",
         "ok": true,
-        "durationMs": 1379
+        "durationMs": 1089
       },
       {
         "command": "pnpm product:build",
         "ok": true,
-        "durationMs": 2138
+        "durationMs": 1619
       },
       {
         "command": "pnpm product:test",
         "ok": true,
-        "durationMs": 3964
+        "durationMs": 3036
       }
     ],
     "dashboardStructureOk": true,
