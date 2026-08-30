@@ -171,10 +171,13 @@ pnpm reproduce</pre>
     <li>This is not a claim of production readiness.</li>
   </ul>
 
-  <h3>Human review for consequential actions</h3>
-  <p class="muted">StateProof does not autonomously approve or execute consequential actions. In a
-  real-world deployment, failed or uncertain verification results should be escalated to a
-  qualified human reviewer before any consequential decision is made.</p>
+  <!-- The same callout the product uses, so one disclosure reads the same on both surfaces. -->
+  <div class="callout warn mt-3">
+    <h3>Human review for consequential actions</h3>
+    <p>StateProof does not autonomously approve or execute consequential actions. In a real-world
+    deployment, failed or uncertain verification results should be escalated to a qualified human
+    reviewer before any consequential decision is made.</p>
+  </div>
 </section>
 `;
 
