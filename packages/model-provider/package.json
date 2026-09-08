@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.122.0",
+    "@anthropic-ai/sdk": "0.124.0",
     "@stateproof/core": "workspace:*",
     "dotenv": "16.4.7",
     "zod": "3.25.76"
