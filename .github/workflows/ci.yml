@@ -27,7 +27,7 @@ jobs:
       STATEPROOF_ANTHROPIC_API_KEY: ""
       ANTHROPIC_API_KEY: ""
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Provenance checks re-derive prompt hashes from recorded commits.
           fetch-depth: 0
@@ -90,7 +90,7 @@ jobs:
     name: docker image builds
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
       - name: Build (no push)
         uses: docker/build-push-action@v7
