@@ -150,6 +150,10 @@ that has already completed, and the ledger records that both did.
 | | |
 | --- | --- |
 | Submission narrative | [`../SUBMISSION.md`](../SUBMISSION.md) |
+| Roadmap | [`roadmap.md`](roadmap.md) |
+| Contributing | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) |
+| Security policy | [`../SECURITY.md`](../SECURITY.md) |
+| Release history | [`../CHANGELOG.md`](../CHANGELOG.md) |
 | Final result | [`../submission/final-evaluation.md`](../submission/final-evaluation.md) |
 | Claims → evidence | [`../submission/final-claims-evidence-map.md`](../submission/final-claims-evidence-map.md) |
 | Iteration history | [`../IMPROVEMENT_CHANGELOG.md`](../IMPROVEMENT_CHANGELOG.md) |

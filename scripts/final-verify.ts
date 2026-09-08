@@ -121,6 +121,9 @@ function checkLinks(): LinkProblem[] {
 /** The documentation set the gate requires, at the paths it requires. */
 const REQUIRED_DOCS = [
   'README.md',
+  'CONTRIBUTING.md',
+  'SECURITY.md',
+  'CHANGELOG.md',
   'REPRODUCTION.md',
   'IMPROVEMENT_CHANGELOG.md',
   'PREEXISTING_WORK.md',
@@ -135,6 +138,7 @@ const REQUIRED_DOCS = [
   'docs/agent-prompts.md',
   'docs/judge-quick-start.md',
   'docs/live-deployment.md',
+  'docs/roadmap.md',
 ];
 
 function checkRequiredDocs(): string[] {
