@@ -9,6 +9,14 @@ updates:
       dev-dependencies:
         dependency-type: development
     labels: [dependencies]
+    ignore:
+      # zod 4 is a migration across every package boundary, not a bump.
+      # Tracked as a roadmap issue; a bot PR cannot do it.
+      - dependency-name: zod
+        update-types: ["version-update:semver-major"]
+      # Type definitions track the runtime, which is the Node 22 line.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -19,3 +27,8 @@ updates:
     schedule:
       interval: monthly
     labels: [dependencies]
+    ignore:
+      # Stay on the Node 22 LTS line; a major runtime move is a deliberate
+      # change to engines, CI and docs together, not a base-image bump.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
