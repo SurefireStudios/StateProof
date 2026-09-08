@@ -16,7 +16,7 @@
   <a href="https://github.com/SurefireStudios/StateProof/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/SurefireStudios/StateProof/actions/workflows/codeql.yml/badge.svg"></a>
   <a href="https://github.com/SurefireStudios/StateProof/releases"><img alt="Release" src="https://img.shields.io/github/v/release/SurefireStudios/StateProof?display_name=tag&color=2ea44f"></a>
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-  <img alt="Node 20" src="https://img.shields.io/badge/node-%3E%3D20.10-339933?logo=node.js&logoColor=white">
+  <img alt="Node 22" src="https://img.shields.io/badge/node-%3E%3D22.12-339933?logo=node.js&logoColor=white">
   <img alt="TypeScript strict" src="https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white">
   <a href="https://stateproof-production.up.railway.app"><img alt="Live demo" src="https://img.shields.io/website?url=https%3A%2F%2Fstateproof-production.up.railway.app%2Fhealthz&label=live%20demo&up_message=online&down_message=offline"></a>
 </p>
@@ -171,7 +171,7 @@ The assertion DSL (version `2.1.0`) has eleven kinds: `record_exists`,
 
 ## Quick start
 
-Requirements: Node.js `>=20.10` and pnpm `>=8.12` (`corepack enable` gives you
+Requirements: Node.js `>=22.12` and pnpm `>=8.12` (`corepack enable` gives you
 the pinned version).
 
 ```bash

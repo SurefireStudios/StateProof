@@ -30,8 +30,11 @@ implementation translates them into schemas, fixtures and code.
 
 ## Third-party dependencies
 
-Only these packages are used. Each is a widely used, unmodified release from
-the public npm registry, pinned to an exact version:
+Only these packages were used during the competition window. Each is a widely
+used, unmodified release from the public npm registry, pinned to an exact
+version. The versions below are the competition-time snapshot; the current pins
+live in the package manifests and are kept current by Dependabot (see
+[CHANGELOG.md](CHANGELOG.md)).
 
 | Package       | Version  | Why it is here                                          |
 | ------------- | -------- | ------------------------------------------------------- |

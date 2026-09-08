@@ -21,7 +21,7 @@ repository at least as verifiable as it found it.
 
 ## Getting started
 
-Requirements: Node.js `>=20.10.0` and pnpm `>=8.12.0` (Corepack: `corepack enable`).
+Requirements: Node.js `>=22.12.0` and pnpm `>=8.12.0` (Corepack: `corepack enable`).
 
 ```bash
 git clone https://github.com/SurefireStudios/StateProof.git

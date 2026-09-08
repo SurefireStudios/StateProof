@@ -6,7 +6,7 @@ accepted by any command below.
 
 ## Requirements
 
-- Node.js `>=20.10.0`
+- Node.js `>=22.12.0`
 - pnpm `>=8.12.0`
 
 ## The one command

@@ -10,6 +10,19 @@ run artifacts that justify it. Nothing below changes a measured result.
 
 ## [Unreleased]
 
+### Changed
+
+- Development toolchain updated by Dependabot: TypeScript 5.4.5 → 7.0.2,
+  Vitest 1.6.0 → 5.0.0, esbuild 0.23.1 → 0.28.2, Playwright 1.49.1 → 1.63.0,
+  tsx 4.19.2 → 4.23.13, `@types/node` 20.14.10 → 26.4.1 (the runtime moves to
+  Node 22, below). `pnpm final:verify` passes unchanged on the new toolchain, and no
+  measured result is affected.
+- **Minimum Node.js is now 22.12.** Vitest 5 requires it, and Node 20 reached
+  end-of-life in April 2026. `engines`, the CI matrix, the release workflow
+  and the Docker base image all move together.
+- `dotenv` 16.4.7 → 17.4.2 in the model provider.
+- GitHub Actions bumped to their current majors.
+
 ## [1.0.0] - 2026-09-08
 
 First public release. The verification engine, the benchmark, the frozen
