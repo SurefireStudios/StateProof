@@ -12,8 +12,8 @@ call, and both credential variables are removed from the environment by
 ## The fastest path — the interactive product
 
 ```text
-Live demo:                       https://stateproof-production.up.railway.app
-Local demo:                      pnpm product:dev
+Live evidence dashboard:         https://surefirestudios.github.io/StateProof/
+Local product demo:              pnpm product:dev
 Credential-free reproduction:    pnpm reproduce
 ```
 

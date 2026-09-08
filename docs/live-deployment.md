@@ -1,9 +1,28 @@
 # Live deployment
 
-**Live:** <https://stateproof-production.up.railway.app>
+**Evidence dashboard, live:** <https://surefirestudios.github.io/StateProof/>
 
-StateProof deploys as **one service on one origin**: the interactive product,
-the static evidence dashboard it hosts, and the committed artifacts both read.
+The static evidence dashboard is published by GitHub Pages from
+[`.github/workflows/pages.yml`](../.github/workflows/pages.yml) on every push
+to `main`. It is a pure function from the pinned artifacts to HTML, and the
+build fails rather than renders if any pinned artifact has changed, so the
+published page cannot show a number the repository does not back.
+
+**Interactive product:** currently not hosted. The previous public instance ran
+on a Railway trial that has ended. Two ways to get one:
+
+- **Locally, in thirty seconds.** `pnpm install && pnpm product:build && pnpm product:dev`,
+  then <http://localhost:4180/>. Identical to the hosted behaviour.
+- **On Render's free tier, in one click.** [`render.yaml`](../render.yaml) is a
+  Render Blueprint: *New → Blueprint → select this repository*. Render builds the
+  Dockerfile, injects `PORT`, probes `/healthz` and redeploys on push. The
+  free plan spins the service down after about fifteen idle minutes and wakes it
+  on the next request, which is harmless because nothing persists by design.
+  Add no environment variable other than the one the blueprint sets.
+
+Whichever host runs it, StateProof deploys as **one service on one origin**: the
+interactive product, the static evidence dashboard it hosts at `/evidence/`,
+and the committed artifacts both read.
 
 The public deployment has **no Anthropic API key and needs none**. Do not add
 one.
@@ -66,7 +85,12 @@ repository.
 With live compilation off the model provider is never imported, so no client is
 constructed and no credential is looked at.
 
-## Railway
+## Railway (previous host)
+
+The original public instance ran on Railway from
+[`railway.json`](../railway.json), which sets the Dockerfile builder,
+`/healthz` as the health check and an on-failure restart policy. The trial has
+ended and the service holds no deployment. To use Railway again:
 
 ```text
 Railway → New Project → Deploy from GitHub Repo
@@ -78,30 +102,6 @@ Settings → Networking → Generate Domain
 ```
 
 Add no other variable. `PORT` is injected by Railway.
-
-`railway.json` sets the Dockerfile builder, `/healthz` as the health check with
-a 60-second timeout, and restart-on-failure with five retries.
-
-### Custom domain
-
-Only after the owner approves and configures DNS:
-
-```text
-Settings → Networking → Custom Domain → stateproof.madebyfitz.com
-```
-
-Railway shows a `CNAME` target; create that record at the DNS provider and wait
-for the certificate. Nothing in source control encodes a domain.
-
-### Health check
-
-```bash
-curl https://stateproof-production.up.railway.app/healthz
-{"status":"ok","service":"stateproof","mode":"deterministic","liveCompilation":false}
-```
-
-That response is the whole contract: no versions, no paths, no environment, no
-usage counts.
 
 ## Any other Docker host
 

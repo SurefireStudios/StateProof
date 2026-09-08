@@ -55,7 +55,7 @@
     "url": "https://github.com/SurefireStudios/StateProof"
   },
   "description": "Evidence-backed verification for action-taking AI agents: compile the task into a contract once, then verify every run against real state and trajectory evidence with zero model calls.",
-  "homepage": "https://stateproof-production.up.railway.app",
+  "homepage": "https://surefirestudios.github.io/StateProof/",
   "bugs": {
     "url": "https://github.com/SurefireStudios/StateProof/issues"
   },

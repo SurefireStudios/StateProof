@@ -1,0 +1,21 @@
+# Render Blueprint — one free web service running the production Dockerfile.
+#
+# Render → New → Blueprint → select this repository. Render reads this file,
+# builds the image, injects PORT, and probes /healthz. No credential is needed
+# and none should be added: the public deployment is deterministic throughout.
+#
+# The free plan spins the service down after about fifteen idle minutes; the
+# next request wakes it (expect a cold start of thirty seconds or so). Nothing
+# persists between restarts by design, so that is harmless.
+services:
+  - type: web
+    name: stateproof
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: STATEPROOF_ENABLE_LIVE_COMPILATION
+        value: "false"

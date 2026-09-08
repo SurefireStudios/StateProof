@@ -1,10 +1,10 @@
 # Claims-to-evidence map
 
-Every claim below is checkable on the running deployment as well as in the
-repository: <https://stateproof-production.up.railway.app/> · [benchmark](https://stateproof-production.up.railway.app/benchmark) ·
-[evidence dashboard](https://stateproof-production.up.railway.app/evidence/) ·
-[run inspector](https://stateproof-production.up.railway.app/evidence/inspector.html) ·
-[agent trajectories](https://stateproof-production.up.railway.app/evidence/trajectories.html)
+Every claim below is checkable on the published evidence dashboard as well as
+in the repository: [evidence dashboard](https://surefirestudios.github.io/StateProof/) ·
+[benchmark](https://surefirestudios.github.io/StateProof/benchmark.html) ·
+[run inspector](https://surefirestudios.github.io/StateProof/inspector.html) ·
+[agent trajectories](https://surefirestudios.github.io/StateProof/trajectories.html)
 
 Every substantive claim StateProof makes, with the artifact that supports it.
 Paths are repository-relative.

@@ -18,7 +18,7 @@
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <img alt="Node 22" src="https://img.shields.io/badge/node-%3E%3D22.12-339933?logo=node.js&logoColor=white">
   <img alt="TypeScript strict" src="https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white">
-  <a href="https://stateproof-production.up.railway.app"><img alt="Live demo" src="https://img.shields.io/website?url=https%3A%2F%2Fstateproof-production.up.railway.app%2Fhealthz&label=live%20demo&up_message=online&down_message=offline"></a>
+  <a href="https://surefirestudios.github.io/StateProof/"><img alt="Evidence dashboard" src="https://img.shields.io/website?url=https%3A%2F%2Fsurefirestudios.github.io%2FStateProof%2F&label=evidence%20dashboard&up_message=online&down_message=offline"></a>
 </p>
 
 <p align="center">
@@ -118,19 +118,23 @@ question**, and state questions are answerable by code.
 
 ## Demo
 
-**Live:** <https://stateproof-production.up.railway.app>
-([demo](https://stateproof-production.up.railway.app/demo) ·
-[import](https://stateproof-production.up.railway.app/import) ·
-[benchmark](https://stateproof-production.up.railway.app/benchmark) ·
-[evidence dashboard](https://stateproof-production.up.railway.app/evidence/))
+**Evidence dashboard, live:** <https://surefirestudios.github.io/StateProof/>
+([run inspector](https://surefirestudios.github.io/StateProof/inspector.html) ·
+[agent trajectories](https://surefirestudios.github.io/StateProof/trajectories.html) ·
+[benchmark](https://surefirestudios.github.io/StateProof/benchmark.html) ·
+[changelog](https://surefirestudios.github.io/StateProof/changelog.html)). Every run, prompt, raw model response and
+report behind the published numbers, rebuilt from the pinned artifacts by
+GitHub Pages on every push. The build fails rather than renders if an artifact
+has changed.
 
-The hosted deployment has **no model API key** and no route calls a model.
-Everything you can click is deterministic verification against frozen
-contracts. If the badge above reads *offline*, run it locally instead; it takes
-thirty seconds and behaves identically. See
+**Interactive product:** run it locally in thirty seconds (see
+[Quick start](#quick-start)), or deploy your own free instance in one click from
+the Render blueprint in [`render.yaml`](render.yaml). It needs **no model API
+key**; everything you can click is deterministic verification against frozen
+contracts. Hosting status and both deployment paths:
 [docs/live-deployment.md](docs/live-deployment.md).
 
-Three minutes, in order:
+Three minutes with the product, in order:
 
 1. **Home.** The worked example at the top is not copy: the server runs the
    verifier on load and renders what it found.
