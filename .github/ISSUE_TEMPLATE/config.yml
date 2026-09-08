@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/SurefireStudios/StateProof/security/advisories/new
+    about: Report a security problem privately. Please do not open a public issue.
+  - name: Reproduction help
+    url: https://github.com/SurefireStudios/StateProof/blob/main/REPRODUCTION.md
+    about: The credential-free reproduction workflow, step by step.

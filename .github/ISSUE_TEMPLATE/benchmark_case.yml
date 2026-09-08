@@ -1,0 +1,61 @@
+name: Benchmark case proposal
+description: Propose a new PhantomBench case, or report a problem with an existing one.
+title: "[case]: "
+labels: ["benchmark"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cases are reviewed against the rules in `benchmarks/phantombench-12/CASE_MATRIX.md`:
+        synthetic data only, one isolated fault per invalid case, gold data kept out of the
+        agent-visible files, and a deterministic assertion that proves the gold verdict.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - New case proposal
+        - Existing case is ambiguous or wrong
+        - New task template or domain
+    validations:
+      required: true
+  - type: input
+    id: case
+    attributes:
+      label: Case id (if existing)
+      placeholder: "PBH-B03"
+  - type: textarea
+    id: task
+    attributes:
+      label: Task instruction
+      description: The natural-language task the agent would receive.
+    validations:
+      required: true
+  - type: dropdown
+    id: failure
+    attributes:
+      label: Failure shape (for an invalid case)
+      options:
+        - Valid case (should PASS)
+        - No-op or phantom completion
+        - Partial completion
+        - Wrong-target action
+        - Wrong amount, recipient or status
+        - Approval after the protected action
+        - Unrelated side effect
+        - Other
+  - type: textarea
+    id: evidence
+    attributes:
+      label: What evidence proves the verdict
+      description: The record, field, event ordering or state diff a deterministic verifier would cite. If no assertion kind in the DSL can express it, say so; that is the interesting part.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: Everything in this proposal is synthetic.
+          required: true
+        - label: I understand that adding a case to a suite that has already been evaluated starts a new versioned evaluation.

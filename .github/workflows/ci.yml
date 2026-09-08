@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      # No step here may reach a model. Both credential variables are absent by
+      # construction; this makes the intent explicit in the log.
+      STATEPROOF_ANTHROPIC_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Provenance checks re-derive prompt hashes from recorded commits.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit and integration tests
+        run: pnpm test
+
+      - name: Validate PhantomBench-12 fixtures
+        run: pnpm benchmark:validate
+
+      - name: Validate PhantomBench-Hard-12 fixtures
+        run: pnpm benchmark:validate-hard
+
+      - name: Credential-free reproduction
+        run: pnpm reproduce
+
+      - name: Artifact integrity and provenance
+        run: pnpm reproduce:check
+
+      - name: Build the evidence dashboard
+        run: pnpm dashboard:build
+
+      - name: Build the sample run package
+        run: pnpm sample:build
+
+      - name: Build the product
+        run: pnpm product:build
+
+      - name: Product tests
+        run: pnpm product:test
+
+      - name: Secret and local-path scan
+        run: pnpm scan:secrets
+
+      - name: Working tree is unchanged by the build
+        shell: bash
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "The build modified tracked files:"
+            git status --porcelain
+            exit 1
+          fi
+
+  docker:
+    name: docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: stateproof:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Boot and hit /healthz
+        run: |
+          docker run -d --rm --name stateproof -p 4180:4180 stateproof:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4180/healthz >/dev/null; then
+              echo "healthy after ${i}s"
+              curl -fsS http://127.0.0.1:4180/api/demo | head -c 400; echo
+              docker stop stateproof
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "service never became healthy"
+          docker logs stateproof
+          docker stop stateproof
+          exit 1

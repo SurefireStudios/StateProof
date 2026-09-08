@@ -1,0 +1,66 @@
+name: Bug report
+description: Something in StateProof behaves incorrectly.
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The more of this you can fill in, the faster it gets fixed.
+        For a security problem, use private vulnerability reporting instead of this form.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Verifier / assertion DSL (packages/core)
+        - Contract Agent / runners (packages/agents)
+        - Benchmark fixtures or validation (packages/benchmark, benchmarks/)
+        - Product app (apps/product)
+        - Evidence dashboard (apps/dashboard)
+        - Reproduction / scripts
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. pnpm install
+        2. pnpm product:dev
+        3. Open /#/import and upload ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Command output, the run id, an exported evidence pack, or a minimal run package. Please strip anything that is not synthetic.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "v1.0.0 or a commit SHA"
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "OS, Node version, pnpm version"
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I ran `pnpm typecheck` and `pnpm test` on a clean checkout and the failure is not already covered.
+        - label: This report contains no real credential, customer data or private email address.
+          required: true

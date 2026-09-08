@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      STATEPROOF_ANTHROPIC_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Full offline verification
+        run: pnpm final:verify
+
+      - name: Resolve tag
+        id: tag
+        run: echo "name=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Package the release
+        run: |
+          TAG="${{ steps.tag.outputs.name }}"
+          mkdir -p out
+          git archive --format=zip --prefix "stateproof-${TAG}/" -o "out/stateproof-${TAG}-source.zip" "${TAG}"
+          (cd apps/dashboard/dist && zip -qr "../../../out/stateproof-${TAG}-evidence-dashboard.zip" .)
+          cp samples/stateproof-sample-run.zip "out/stateproof-${TAG}-sample-run.zip"
+          (cd out && sha256sum *.zip > SHA256SUMS.txt && cat SHA256SUMS.txt)
+
+      - name: Extract release notes from CHANGELOG.md
+        run: |
+          TAG="${{ steps.tag.outputs.name }}"
+          VERSION="${TAG#v}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## \[" v "\]" { on=1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' CHANGELOG.md > out/NOTES.md
+          if [ ! -s out/NOTES.md ]; then
+            echo "No CHANGELOG.md section for ${VERSION}; using the tag message." > out/NOTES.md
+            git tag -l --format='%(contents)' "${TAG}" >> out/NOTES.md
+          fi
+          cat out/NOTES.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: StateProof ${{ steps.tag.outputs.name }}
+          body_path: out/NOTES.md
+          files: |
+            out/*.zip
+            out/SHA256SUMS.txt

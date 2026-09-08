@@ -1,0 +1,35 @@
+name: Feature request
+description: Propose a change to the verifier, the assertion language, the product or the tooling.
+title: "[feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What can StateProof not verify, express, or show today? A concrete run or task shape helps.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What would you add or change, and where does it live? If it is a new assertion kind, sketch its inputs and its evidence reference.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: How would we know it works
+      description: The test, fixture or metric that would demonstrate the change. StateProof does not ship behaviour it cannot verify.
+  - type: dropdown
+    id: freeze
+    attributes:
+      label: Does this touch the frozen evaluation?
+      description: Prompts, benchmark fixtures, pinned artifacts or scoring code. Changing those is a new evaluation, not a fix.
+      options:
+        - "No"
+        - "Yes, and I understand it means a new versioned run"
+        - "Not sure"
+    validations:
+      required: true
