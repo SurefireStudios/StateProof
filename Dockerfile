@@ -9,7 +9,7 @@
 # work without one.
 
 # --- build ------------------------------------------------------------------
-FROM node:20.18.1-bookworm-slim AS build
+FROM node:26.8.1-bookworm-slim AS build
 WORKDIR /app
 
 # Corepack pins pnpm to the version this lockfile was written with.
@@ -35,7 +35,7 @@ RUN pnpm product:build \
  && pnpm product:server:build
 
 # --- runtime ----------------------------------------------------------------
-FROM node:20.18.1-bookworm-slim AS runtime
+FROM node:26.8.1-bookworm-slim AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production \
