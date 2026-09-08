@@ -10,6 +10,6 @@
   },
   "dependencies": {
     "@stateproof/core": "workspace:*",
-    "zod": "3.25.76"
+    "zod": "4.5.4"
   }
 }

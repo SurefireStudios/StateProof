@@ -14,7 +14,7 @@
     "@stateproof/benchmark": "workspace:*",
     "@stateproof/core": "workspace:*",
     "@stateproof/submission": "workspace:*",
-    "zod": "3.25.76",
+    "zod": "4.5.4",
     "@stateproof/model-provider": "workspace:*"
   },
   "devDependencies": {

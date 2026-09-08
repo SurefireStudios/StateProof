@@ -12,6 +12,6 @@
     "@stateproof/benchmark": "workspace:*",
     "@stateproof/core": "workspace:*",
     "@stateproof/model-provider": "workspace:*",
-    "zod": "3.25.76"
+    "zod": "4.5.4"
   }
 }
