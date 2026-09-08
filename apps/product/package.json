@@ -18,7 +18,7 @@
     "@stateproof/model-provider": "workspace:*"
   },
   "devDependencies": {
-    "esbuild": "0.23.1",
-    "tsx": "4.19.2"
+    "esbuild": "0.28.2",
+    "tsx": "4.23.13"
   }
 }
