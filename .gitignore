@@ -75,3 +75,6 @@ video/**/*.mp4
 # finished file; the capture rig, raw clips and editing projects are not
 # something a judge needs to build, run or reproduce anything.
 video/
+
+# local Claude Code launch configuration
+.claude/launch.json

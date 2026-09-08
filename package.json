@@ -1,6 +1,6 @@
 {
   "name": "stateproof",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -40,7 +40,8 @@
     "sample:build": "tsx scripts/build-sample-package.ts",
     "final:verify": "tsx scripts/final-verify.ts",
     "product:server:build": "pnpm --filter product server:build",
-    "deploy:verify": "tsx scripts/deploy-verify.ts"
+    "deploy:verify": "tsx scripts/deploy-verify.ts",
+    "media:capture": "tsx scripts/capture-media.ts"
   },
   "devDependencies": {
     "@types/node": "20.14.10",
@@ -52,5 +53,20 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/SurefireStudios/StateProof"
-  }
+  },
+  "description": "Evidence-backed verification for action-taking AI agents: compile the task into a contract once, then verify every run against real state and trajectory evidence with zero model calls.",
+  "homepage": "https://stateproof-production.up.railway.app",
+  "bugs": {
+    "url": "https://github.com/SurefireStudios/StateProof/issues"
+  },
+  "keywords": [
+    "ai-agents",
+    "agent-evaluation",
+    "verification",
+    "llm-evals",
+    "benchmark",
+    "typescript",
+    "deterministic",
+    "evidence"
+  ]
 }

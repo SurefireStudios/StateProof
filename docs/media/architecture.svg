@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" font-family="ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#374151"/>
+    </marker>
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9ca3af"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="560" rx="14" fill="#fafaf9" stroke="#e5e7eb"/>
+
+  <!-- title -->
+  <text x="40" y="44" font-size="20" font-weight="700" fill="#111827">StateProof — compile success once, verify every run against state</text>
+  <text x="40" y="68" font-size="13" fill="#6b7280">One model call per task, never per run. Everything to the right of the contract bundle is code.</text>
+
+  <!-- lane labels -->
+  <text x="40" y="118" font-size="11" font-weight="700" letter-spacing="1.5" fill="#9ca3af">COLD PATH · ONCE PER TASK</text>
+  <text x="40" y="338" font-size="11" font-weight="700" letter-spacing="1.5" fill="#9ca3af">WARM PATH · EVERY RUN · 0 MODEL CALLS</text>
+  <line x1="40" y1="300" x2="1160" y2="300" stroke="#e5e7eb" stroke-dasharray="4 6"/>
+
+  <!-- cold: inputs -->
+  <rect x="40" y="136" width="220" height="120" rx="10" fill="#ffffff" stroke="#d1d5db"/>
+  <text x="56" y="162" font-size="14" font-weight="700" fill="#111827">Agent-visible inputs</text>
+  <text x="56" y="188" font-size="13" fill="#374151">• task instruction</text>
+  <text x="56" y="208" font-size="13" fill="#374151">• tool definitions</text>
+  <text x="56" y="228" font-size="13" fill="#374151">• domain / state schema</text>
+
+  <!-- cold: contract agent -->
+  <rect x="330" y="136" width="250" height="120" rx="10" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="346" y="162" font-size="14" font-weight="700" fill="#9a3412">Contract Agent</text>
+  <text x="346" y="182" font-size="12" fill="#9a3412">the one model-shaped step</text>
+  <text x="346" y="206" font-size="13" fill="#374151">compile → Zod schema → semantic lint</text>
+  <text x="346" y="226" font-size="13" fill="#374151">one repair retry on defects</text>
+  <text x="346" y="246" font-size="12" fill="#6b7280">never sees a run, a state, or gold data</text>
+
+  <!-- cold: bundle -->
+  <rect x="650" y="136" width="250" height="120" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="666" y="162" font-size="14" font-weight="700" fill="#1e3a8a">Contract bundle</text>
+  <text x="666" y="186" font-size="13" fill="#374151">task fingerprint → contract</text>
+  <text x="666" y="206" font-size="13" fill="#374151">typed, must-pass requirements</text>
+  <text x="666" y="226" font-size="13" fill="#374151">machine-checkable assertions</text>
+  <text x="666" y="246" font-size="12" fill="#6b7280">sha256 hashed · full provenance</text>
+
+  <!-- cold arrows -->
+  <line x1="260" y1="196" x2="328" y2="196" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="580" y1="196" x2="648" y2="196" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- cache note -->
+  <rect x="970" y="150" width="190" height="92" rx="10" fill="#ffffff" stroke="#d1d5db" stroke-dasharray="5 4"/>
+  <text x="986" y="176" font-size="13" font-weight="700" fill="#111827">Cache key</text>
+  <text x="986" y="196" font-size="12" fill="#374151">task · tools · schema ·</text>
+  <text x="986" y="212" font-size="12" fill="#374151">DSL version · prompt hash ·</text>
+  <text x="986" y="228" font-size="12" fill="#374151">provider · model config</text>
+  <line x1="900" y1="196" x2="968" y2="196" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arrow-muted)"/>
+
+  <!-- warm: run -->
+  <rect x="40" y="356" width="220" height="140" rx="10" fill="#ffffff" stroke="#d1d5db"/>
+  <text x="56" y="382" font-size="14" font-weight="700" fill="#111827">Run under test</text>
+  <text x="56" y="408" font-size="13" fill="#374151">• tool trajectory (seq-ordered)</text>
+  <text x="56" y="428" font-size="13" fill="#374151">• initial state snapshot</text>
+  <text x="56" y="448" font-size="13" fill="#374151">• final state snapshot</text>
+  <text x="56" y="468" font-size="13" fill="#374151">• agent's final response</text>
+  <text x="56" y="486" font-size="12" fill="#6b7280">the response is a claim, not evidence</text>
+
+  <!-- warm: verifier -->
+  <rect x="330" y="356" width="250" height="140" rx="10" fill="#ecfdf5" stroke="#6ee7b7"/>
+  <text x="346" y="382" font-size="14" font-weight="700" fill="#065f46">Deterministic verifier</text>
+  <text x="346" y="402" font-size="12" fill="#065f46">code, not an agent · ~1 ms per run</text>
+  <text x="346" y="426" font-size="13" fill="#374151">record exists / absent / matching</text>
+  <text x="346" y="446" font-size="13" fill="#374151">exact money · recipient · status</text>
+  <text x="346" y="466" font-size="13" fill="#374151">event order · scope · no side effects</text>
+  <text x="346" y="486" font-size="12" fill="#6b7280">missing evidence never becomes PASS</text>
+
+  <!-- warm: verdict -->
+  <rect x="650" y="356" width="250" height="140" rx="10" fill="#ffffff" stroke="#d1d5db"/>
+  <text x="666" y="382" font-size="14" font-weight="700" fill="#111827">Verdict + evidence</text>
+  <text x="666" y="408" font-size="13" fill="#374151">PASS · FAIL · NEEDS_REVIEW</text>
+  <text x="666" y="428" font-size="13" fill="#374151">one status + reason per requirement</text>
+  <text x="666" y="448" font-size="13" fill="#374151">evidence refs generated from what</text>
+  <text x="666" y="466" font-size="13" fill="#374151">the assertions actually matched</text>
+  <text x="666" y="486" font-size="12" fill="#6b7280">state:final.refunds.RFB-9203.amount</text>
+
+  <!-- warm: surfaces -->
+  <rect x="970" y="356" width="190" height="140" rx="10" fill="#ffffff" stroke="#d1d5db"/>
+  <text x="986" y="382" font-size="14" font-weight="700" fill="#111827">Surfaces</text>
+  <text x="986" y="408" font-size="13" fill="#374151">Run inspector</text>
+  <text x="986" y="428" font-size="13" fill="#374151">Evidence pack (JSON / MD)</text>
+  <text x="986" y="448" font-size="13" fill="#374151">Benchmark comparison</text>
+  <text x="986" y="468" font-size="13" fill="#374151">Evidence dashboard</text>
+  <text x="986" y="486" font-size="12" fill="#6b7280">scorer sees gold only after the fact</text>
+
+  <!-- warm arrows -->
+  <line x1="260" y1="426" x2="328" y2="426" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="580" y1="426" x2="648" y2="426" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="900" y1="426" x2="968" y2="426" stroke="#374151" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- bundle to verifier -->
+  <path d="M775,256 L775,300 L455,300 L455,354" fill="none" stroke="#1d4ed8" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="470" y="288" width="200" height="24" rx="6" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="570" y="304" font-size="12" text-anchor="middle" fill="#1e3a8a">fingerprint hit → no model call</text>
+
+  <!-- footer -->
+  <text x="40" y="536" font-size="12" fill="#6b7280">Measured on PhantomBench-Hard-12: baseline 12 model calls / 125,154 tokens · StateProof first deployment 3 / 29,889 · repeated verification 0 / 0 — at identical requirement-level quality.</text>
+</svg>
