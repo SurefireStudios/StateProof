@@ -19,7 +19,7 @@ jobs:
       STATEPROOF_ANTHROPIC_API_KEY: ""
       ANTHROPIC_API_KEY: ""
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.inputs.tag || github.ref }}
