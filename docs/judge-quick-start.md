@@ -6,7 +6,7 @@ call, and both credential variables are removed from the environment by
 
 ## Requirements
 
-- Node.js `>=20.10.0` (verified on v20.10.0)
+- Node.js `>=22.12.0` (the competition submission was verified on v20.10.0; the toolchain has since moved to Vitest 5, which requires Node 22)
 - pnpm `>=8.12.0` (verified on 8.12.0)
 
 ## The fastest path — the interactive product
