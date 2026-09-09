@@ -2,9 +2,9 @@
 
 **Result: PASSED**
 
-- Commit: `ee9880b09827a8f7843c883af8c3188b7caadd19` (tag `stateproof-submission-v1`)
+- Commit: `a02b62831a391745d5f02a6bafe5899240a42462`
 - OS: Windows_NT 10.0.26200 (win32/x64)
-- Node: v20.10.0
+- Node: v24.21.0
 - pnpm: 8.12.0
 - Credentials: `STATEPROOF_ANTHROPIC_API_KEY` and `ANTHROPIC_API_KEY` removed from the child environment
 - Checkout: fresh `git clone` of HEAD into a temporary directory — no `.env`, no `node_modules`, no prior build output
@@ -13,13 +13,13 @@
 
 | Command | Result | Duration |
 | --- | --- | --- |
-| `pnpm install --frozen-lockfile` | ok | 3.1 s |
-| `pnpm typecheck` | ok | 3.3 s |
-| `pnpm test` | ok | 18.1 s |
-| `pnpm benchmark:validate` | ok | 1.3 s |
-| `pnpm benchmark:validate-hard` | ok | 1.3 s |
-| `pnpm reproduce` | ok | 4.1 s |
-| `pnpm dashboard:build` | ok | 1.8 s |
+| `pnpm install --frozen-lockfile` | ok | 4.5 s |
+| `pnpm typecheck` | ok | 1.2 s |
+| `pnpm test` | ok | 22.8 s |
+| `pnpm benchmark:validate` | ok | 1.1 s |
+| `pnpm benchmark:validate-hard` | ok | 1.0 s |
+| `pnpm reproduce` | ok | 3.2 s |
+| `pnpm dashboard:build` | ok | 1.5 s |
 
 ## Absolute development paths in the built output
 
@@ -40,4 +40,4 @@ None. The generated site contains no path pointing back at the development machi
 | `RUN-baseline-hard-locked-live-20260829T035909Z` | `1fa2558582a5f85ef740678a57595190` |
 | `RUN-stateproof-hard-locked-warm-20260829T040036Z` | `57d9c4fc3157e6655b8b641f82d5f140` |
 
-Report fingerprint: `885d444497fe13d8`
+Report fingerprint: `3174227574eb7baf`

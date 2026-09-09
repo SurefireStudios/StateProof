@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  realpathSync,
   readFileSync,
   readdirSync,
   rmSync,
@@ -47,20 +48,52 @@ function run(command: string, cwd: string, env: NodeJS.ProcessEnv): StepResult {
       stdio: ['ignore', 'pipe', 'pipe'],
       maxBuffer: 64 * 1024 * 1024,
     });
-    return { command, ok: true, durationMs: Date.now() - startedMs, tail: tail(output) };
+    return { command, ok: true, durationMs: Date.now() - startedMs, tail: tail(redact(output, cwd)) };
   } catch (error) {
     const failure = error as { stdout?: string; stderr?: string };
     return {
       command,
       ok: false,
       durationMs: Date.now() - startedMs,
-      tail: tail(`${failure.stdout ?? ''}${failure.stderr ?? ''}`),
+      tail: tail(redact(`${failure.stdout ?? ''}${failure.stderr ?? ''}`, cwd)),
     };
   }
 }
 
 function tail(output: string, lines = 12): string {
   return output.split('\n').filter((line) => line.trim() !== '').slice(-lines).join('\n');
+}
+
+/**
+ * Replace the temporary checkout path with a placeholder.
+ *
+ * The checkout sits under the OS temp directory, which on most machines is inside a home
+ * directory, so a command that echoes its own working directory writes a local user path
+ * into a report meant to be published. Both separators are covered because tools disagree
+ * about which to print on Windows, and the resolved path is covered too because macOS
+ * reports its temp directory through a symlink.
+ */
+export function redact(output: string, checkout: string): string {
+  const backslash = '\\';
+  const variants = new Set<string>();
+  for (const base of [checkout, resolvedPath(checkout)]) {
+    if (base === '') continue;
+    variants.add(base);
+    variants.add(base.split(backslash).join('/'));
+    variants.add(base.split('/').join(backslash));
+  }
+  // Longest first, so no path is partly replaced by one of its own prefixes.
+  return [...variants]
+    .sort((a, b) => b.length - a.length)
+    .reduce((text, variant) => text.split(variant).join('<checkout>'), output);
+}
+
+function resolvedPath(target: string): string {
+  try {
+    return realpathSync(target);
+  } catch {
+    return '';
+  }
 }
 
 function main(): void {
