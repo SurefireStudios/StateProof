@@ -26,6 +26,7 @@
     "dashboard:build": "pnpm --filter dashboard build",
     "dev": "pnpm --filter dashboard dev",
     "reproduce": "tsx scripts/reproduce.ts",
+    "verify": "tsx scripts/verify.ts",
     "reproduce:check": "tsx scripts/reproduce.ts --check-only",
     "test:clean-reproduction": "tsx scripts/clean-reproduction.ts",
     "submission:finalize": "tsx scripts/finalize-submission.ts",

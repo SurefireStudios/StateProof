@@ -189,6 +189,16 @@ pnpm product:dev
 Open <http://localhost:4180/>, click **Run the verification demo**, then
 **Verify this run**. No API key, no model call, no network.
 
+Verify a run package from a shell, for an evaluation pipeline or a CI job:
+
+```bash
+pnpm verify samples/stateproof-sample-run.zip --out evidence/
+```
+
+It writes the same JSON and Markdown evidence pack the product exports, and exits
+non-zero on `FAIL` (add `--fail-on-needs-review` to treat `NEEDS_REVIEW` the same
+way). It calls no model: a run with no contract is reported, never compiled.
+
 Reproduce the published evaluation offline:
 
 ```bash
