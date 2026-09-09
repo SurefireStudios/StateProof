@@ -1,4 +1,5 @@
 export * from './json';
+export * from './pricing';
 export * from './common';
 
 export * from './schema/task';

@@ -746,7 +746,11 @@ export function renderStateProofReport(
     }
   }
   lines.push('');
-  lines.push('Cost in USD is deliberately null: no pricing rule has been implemented.');
+  lines.push(
+    'Cost in USD is an estimate from the pinned rate table, recorded with the table ' +
+      'version that produced it. A model the table does not price is reported as ' +
+      'unpriced rather than estimated at the rates of a different model.',
+  );
   lines.push('');
   lines.push('No failed case is hidden, and no prediction was hand-corrected.');
   lines.push('');
