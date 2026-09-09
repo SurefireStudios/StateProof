@@ -157,7 +157,11 @@ describe('D2 — the completed manifest is whole', () => {
     expect(manifest.packageLockHash).toMatch(/^[0-9a-f]{64}$/);
     expect(manifest.promptHashes['prompts/baseline-evaluator/v1.md']).toMatch(/^[0-9a-f]{64}$/);
     expect(manifest.modelUsage?.calls).toBeGreaterThan(0);
+    // The fake client's model is not in the rate table, so this run is unpriced. The
+    // two fields have to agree: a cost without the table that produced it could not
+    // be checked later, and a table version without a cost would say nothing.
     expect(manifest.modelUsage?.estimatedCostUsd).toBeNull();
+    expect(manifest.modelUsage?.pricingTableVersion).toBeNull();
     expect(manifest.caseIds).toEqual(developmentCases);
 
     for (const relative of [

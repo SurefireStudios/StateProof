@@ -5,6 +5,7 @@ import {
   type EvaluationRunManifest,
   EvaluationRunManifestSchema,
   type Split,
+  priceRun,
   sha256Hex,
   toJsonValue,
 } from '@stateproof/core';
@@ -383,7 +384,7 @@ export async function runStateProof(options: StateProofRunOptions): Promise<Stat
             outputTokens: phase.outputTokens,
             calls: phase.compilationCalls,
             retries: phase.repairCalls,
-            estimatedCostUsd: null,
+            ...priceRun({ inputTokens: phase.inputTokens, outputTokens: phase.outputTokens }, phase.modelId),
           },
     rawResponsePaths: phase.rawResponsePaths,
     trajectoryPaths: caseIds.map(

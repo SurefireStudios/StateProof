@@ -13,6 +13,12 @@ export const ModelUsageSchema = z
     calls: z.number().int().nonnegative(),
     retries: z.number().int().nonnegative(),
     estimatedCostUsd: z.number().nonnegative().nullable(),
+    /**
+     * Which rate table priced this run. Optional so manifests written before the
+     * table existed still validate; null when the model is one the table does not
+     * price, so an absent cost is distinguishable from an unrecorded one.
+     */
+    pricingTableVersion: z.string().min(1).nullable().optional(),
   })
   .strict();
 

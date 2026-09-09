@@ -5,6 +5,7 @@ import {
   type EvaluationRunManifest,
   EvaluationRunManifestSchema,
   type Split,
+  priceRun,
   sha256Hex,
   toJsonValue,
 } from '@stateproof/core';
@@ -226,7 +227,7 @@ export async function runHardBaselinePredictions(
             outputTokens: totalOutputTokens,
             calls,
             retries,
-            estimatedCostUsd: null,
+            ...priceRun({ inputTokens: totalInputTokens, outputTokens: totalOutputTokens }, options.client.modelId),
           },
     rawResponsePaths,
     trajectoryPaths: caseIds.map(

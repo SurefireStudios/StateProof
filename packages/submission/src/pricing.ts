@@ -1,66 +1,27 @@
 /**
- * API cost estimation from a pinned pricing snapshot.
+ * Cost presentation and the submission's own baseline-versus-StateProof comparison.
  *
- * This is an *estimate against published list prices on a stated date*, not an
- * invoice. It is computed from the input and output token counts each run
- * recorded separately, because the two are priced differently — deriving cost
- * from a total-token figure would silently price output at the input rate and
- * understate the baseline by a factor of five on its output.
- *
- * No network call is made to obtain pricing, then or now.
+ * The rate table and the per-run estimate live in `@stateproof/core`, beside the
+ * manifest fields they fill. This file re-exports them so existing importers are
+ * unchanged, and there is one table rather than two that can disagree.
  */
 
-export interface PricingSnapshot {
-  readonly modelId: string;
-  /** ISO date the prices were read. Costs are only meaningful with it. */
-  readonly asOf: string;
-  readonly currency: 'USD';
-  readonly inputUsdPerMillionTokens: number;
-  readonly outputUsdPerMillionTokens: number;
-  readonly formula: string;
-  readonly sources: readonly string[];
-  readonly excludes: readonly string[];
-}
+import {
+  CLAUDE_OPUS_5_PRICING,
+  type PricingSnapshot,
+  type TokenUsage,
+  estimateCostUsd,
+} from '@stateproof/core';
 
-export const CLAUDE_OPUS_5_PRICING: PricingSnapshot = {
-  modelId: 'claude-opus-5',
-  asOf: '2026-08-29',
-  currency: 'USD',
-  inputUsdPerMillionTokens: 5,
-  outputUsdPerMillionTokens: 25,
-  formula: 'inputTokens * 5 / 1e6 + outputTokens * 25 / 1e6',
-  sources: ['Anthropic, "Pricing - Claude Platform Docs"', 'Anthropic, "Introducing Claude Opus 5"'],
-  excludes: [
-    'local compute and developer time',
-    'hosting or storage of artifacts',
-    'smoke tests and exploratory calls, reported separately as development overhead',
-  ],
-};
-
-export interface TokenUsage {
-  readonly inputTokens: number | null;
-  readonly outputTokens: number | null;
-}
-
-/**
- * Returns null when either count is missing.
- *
- * A run that did not record its token split cannot be priced, and guessing one
- * half from the other would produce a number that looks measured and is not.
- */
-export function estimateCostUsd(
-  usage: TokenUsage,
-  pricing: PricingSnapshot = CLAUDE_OPUS_5_PRICING,
-): number | null {
-  const { inputTokens, outputTokens } = usage;
-  if (inputTokens === null || outputTokens === null) return null;
-  if (!Number.isFinite(inputTokens) || !Number.isFinite(outputTokens)) return null;
-  if (inputTokens < 0 || outputTokens < 0) return null;
-  return (
-    (inputTokens * pricing.inputUsdPerMillionTokens) / 1_000_000 +
-    (outputTokens * pricing.outputUsdPerMillionTokens) / 1_000_000
-  );
-}
+export {
+  CLAUDE_OPUS_5_PRICING,
+  PRICING_TABLE,
+  PRICING_TABLE_VERSION,
+  estimateCostUsd,
+  priceRun,
+  pricingFor,
+} from '@stateproof/core';
+export type { PricingSnapshot, TokenUsage } from '@stateproof/core';
 
 /** Cents-level precision is the most this estimate can honestly carry. */
 export function formatUsd(value: number | null): string {
