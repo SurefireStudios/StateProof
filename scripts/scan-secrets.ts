@@ -177,7 +177,7 @@ function scan(root: string, files: readonly string[]): { findings: Finding[]; fo
     }
 
     for (const rule of RULES) {
-      const match = rule.test(text);
+      const match = firstMatch(rule, text);
       if (match === null) continue;
       findings.push({
         file: relative,
@@ -189,6 +189,25 @@ function scan(root: string, files: readonly string[]): { findings: Finding[]; fo
   }
 
   return { findings, forbidden };
+}
+
+const ESCAPED_BACKSLASH = '\\\\';
+const BACKSLASH = '\\';
+
+/**
+ * Apply a rule to the text as written and, where it contains escaped backslashes, to the
+ * unescaped form as well.
+ *
+ * A Windows path inside a JSON string is held with its separators doubled, which the
+ * absolute-path rule does not match because it looks for single ones. Scanning the
+ * unescaped view too means a path cannot hide from the scanner merely by being quoted
+ * into JSON, which is how the one in the clean-reproduction report went unnoticed.
+ */
+function firstMatch(rule: Rule, text: string): RegExpMatchArray | null {
+  const direct = rule.test(text);
+  if (direct !== null) return direct;
+  if (!text.includes(ESCAPED_BACKSLASH)) return null;
+  return rule.test(text.split(ESCAPED_BACKSLASH).join(BACKSLASH));
 }
 
 /**
@@ -237,7 +256,7 @@ function scanArchives(root: string, files: readonly string[]): Finding[] {
         continue;
       }
       for (const rule of RULES) {
-        const match = rule.test(entry.contents);
+        const match = firstMatch(rule, entry.contents);
         if (match === null) continue;
         findings.push({
           file: `${relative}!${entry.name}`,
