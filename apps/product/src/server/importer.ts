@@ -249,6 +249,32 @@ function filesFromInput(input: ImportInput): Record<string, string> {
   return files;
 }
 
+/**
+ * Read a compiled contract, accepting either a bare contract or the full artifact
+ * that wraps one.
+ *
+ * Exported because the verify CLI takes a contract as a file argument and has to
+ * report the same problems, field by field, as the import screen. Two readers would
+ * drift; one cannot.
+ */
+export function parseContractDocument(
+  text: string | undefined,
+  field: string,
+  problems: ImportProblem[],
+): CompiledContractV2 | null {
+  if (text === undefined) return null;
+  const parsed = parseJson(field, text, problems);
+  if (parsed === null) return null;
+
+  const bare = CompiledContractV2Schema.safeParse(parsed);
+  if (bare.success) return bare.data;
+  const wrapped = CompiledContractV2Schema.safeParse((parsed as { contract?: unknown }).contract);
+  if (wrapped.success) return wrapped.data;
+
+  problems.push(...describeZodError(bare.error, field));
+  return null;
+}
+
 export function importRun(
   input: ImportInput,
   repoRoot: string,
@@ -305,21 +331,11 @@ export function importRun(
   const warnings = checkDomain(agentVisible, problems);
   if (problems.length > 0) throw new ImportError(problems);
 
-  let uploadedContract: CompiledContractV2 | null = null;
-  const contractText = files['compiled-contract.json'];
-  if (contractText !== undefined) {
-    const parsed = parseJson('compiled-contract.json', contractText, problems);
-    if (parsed !== null) {
-      // Accept either a bare contract or a full compiled-contract artifact.
-      const bare = CompiledContractV2Schema.safeParse(parsed);
-      const wrapped = CompiledContractV2Schema.safeParse(
-        (parsed as { contract?: unknown }).contract,
-      );
-      if (bare.success) uploadedContract = bare.data;
-      else if (wrapped.success) uploadedContract = wrapped.data;
-      else problems.push(...describeZodError(bare.error, 'compiled-contract.json'));
-    }
-  }
+  const uploadedContract = parseContractDocument(
+    files['compiled-contract.json'],
+    'compiled-contract.json',
+    problems,
+  );
   if (problems.length > 0) throw new ImportError(problems);
 
   // Does this task match one of the three frozen sample tasks? The fingerprint
