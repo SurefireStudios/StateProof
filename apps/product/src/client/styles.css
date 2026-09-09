@@ -44,6 +44,12 @@
   --review-tint: rgba(240, 180, 41, 0.1);
   --model: #b98cff;
 
+  /* Raised surfaces are lit from above, so the tint is white here and inverts with
+     the theme. Every overlay in this file is rgba(var(--tint), a). */
+  --tint: 255, 255, 255;
+  /* The sticky topbar sits over scrolling content, so it carries the page colour. */
+  --scrim: rgba(8, 9, 12, 0.82);
+
   --r-xs: 4px;
   --r-sm: 6px;
   --r-md: 10px;
@@ -60,7 +66,7 @@
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px -14px rgba(0, 0, 0, 0.75);
-  --hairline: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  --hairline: inset 0 1px 0 rgba(var(--tint), 0.035);
 
   --dur: 160ms;
   --dur-slow: 320ms;
@@ -72,6 +78,59 @@
 
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+
+/* ── light ───────────────────────────────────────────────────────────────── */
+/*
+ * The design is dark first; this redefines the tokens and nothing else, so every
+ * rule below is written once and both themes get it.
+ *
+ * The verdict colours are not the dark ones lightened. A judge reads a verdict as a
+ * word and a glyph first, but the colour still has to carry on white, so pass, fail
+ * and review are darkened to hold their contrast against the page rather than
+ * staying the brighter shades that only work on near-black.
+ */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+
+    --bg: #f6f7f9;
+    --bg-raise: #ffffff;
+    --bg-elev: #ffffff;
+    --bg-sink: #eceef2;
+
+    --line-soft: #edeff3;
+    --line: #dee2e9;
+    --line-strong: #c6ccd7;
+    --line-hover: #a6aebd;
+
+    --ink: #0e131a;
+    --ink-dim: #4b5568;
+    --ink-faint: #6d7789;
+
+    --accent: #0b62c4;
+    --accent-hi: #094e9e;
+    --accent-ink: #ffffff;
+    --accent-tint: rgba(11, 98, 196, 0.09);
+
+    --pass: #0e7247;
+    --pass-tint: rgba(14, 114, 71, 0.1);
+    --fail: #bb2436;
+    --fail-tint: rgba(187, 36, 54, 0.1);
+    --review: #855400;
+    --review-tint: rgba(133, 84, 0, 0.12);
+    --model: #6636bd;
+
+    /* Depth now comes from a shadow rather than a lit edge, so the tint inverts and
+       the hairline becomes the one white line in the file. */
+    --tint: 15, 23, 42;
+    --scrim: rgba(246, 247, 249, 0.86);
+
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+    --shadow-md: 0 1px 2px rgba(15, 23, 42, 0.06), 0 10px 30px -14px rgba(15, 23, 42, 0.28);
+    --hairline: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
 }
 
 /* ── base ────────────────────────────────────────────────────────────────── */
@@ -203,7 +262,7 @@ pre code { background: none; border: none; padding: 0; }
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(8, 9, 12, 0.82);
+  background: var(--scrim);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
@@ -265,7 +324,7 @@ nav.main a {
   font-weight: 500;
   transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
 }
-nav.main a:hover { background: rgba(255, 255, 255, 0.05); color: var(--ink); text-decoration: none; }
+nav.main a:hover { background: rgba(var(--tint), 0.05); color: var(--ink); text-decoration: none; }
 nav.main a[aria-current="page"] {
   color: var(--ink);
   background: var(--bg-elev);
@@ -303,7 +362,7 @@ nav.main a.nav-out:hover { color: var(--ink-dim); }
 }
 .section-nav a:hover {
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--tint), 0.05);
   text-decoration: none;
 }
 
@@ -376,7 +435,7 @@ section:last-child { margin-bottom: 0; }
 }
 .hero-links a:hover {
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--tint), 0.05);
   text-decoration: none;
 }
 
@@ -390,7 +449,7 @@ section:last-child { margin-bottom: 0; }
   padding: 12px 22px;
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--tint), 0.02);
   box-shadow: var(--hairline);
   color: var(--ink-faint);
   font-size: 13px;
@@ -494,7 +553,7 @@ section:last-child { margin-bottom: 0; }
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--tint), 0.02);
   animation: reveal var(--dur-slow) var(--ease) both;
 }
 .finding.r-fail { border-color: rgba(255, 107, 107, 0.28); background: var(--fail-tint); }
@@ -583,7 +642,7 @@ section:last-child { margin-bottom: 0; }
 /* ── cards ───────────────────────────────────────────────────────────────── */
 .card {
   background-color: var(--bg-raise);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0));
+  background-image: linear-gradient(180deg, rgba(var(--tint), 0.022), rgba(var(--tint), 0));
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   padding: 18px 20px;
@@ -627,7 +686,7 @@ button, .btn {
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.4),
     0 6px 18px -10px rgba(77, 163, 255, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    inset 0 1px 0 rgba(var(--tint), 0.25);
   transition:
     transform var(--dur) var(--ease),
     box-shadow var(--dur) var(--ease),
@@ -642,20 +701,20 @@ button:hover:not(:disabled), .btn:hover {
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.4),
     0 12px 26px -12px rgba(77, 163, 255, 0.85),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    inset 0 1px 0 rgba(var(--tint), 0.3);
 }
 button:active:not(:disabled), .btn:active { transform: translateY(0); }
 button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: var(--shadow-sm); }
 
 .btn.ghost, button.ghost {
   background-image: none;
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(var(--tint), 0.03);
   color: var(--ink);
   border-color: var(--line-strong);
   box-shadow: var(--hairline);
 }
 .btn.ghost:hover, button.ghost:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.07);
+  background-color: rgba(var(--tint), 0.07);
   border-color: var(--line-hover);
   color: var(--ink);
 }
@@ -673,12 +732,12 @@ input[type="file"]::file-selector-button {
   padding: 7px 12px;
   border-radius: var(--r-sm);
   border: 1px solid var(--line-strong);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--tint), 0.03);
   color: var(--ink);
   transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
 input[type="file"]::file-selector-button:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--tint), 0.08);
   border-color: var(--line-hover);
 }
 
@@ -851,7 +910,7 @@ details > summary:hover { color: var(--accent); }
   transition: background-color var(--dur) var(--ease);
 }
 .event:last-child { border-bottom: none; }
-.event:hover { background-color: rgba(255, 255, 255, 0.022); }
+.event:hover { background-color: rgba(var(--tint), 0.022); }
 .event .seq { font-family: var(--mono); color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .event .kind { font-family: var(--mono); font-size: 12px; color: var(--ink-dim); line-height: 1.45; }
 .event .detail { word-break: break-word; white-space: pre-wrap; }
@@ -882,7 +941,7 @@ details > summary:hover { color: var(--accent); }
   padding: 2px 7px;
   border-radius: var(--r-xs);
   border: 1px solid var(--line-strong);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--tint), 0.02);
   color: var(--ink-dim);
   white-space: nowrap;
 }
@@ -940,7 +999,7 @@ thead th {
   letter-spacing: 0.07em;
 }
 tbody tr { transition: background-color var(--dur) var(--ease); }
-tbody tr:hover { background-color: rgba(255, 255, 255, 0.025); }
+tbody tr:hover { background-color: rgba(var(--tint), 0.025); }
 tbody tr:last-child td, tbody tr:last-child th { border-bottom: none; }
 tbody th[scope="row"] { color: var(--ink); font-weight: 560; }
 
@@ -1020,7 +1079,7 @@ tbody th[scope="row"] { color: var(--ink); font-weight: 560; }
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   background-color: var(--bg-raise);
-  background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  background-image: linear-gradient(90deg, transparent, rgba(var(--tint), 0.05), transparent);
   background-size: 220% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
 }
@@ -1095,7 +1154,7 @@ footer p:first-child { color: var(--ink-dim); }
 }
 .colophon-links a:hover {
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--tint), 0.05);
   text-decoration: none;
 }
 
