@@ -27,7 +27,7 @@ jobs:
       ANTHROPIC_API_KEY: ""
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 8.12.0
       - uses: actions/setup-node@v7
