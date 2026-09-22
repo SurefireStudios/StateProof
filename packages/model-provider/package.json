@@ -11,7 +11,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "0.124.0",
     "@stateproof/core": "workspace:*",
-    "dotenv": "17.4.2",
+    "dotenv": "18.0.1",
     "zod": "3.25.76"
   }
 }
